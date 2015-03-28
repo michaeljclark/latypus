@@ -162,32 +162,24 @@ public:
         printf("queue_atomic::atomic_bits   = %u\n", qtype::atomic_bits);
         printf("queue_atomic::offset_bits   = %u\n", qtype::offset_bits);
         printf("queue_atomic::version_bits  = %u\n", qtype::version_bits);
-        printf("queue_atomic::front_shift   = %u\n", qtype::front_shift);
-        printf("queue_atomic::back_shift    = %u\n", qtype::back_shift);
+        printf("queue_atomic::offset_shift  = %u\n", qtype::offset_shift);
         printf("queue_atomic::version_shift = %u\n", qtype::version_shift);
         printf("queue_atomic::size_max      = 0x%016llx (%llu)\n", (u64)qtype::size_max, (u64)qtype::size_max);
         printf("queue_atomic::offset_limit  = 0x%016llx (%llu)\n", (u64)qtype::offset_limit, (u64)qtype::offset_limit);
         printf("queue_atomic::version_limit = 0x%016llx (%llu)\n", (u64)qtype::version_limit, (u64)qtype::version_limit);
         printf("queue_atomic::offset_mask   = 0x%016llx\n", (u64)qtype::offset_mask);
         printf("queue_atomic::version_mask  = 0x%016llx\n", (u64)qtype::version_mask);
-        printf("queue_atomic::front_pack    = 0x%016llx\n", (u64)qtype::front_pack);
-        printf("queue_atomic::back_pack     = 0x%016llx\n", (u64)qtype::back_pack);
-        printf("queue_atomic::version_pack  = 0x%016llx\n", (u64)qtype::version_pack);
         
         CPPUNIT_ASSERT(qtype::atomic_bits   == 64);
-        CPPUNIT_ASSERT(qtype::offset_bits   == 24);
-        CPPUNIT_ASSERT(qtype::version_bits  == 16);
-        CPPUNIT_ASSERT(qtype::front_shift   == 0);
-        CPPUNIT_ASSERT(qtype::back_shift    == 24);
-        CPPUNIT_ASSERT(qtype::version_shift == 48);
-        CPPUNIT_ASSERT(qtype::size_max      == 8388608);
-        CPPUNIT_ASSERT(qtype::offset_limit  == 16777216);
-        CPPUNIT_ASSERT(qtype::version_limit == 65536);
-        CPPUNIT_ASSERT(qtype::offset_mask   == 0x00ffffff);
-        CPPUNIT_ASSERT(qtype::version_mask  == 0x0000ffff);
-        CPPUNIT_ASSERT(qtype::front_pack    == 0x0000000000ffffffULL);
-        CPPUNIT_ASSERT(qtype::back_pack     == 0x0000ffffff000000ULL);
-        CPPUNIT_ASSERT(qtype::version_pack  == 0xffff000000000000ULL);
+        CPPUNIT_ASSERT(qtype::offset_bits   == 32);
+        CPPUNIT_ASSERT(qtype::version_bits  == 32);
+        CPPUNIT_ASSERT(qtype::offset_shift  == 0);
+        CPPUNIT_ASSERT(qtype::version_shift == 32);
+        CPPUNIT_ASSERT(qtype::size_max      == 2147483648);
+        CPPUNIT_ASSERT(qtype::offset_limit  == 4294967296);
+        CPPUNIT_ASSERT(qtype::version_limit == 4294967296);
+        CPPUNIT_ASSERT(qtype::offset_mask   == 0x00000000ffffffffULL);
+        CPPUNIT_ASSERT(qtype::version_mask  == 0x00000000ffffffffULL);
     }
     
     void test_empty_invariants()
@@ -202,7 +194,8 @@ public:
         CPPUNIT_ASSERT(q.full() == false);
         CPPUNIT_ASSERT(q.size_limit == 1024);
         CPPUNIT_ASSERT(q._last_version() == 0);
-        CPPUNIT_ASSERT(q._version() == 0);
+        CPPUNIT_ASSERT(q._back_version() == 0);
+        CPPUNIT_ASSERT(q._front_version() == 0);
         CPPUNIT_ASSERT(q._back() == 0);
         CPPUNIT_ASSERT(q._front() == 1024);
     }
@@ -220,7 +213,8 @@ public:
         CPPUNIT_ASSERT(q.full() == false);
         CPPUNIT_ASSERT(q.size_limit == qsize);
         CPPUNIT_ASSERT(q._last_version() == 0);
-        CPPUNIT_ASSERT(q._version() == 0);
+        CPPUNIT_ASSERT(q._back_version() == 0);
+        CPPUNIT_ASSERT(q._front_version() == 0);
         CPPUNIT_ASSERT(q._back() == 0);
         CPPUNIT_ASSERT(q._front() == qsize);
         
@@ -228,7 +222,8 @@ public:
         for (size_t i = 1; i <= 4; i++) {
             CPPUNIT_ASSERT(q.push_back((void*)i) == true);
             CPPUNIT_ASSERT(q._last_version() == i);
-            CPPUNIT_ASSERT(q._version() == i);
+            CPPUNIT_ASSERT(q._back_version() == i);
+            CPPUNIT_ASSERT(q._front_version() == 0);
             CPPUNIT_ASSERT(q._back() == i);
             CPPUNIT_ASSERT(q._front() == qsize);
             CPPUNIT_ASSERT(q.size() == i);
@@ -239,7 +234,8 @@ public:
         // push_back overflow test
         CPPUNIT_ASSERT(q.push_back((void*)5) == false);
         CPPUNIT_ASSERT(q._last_version() == 4);
-        CPPUNIT_ASSERT(q._version() == 4);
+        CPPUNIT_ASSERT(q._back_version() == 4);
+        CPPUNIT_ASSERT(q._front_version() == 0);
         CPPUNIT_ASSERT(q._back() == 4);
         CPPUNIT_ASSERT(q._front() == qsize);
         CPPUNIT_ASSERT(q.size() == 4);
@@ -250,7 +246,8 @@ public:
         for (size_t i = 1; i <= 4; i++) {
             CPPUNIT_ASSERT(q.pop_front() == (void*)i);
             CPPUNIT_ASSERT(q._last_version() == 4 + i);
-            CPPUNIT_ASSERT(q._version() == 4 + i);
+            CPPUNIT_ASSERT(q._back_version() == 4);
+            CPPUNIT_ASSERT(q._front_version() == 4 + i);
             CPPUNIT_ASSERT(q._back() == 4);
             CPPUNIT_ASSERT(q._front() == 4 + i);
             CPPUNIT_ASSERT(q.size() == 4 - i);
@@ -261,7 +258,8 @@ public:
         // pop_front underflow test
         CPPUNIT_ASSERT(q.pop_front() == (void*)0);
         CPPUNIT_ASSERT(q._last_version() == 8);
-        CPPUNIT_ASSERT(q._version() == 8);
+        CPPUNIT_ASSERT(q._back_version() == 4);
+        CPPUNIT_ASSERT(q._front_version() == 8);
         CPPUNIT_ASSERT(q._back() == 4);
         CPPUNIT_ASSERT(q._front() == 8);
         CPPUNIT_ASSERT(q.size() == 0);
@@ -272,7 +270,8 @@ public:
         for (size_t i = 1; i <= 4; i++) {
             CPPUNIT_ASSERT(q.push_back((void*)i) == true);
             CPPUNIT_ASSERT(q._last_version() == 8 + i);
-            CPPUNIT_ASSERT(q._version() == 8 + i);
+            CPPUNIT_ASSERT(q._back_version() == 8 + i);
+            CPPUNIT_ASSERT(q._front_version() == 8);
             CPPUNIT_ASSERT(q._back() == 4 + i);
             CPPUNIT_ASSERT(q._front() == 8);
             CPPUNIT_ASSERT(q.size() == i);
@@ -283,7 +282,8 @@ public:
         // push_back overflow test
         CPPUNIT_ASSERT(q.push_back((void*)5) == false);
         CPPUNIT_ASSERT(q._last_version() == 12);
-        CPPUNIT_ASSERT(q._version() == 12);
+        CPPUNIT_ASSERT(q._back_version() == 12);
+        CPPUNIT_ASSERT(q._front_version() == 8);
         CPPUNIT_ASSERT(q._back() == 8);
         CPPUNIT_ASSERT(q._front() == 8);
         CPPUNIT_ASSERT(q.size() == 4);
@@ -294,7 +294,8 @@ public:
         for (size_t i = 1; i <= 4; i++) {
             CPPUNIT_ASSERT(q.pop_front() == (void*)i);
             CPPUNIT_ASSERT(q._last_version() == 12 + i);
-            CPPUNIT_ASSERT(q._version() == 12 + i);
+            CPPUNIT_ASSERT(q._back_version() == 12);
+            CPPUNIT_ASSERT(q._front_version() == 12 + i);
             CPPUNIT_ASSERT(q._back() == 8);
             CPPUNIT_ASSERT(q._front() == 8 + i);
             CPPUNIT_ASSERT(q.size() == 4 - i);
@@ -305,7 +306,8 @@ public:
         // pop_front underflow test
         CPPUNIT_ASSERT(q.pop_front() == (void*)0);
         CPPUNIT_ASSERT(q._last_version() == 16);
-        CPPUNIT_ASSERT(q._version() == 16);
+        CPPUNIT_ASSERT(q._back_version() == 12);
+        CPPUNIT_ASSERT(q._front_version() == 16);
         CPPUNIT_ASSERT(q._back() == 8);
         CPPUNIT_ASSERT(q._front() == 12);
         CPPUNIT_ASSERT(q.size() == 0);
