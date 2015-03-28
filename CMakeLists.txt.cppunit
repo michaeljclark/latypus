@@ -1,0 +1,68 @@
+cmake_minimum_required(VERSION 2.8)
+
+project(cppunit)
+
+include_directories(include)
+
+add_library(
+	cppunit STATIC
+	src/cppunit/AdditionalMessage.cpp
+	src/cppunit/Asserter.cpp
+	src/cppunit/BeOsDynamicLibraryManager.cpp
+	src/cppunit/BriefTestProgressListener.cpp
+	src/cppunit/CompilerOutputter.cpp
+	src/cppunit/cppunit.dsp
+	src/cppunit/cppunit.vcproj
+	src/cppunit/cppunit.vcxproj
+	src/cppunit/cppunit_dll.dsp
+	src/cppunit/cppunit_dll.vcproj
+	src/cppunit/cppunit_dll.vcxproj
+	src/cppunit/DefaultProtector.cpp
+	src/cppunit/DefaultProtector.h
+	src/cppunit/DynamicLibraryManager.cpp
+	src/cppunit/DynamicLibraryManagerException.cpp
+	src/cppunit/Exception.cpp
+	src/cppunit/Makefile.am
+	src/cppunit/Message.cpp
+	src/cppunit/PlugInManager.cpp
+	src/cppunit/PlugInParameters.cpp
+	src/cppunit/Protector.cpp
+	src/cppunit/ProtectorChain.cpp
+	src/cppunit/ProtectorChain.h
+	src/cppunit/ProtectorContext.h
+	src/cppunit/RepeatedTest.cpp
+	src/cppunit/ShlDynamicLibraryManager.cpp
+	src/cppunit/SourceLine.cpp
+	src/cppunit/StringTools.cpp
+	src/cppunit/SynchronizedObject.cpp
+	src/cppunit/Test.cpp
+	src/cppunit/TestAssert.cpp
+	src/cppunit/TestCase.cpp
+	src/cppunit/TestCaseDecorator.cpp
+	src/cppunit/TestComposite.cpp
+	src/cppunit/TestDecorator.cpp
+	src/cppunit/TestFactoryRegistry.cpp
+	src/cppunit/TestFailure.cpp
+	src/cppunit/TestLeaf.cpp
+	src/cppunit/TestNamer.cpp
+	src/cppunit/TestPath.cpp
+	src/cppunit/TestPlugInDefaultImpl.cpp
+	src/cppunit/TestResult.cpp
+	src/cppunit/TestResultCollector.cpp
+	src/cppunit/TestRunner.cpp
+	src/cppunit/TestSetUp.cpp
+	src/cppunit/TestSuccessListener.cpp
+	src/cppunit/TestSuite.cpp
+	src/cppunit/TestSuiteBuilderContext.cpp
+	src/cppunit/TextOutputter.cpp
+	src/cppunit/TextTestProgressListener.cpp
+	src/cppunit/TextTestResult.cpp
+	src/cppunit/TextTestRunner.cpp
+	src/cppunit/TypeInfoHelper.cpp
+	src/cppunit/UnixDynamicLibraryManager.cpp
+	src/cppunit/Win32DynamicLibraryManager.cpp
+	src/cppunit/XmlDocument.cpp
+	src/cppunit/XmlElement.cpp
+	src/cppunit/XmlOutputter.cpp
+	src/cppunit/XmlOutputterHook.cpp
+)

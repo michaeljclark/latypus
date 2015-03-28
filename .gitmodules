@@ -1,0 +1,6 @@
+[submodule "third_party/cppunit"]
+	path = third_party/cppunit
+	url = git://anongit.freedesktop.org/git/libreoffice/cppunit/
+[submodule "third_party/boringssl"]
+	path = third_party/boringssl
+	url = https://boringssl.googlesource.com/boringssl
