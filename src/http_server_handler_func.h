@@ -12,8 +12,6 @@ struct http_server_handler_func : http_server_handler
 {
     HTTPVersion     http_version;
     HTTPMethod      request_method;
-    std::string     open_path;
-    std::string     translated_path;
     std::string     extension;
     std::string     mime_type;
     std::string     status_text;
@@ -22,9 +20,7 @@ struct http_server_handler_func : http_server_handler
     int             status_code;
     ssize_t         content_length;
     ssize_t         total_written;
-    struct stat     stat_result;
     http_date       last_modified;
-    http_date       if_modified_since;
     
     http_server_handler_func();
     ~http_server_handler_func();

@@ -64,8 +64,6 @@ http_server_handler_func::~http_server_handler_func()
 
 void http_server_handler_func::init()
 {
-    open_path.clear();
-    translated_path.clear();
     reader = nullptr;
     response_buffer.reset();
     extension.clear();
@@ -74,8 +72,6 @@ void http_server_handler_func::init()
     status_code = 0;
     content_length = 0;
     total_written = 0;
-    last_modified = http_date();
-    if_modified_since = http_date();
 }
 
 bool http_server_handler_func::handle_request()
@@ -103,10 +99,10 @@ bool http_server_handler_func::handle_request()
     reader = &response_buffer;
     
     if (delegate->get_debug_mask() & protocol_debug_handler) {
-        log_debug("handle_request: status_code=%d status_text=%s open_path=%s "
-                  "translated_path=%s extension=%s mime_type=%s",
-                  status_code, status_text.c_str(), open_path.c_str(),
-                  translated_path.c_str(), extension.c_str(), mime_type.c_str());
+        log_debug("handle_request: status_code=%d status_text=%s "
+                  "extension=%s mime_type=%s",
+                  status_code, status_text.c_str(),
+                  extension.c_str(), mime_type.c_str());
     }
     
     return true;
