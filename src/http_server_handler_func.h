@@ -1,14 +1,14 @@
 //
-//  http_server_handler_file.h
+//  http_server_handler_func.h
 //
 
-#ifndef http_server_handler_file_h
-#define http_server_handler_file_h
+#ifndef http_server_handler_func_h
+#define http_server_handler_func_h
 
 
-/* http_server_handler_file */
+/* http_server_handler_func */
 
-struct http_server_handler_file : http_server_handler
+struct http_server_handler_func : http_server_handler
 {
     HTTPVersion     http_version;
     HTTPMethod      request_method;
@@ -18,10 +18,7 @@ struct http_server_handler_file : http_server_handler
     std::string     mime_type;
     std::string     status_text;
     io_reader*      reader;
-    io_buffer       error_buffer;
-    io_file         file_resource;
-    io_error        open_err;
-    io_error        stat_err;
+    io_buffer       response_buffer;
     int             status_code;
     ssize_t         content_length;
     ssize_t         total_written;
@@ -29,13 +26,9 @@ struct http_server_handler_file : http_server_handler
     http_date       last_modified;
     http_date       if_modified_since;
     
-    http_server_handler_file();
-    ~http_server_handler_file();
-    
-    virtual void translate_path();
-    virtual size_t create_error_response();
-    virtual int open_resource(int oflag, int mask);
-    
+    http_server_handler_func();
+    ~http_server_handler_func();
+        
     virtual void init();
     virtual bool handle_request();
     virtual io_result read_request_body();

@@ -1,5 +1,5 @@
 //
-//  http_server_handler_file.cc
+//  http_server_handler_func.cc
 //
 
 #include "plat_os.h"
@@ -48,120 +48,29 @@
 #include "http_response.h"
 #include "http_date.h"
 #include "http_server.h"
-#include "http_server_handler_file.h"
+#include "http_server_handler_func.h"
 
 
-/* http_server_handler_file */
+/* http_server_handler_func */
 
-http_server_handler_file::http_server_handler_file()
+http_server_handler_func::http_server_handler_func()
 {
-    error_buffer.resize(1024);
+    response_buffer.resize(1024);
 }
 
-http_server_handler_file::~http_server_handler_file()
+http_server_handler_func::~http_server_handler_func()
 {
-    file_resource.close();
 }
 
-void http_server_handler_file::translate_path()
-{
-    // TODO - valid root path exists in config
-    // TODO - unescape path
-    auto cfg = delegate->get_config();
-    auto root = cfg->root;
-    const char* request_path = http_conn->request.get_request_path();
-    // TODO - handle canonical unescaping of path
-    // TODO - windows LFN http://support.microsoft.com/kb/142982 GetShortPathName
-    // TODO - windows forks using : or ::$DATA (alternate name for main fork)
-    // TODO - case insensitive filesystems
-    if (root.length() > 0 && root[root.length() - 1] != '/' && request_path[0] != '/') {
-        translated_path = cfg->root + "/" + request_path;
-    } else {
-        translated_path = cfg->root + request_path;
-    }
-}
-
-int http_server_handler_file::open_resource(int oflag, int mask)
-{
-    open_path = translated_path;
-    
-    stat_err = io_file::stat(translated_path, stat_result);
-    
-    if (stat_err.errcode == EACCES) {
-        return HTTPStatusCodeForbidden;
-    } else if (stat_err.errcode == ENOENT) {
-        return HTTPStatusCodeNotFound;
-    } else if (stat_err.errcode != 0) {
-        return HTTPStatusCodeInternalServerError;
-    } else if (stat_result.st_mode & S_IFDIR) {
-        // TODO - redirect if trailing slash is missing
-        // TODO - handle directory listings
-        bool found_index = false;
-        auto cfg = delegate->get_config();
-        for (auto index : cfg->index_files) {
-            std::string index_path;
-            if (translated_path.length() > 0 && translated_path[translated_path.length() - 1] == '/') {
-                index_path = translated_path + index;
-            } else {
-                index_path = translated_path + "/" + index;
-            }
-            if (io_file::stat(index_path, stat_result).errcode == 0) {
-                open_path = index_path;
-                found_index = true;
-                break;
-            }
-        }
-        if (!found_index) {
-            return HTTPStatusCodeForbidden;
-        }
-    } else if (!(stat_result.st_mode & S_IFREG)) {
-        return HTTPStatusCodeForbidden;
-    }
-    
-    open_err = file_resource.open(open_path, oflag, mask);
-    
-    if (open_err.errcode == EACCES) {
-        return HTTPStatusCodeForbidden;
-    } else if (open_err.errcode == ENOENT) {
-        return HTTPStatusCodeNotFound;
-    } else if (open_err.errcode != 0) {
-        return HTTPStatusCodeInternalServerError;
-    } else {
-        last_modified = http_date((time_t)stat_result.st_mtime);
-        return HTTPStatusCodeOK;
-    }
-}
-
-size_t http_server_handler_file::create_error_response()
-{
-    char error_fmt[] =
-        "<html>\r\n"
-        "<head><title>%d %s</title></head>\r\n"
-        "<body>\r\n"
-        "<h1>%d %s</h1>\r\n"
-        "</body>\r\n"
-        "</html>\r\n";
-    error_buffer.reset();
-    size_t error_len = snprintf(error_buffer.data(), error_buffer.size(), error_fmt,
-                                status_code, status_text.c_str(),
-                                status_code, status_text.c_str());
-    error_buffer.set_length(error_len);
-    mime_type = "text/html";
-    return error_len;
-}
-
-void http_server_handler_file::init()
+void http_server_handler_func::init()
 {
     open_path.clear();
     translated_path.clear();
     reader = nullptr;
-    file_resource.close();
-    error_buffer.reset();
+    response_buffer.reset();
     extension.clear();
     mime_type.clear();
     status_text.clear();
-    open_err = 0;
-    stat_err = 0;
     status_code = 0;
     content_length = 0;
     total_written = 0;
@@ -169,48 +78,29 @@ void http_server_handler_file::init()
     if_modified_since = http_date();
 }
 
-bool http_server_handler_file::handle_request()
+bool http_server_handler_func::handle_request()
 {
     // get request http version and request method
     http_version = http_constants::get_version_type(http_conn->request.get_http_version());
     request_method = http_constants::get_method_type(http_conn->request.get_request_method());
     
-    translate_path();
-    
     switch (request_method) {
         case HTTPMethodGET:
         case HTTPMethodHEAD:
-            status_code = open_resource(O_RDONLY, 0);
+            status_code = HTTPStatusCodeOK;
             break;
         default:
             status_code = HTTPStatusCodeMethodNotAllowed;
             break;
     }
     
-    const char* if_modified_since_str;
-    if (status_code == HTTPStatusCodeOK &&
-        (if_modified_since_str = http_conn->request.get_header_string(kHTTPHeaderIfModifiedSince)))
-    {
-        if_modified_since = http_date(if_modified_since_str);
-        if (last_modified.tod <= if_modified_since.tod) {
-            status_code = HTTPStatusCodeNotModified;
-        }
-    }
-    
+    // create response
     status_text = http_constants::get_status_text(status_code);
-    if (status_code == HTTPStatusCodeOK) {
-        auto ext_mime_type = delegate->get_config()->lookup_mime_type(open_path);
-        extension = ext_mime_type.first;
-        mime_type = ext_mime_type.second;
-        content_length = stat_result.st_size;
-        reader = &file_resource;
-    } else if (status_code == HTTPStatusCodeNotModified) {
-        content_length = 0;
-        reader = nullptr;
-    } else {
-        content_length = create_error_response();
-        reader = &error_buffer;
-    }
+    const char* str = "Hello World\n";
+    size_t len = strlen(str);
+    response_buffer.set(str, len);
+    content_length = len;
+    reader = &response_buffer;
     
     if (delegate->get_debug_mask() & protocol_debug_handler) {
         log_debug("handle_request: status_code=%d status_text=%s open_path=%s "
@@ -222,12 +112,12 @@ bool http_server_handler_file::handle_request()
     return true;
 }
 
-io_result http_server_handler_file::read_request_body()
+io_result http_server_handler_func::read_request_body()
 {
     return io_result(0);
 }
 
-bool http_server_handler_file::populate_response()
+bool http_server_handler_func::populate_response()
 {
     char date_buf[32];
     
@@ -291,7 +181,7 @@ bool http_server_handler_file::populate_response()
     return true;
 }
 
-io_result http_server_handler_file::write_response_body()
+io_result http_server_handler_func::write_response_body()
 {    
     auto &buffer = http_conn->buffer;
     
@@ -316,8 +206,7 @@ io_result http_server_handler_file::write_response_body()
     return io_result(content_length - total_written);
 }
 
-bool http_server_handler_file::end_request()
+bool http_server_handler_func::end_request()
 {
-    file_resource.close();
     return true;
 }
