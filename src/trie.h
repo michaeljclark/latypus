@@ -91,7 +91,8 @@ struct trie
     }
     
     void find_node_internal(std::string &key, trie_node* &node, trie_node* &parent,
-                            size_t &prefix_offset, size_t &key_offset, size_t &child_index)
+                            size_t &prefix_offset, size_t &key_offset, size_t &child_index,
+                            std::vector<trie_node*> *stack = nullptr)
     {
         prefix_offset = key_offset = child_index = 0;
         while(key_offset < key.length()) {
@@ -106,6 +107,7 @@ struct trie
             {
                 if (prefix_offset == node->prefix.length()) {
                     // matched to end of leaf
+                    if (stack) stack->push_back(node);
                 }
                 break;
             }
@@ -113,6 +115,8 @@ struct trie
             {
                 if (prefix_offset == node->prefix.length()) {
                     // matched to end of branch
+                    if (stack) stack->push_back(node);
+                    
                     branch_type* branch = static_cast<branch_type*>(node);
                     child_index = 0;
                     for (auto child_node : branch->nodes) {
@@ -201,7 +205,7 @@ struct trie
         return true;
     }
     
-    bool find(std::string key, T &val)
+    T find(std::string key, T &val)
     {
         // find nearest matching node
         trie_node *node = root_node, *parent = nullptr;
@@ -211,8 +215,7 @@ struct trie
         // exact match
         if (key.length() == key_offset) {
             if (node->get_type() == trie_node_type_leaf) {
-                val = static_cast<leaf_type*>(node)->val;
-                return true;
+                return static_cast<leaf_type*>(node)->val;
             } else if (node->get_type() == trie_node_type_branch) {
                 branch_type *branch = static_cast<branch_type*>(node);
                 // Check if first child node is sentinel ""
@@ -221,25 +224,44 @@ struct trie
                     branch->nodes[0]->get_type() == trie_node_type_leaf &&
                     branch->nodes[0]->prefix.size() == 0)
                 {
-                    val = static_cast<leaf_type*>(branch->nodes[0])->val;
-                    return true;
+                    return static_cast<leaf_type*>(branch->nodes[0])->val;
                 }
             }
         }
         
         // not found
-        return false;
+        return T(0);
     }
 
-    leaf_type* find_nearest_leaf(std::string key, size_t &key_offset)
+    T find_nearest(std::string key)
     {
         // find nearest matching node
         trie_node *node = root_node, *parent = nullptr;
-        size_t prefix_offset, child_index;
-        find_node_internal(key, node, parent, prefix_offset, key_offset, child_index);
-                
+        size_t prefix_offset, child_index, key_offset;
+        std::vector<trie_node*> stack;
+        find_node_internal(key, node, parent, prefix_offset, key_offset, child_index, &stack);
+        
+        // if we don't have a complete match, search up the tree for the nearest leaf
+        if (node && key.length() < key_offset + node->prefix.length() - prefix_offset) {
+            for (size_t i = stack.size(); i > 0; i--) {
+                trie_node *node = stack[i - 1];
+                if (node && node->get_type() == trie_node_type_branch) {
+                    branch_type *branch = static_cast<branch_type*>(node);
+                    // Check if first child node is sentinel ""
+                    // Note: depends on nodes being sorted
+                    if (branch->nodes.size() > 0 &&
+                        branch->nodes[0]->get_type() == trie_node_type_leaf &&
+                        branch->nodes[0]->prefix.size() == 0)
+                    {
+                        return static_cast<leaf_type*>(branch->nodes[0])->val;
+                    }
+                }
+            }
+            return T(0);
+        }
+        
         if (node->get_type() == trie_node_type_leaf) {
-            return static_cast<leaf_type*>(node);
+            return static_cast<leaf_type*>(node)->val;
         } else if (node->get_type() == trie_node_type_branch) {
             branch_type *branch = static_cast<branch_type*>(node);
             // Check if first child node is sentinel ""
@@ -248,12 +270,12 @@ struct trie
                 branch->nodes[0]->get_type() == trie_node_type_leaf &&
                 branch->nodes[0]->prefix.size() == 0)
             {
-                return static_cast<leaf_type*>(branch->nodes[0]);
+                return static_cast<leaf_type*>(branch->nodes[0])->val;
             }
         }
         
         // not found
-        return nullptr;
+        return T(0);
     }
 };
 

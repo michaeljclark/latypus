@@ -37,36 +37,26 @@ public:
     void test_url_map_1()
     {
         trie<uint32_t> url_map;
-        trie<uint32_t>::leaf_type *node;
-        size_t key_offset;
-        
+
         url_map.insert("/bar/", 1);
         url_map.insert("/foo/", 2);
         url_map.insert("/foo/bar/", 3);
         url_map.insert("/foo/bang/", 4);
+        url_map.insert("/woo/tang/", 5);
         
         url_map.print();
         
-        CPPUNIT_ASSERT(node = url_map.find_nearest_leaf("/bar/bang", key_offset));
-        CPPUNIT_ASSERT(node->prefix == "bar/");
-        CPPUNIT_ASSERT(std::string("/bar/").substr(0, key_offset) == "/bar/");
-        CPPUNIT_ASSERT(node->val == 1);
-
-        CPPUNIT_ASSERT(node = url_map.find_nearest_leaf("/foo/woo", key_offset));
-        CPPUNIT_ASSERT(node->prefix == "");
-        CPPUNIT_ASSERT(std::string("/foo/woo").substr(0, key_offset) == "/foo/");
-        CPPUNIT_ASSERT(node->val == 2);
-
-        CPPUNIT_ASSERT(node = url_map.find_nearest_leaf("/foo/bar/baz", key_offset));
-        CPPUNIT_ASSERT(node->prefix == "r/");
-        CPPUNIT_ASSERT(std::string("/foo/bar/").substr(0, key_offset) == "/foo/bar/");
-        CPPUNIT_ASSERT(node->val == 3);
-
-        CPPUNIT_ASSERT(node = url_map.find_nearest_leaf("/foo/bang", key_offset));
-        CPPUNIT_ASSERT(node->prefix == "ng/");
-        CPPUNIT_ASSERT(std::string("/foo/bang").substr(0, key_offset) == "/foo/bang");
-        //CPPUNIT_ASSERT(std::string("/foo/bang/").substr(0, key_offset) == "/foo/");
-        CPPUNIT_ASSERT(node->val == 4);
+        CPPUNIT_ASSERT(url_map.find_nearest("/bar") == 0);
+        CPPUNIT_ASSERT(url_map.find_nearest("/bar/bang") == 1);
+        CPPUNIT_ASSERT(url_map.find_nearest("/foo") == 0);
+        CPPUNIT_ASSERT(url_map.find_nearest("/foo/woo") == 2);
+        CPPUNIT_ASSERT(url_map.find_nearest("/foo/bar/baz") == 3);
+        CPPUNIT_ASSERT(url_map.find_nearest("/foo/bar/bart") == 3);
+        CPPUNIT_ASSERT(url_map.find_nearest("/foo/bang") == 2);
+        CPPUNIT_ASSERT(url_map.find_nearest("/foo/bang/") == 4);
+        CPPUNIT_ASSERT(url_map.find_nearest("/woo/tang") == 0);
+        CPPUNIT_ASSERT(url_map.find_nearest("/woo/tang/bar") == 5);
+        CPPUNIT_ASSERT(url_map.find_nearest("/woo/tang/baz") == 5);
 }
 };
 
