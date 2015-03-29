@@ -232,13 +232,13 @@ struct trie
         return false;
     }
 
-    leaf_type* find_nearest_node(std::string key)
+    leaf_type* find_nearest_node(std::string key, size_t &key_offset)
     {
         // find nearest matching node
         trie_node *node = root_node, *parent = nullptr;
-        size_t prefix_offset, key_offset, child_index;
+        size_t prefix_offset, child_index;
         find_node_internal(key, node, parent, prefix_offset, key_offset, child_index);
-        
+                
         if (node->get_type() == trie_node_type_leaf) {
             return static_cast<leaf_type*>(node);
         } else if (node->get_type() == trie_node_type_branch) {

@@ -38,6 +38,7 @@ public:
     {
         trie<uint32_t> url_map;
         trie<uint32_t>::leaf_type *node;
+        size_t key_offset;
         
         url_map.insert("/bar/", 1);
         url_map.insert("/foo/", 2);
@@ -46,19 +47,19 @@ public:
         
         url_map.print();
         
-        CPPUNIT_ASSERT(node = url_map.find_nearest_node("/bar/bang"));
+        CPPUNIT_ASSERT(node = url_map.find_nearest_node("/bar/bang", key_offset));
         CPPUNIT_ASSERT(node->prefix == "bar/");
         CPPUNIT_ASSERT(node->val == 1);
 
-        CPPUNIT_ASSERT(node = url_map.find_nearest_node("/foo/woo"));
+        CPPUNIT_ASSERT(node = url_map.find_nearest_node("/foo/woo", key_offset));
         CPPUNIT_ASSERT(node->prefix == "");
         CPPUNIT_ASSERT(node->val == 2);
 
-        CPPUNIT_ASSERT(node = url_map.find_nearest_node("/foo/bar/baz"));
+        CPPUNIT_ASSERT(node = url_map.find_nearest_node("/foo/bar/baz", key_offset));
         CPPUNIT_ASSERT(node->prefix == "r/");
         CPPUNIT_ASSERT(node->val == 3);
 
-        CPPUNIT_ASSERT(node = url_map.find_nearest_node("/foo/bang"));
+        CPPUNIT_ASSERT(node = url_map.find_nearest_node("/foo/bang", key_offset));
         CPPUNIT_ASSERT(node->prefix == "ng/");
         CPPUNIT_ASSERT(node->val == 4);
 }
