@@ -252,10 +252,6 @@ struct trie
                 return static_cast<leaf_type*>(branch->nodes[0]);
             }
         }
-
-        if (node->get_type() == trie_node_type_leaf) {
-            return static_cast<leaf_type*>(node);
-        }
         
         // not found
         return nullptr;
