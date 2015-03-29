@@ -38,26 +38,26 @@ public:
     {
         trie<uint32_t> url_map;
 
-        url_map.insert("/bar/", 1);
-        url_map.insert("/foo/", 2);
-        url_map.insert("/foo/bar/", 3);
-        url_map.insert("/foo/bang/", 4);
-        url_map.insert("/woo/tang/", 5);
-        
-        url_map.print();
-        
-        CPPUNIT_ASSERT(url_map.find_nearest("/bar") == 0);
-        CPPUNIT_ASSERT(url_map.find_nearest("/bar/bang") == 1);
-        CPPUNIT_ASSERT(url_map.find_nearest("/foo") == 0);
-        CPPUNIT_ASSERT(url_map.find_nearest("/foo/woo") == 2);
-        CPPUNIT_ASSERT(url_map.find_nearest("/foo/bar/baz") == 3);
-        CPPUNIT_ASSERT(url_map.find_nearest("/foo/bar/bart") == 3);
-        CPPUNIT_ASSERT(url_map.find_nearest("/foo/bang") == 2);
-        CPPUNIT_ASSERT(url_map.find_nearest("/foo/bang/") == 4);
-        CPPUNIT_ASSERT(url_map.find_nearest("/woo/tang") == 0);
-        CPPUNIT_ASSERT(url_map.find_nearest("/woo/tang/bar") == 5);
-        CPPUNIT_ASSERT(url_map.find_nearest("/woo/tang/baz") == 5);
-}
+        CPPUNIT_ASSERT(url_map.insert("/", 1) == true);
+        CPPUNIT_ASSERT(url_map.insert("/bar/", 2) == true);
+        CPPUNIT_ASSERT(url_map.insert("/foo/", 3) == true);
+        CPPUNIT_ASSERT(url_map.insert("/foo/bar/", 4) == true);
+        CPPUNIT_ASSERT(url_map.insert("/foo/bang/", 5) == true);
+        CPPUNIT_ASSERT(url_map.insert("/woo/tang/", 6) == true);
+        CPPUNIT_ASSERT(url_map.insert("/woo/tang/", 6) == false);
+
+        CPPUNIT_ASSERT(url_map.find_nearest("/bar") == 1);
+        CPPUNIT_ASSERT(url_map.find_nearest("/bar/bang") == 2);
+        CPPUNIT_ASSERT(url_map.find_nearest("/foo") == 1);
+        CPPUNIT_ASSERT(url_map.find_nearest("/foo/woo") == 3);
+        CPPUNIT_ASSERT(url_map.find_nearest("/foo/bar/baz") == 4);
+        CPPUNIT_ASSERT(url_map.find_nearest("/foo/bar/bart") == 4);
+        CPPUNIT_ASSERT(url_map.find_nearest("/foo/bang") == 3);
+        CPPUNIT_ASSERT(url_map.find_nearest("/foo/bang/") == 5);
+        CPPUNIT_ASSERT(url_map.find_nearest("/woo/tang") == 1);
+        CPPUNIT_ASSERT(url_map.find_nearest("/woo/tang/bar") == 6);
+        CPPUNIT_ASSERT(url_map.find_nearest("/woo/tang/baz") == 6);
+    }
 };
 
 int main(int argc, const char * argv[])
