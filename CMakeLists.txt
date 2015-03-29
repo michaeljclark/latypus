@@ -89,6 +89,9 @@ target_link_libraries(test_queue latypus pthread cppunit)
 add_executable(test_resolver tests/test_resolver.cc)
 target_link_libraries(test_resolver latypus pthread cppunit)
 
+add_executable(test_trie tests/test_trie.cc)
+target_link_libraries(test_trie latypus pthread cppunit)
+
 add_executable(test_io tests/test_io.cc)
 target_link_libraries(test_io latypus pthread cppunit)
 
