@@ -50,9 +50,9 @@ public:
         CPPUNIT_ASSERT(node->prefix == "bar/");
         CPPUNIT_ASSERT(node->val == 1);
 
-        //CPPUNIT_ASSERT(node = url_map.find_nearest_node("/foo/woo"));
-        //CPPUNIT_ASSERT(node->prefix == "foo/");
-        //CPPUNIT_ASSERT(node->val == 2);
+        CPPUNIT_ASSERT(node = url_map.find_nearest_node("/foo/woo"));
+        CPPUNIT_ASSERT(node->prefix == "");
+        CPPUNIT_ASSERT(node->val == 2);
 
         CPPUNIT_ASSERT(node = url_map.find_nearest_node("/foo/bar/baz"));
         CPPUNIT_ASSERT(node->prefix == "r/");
