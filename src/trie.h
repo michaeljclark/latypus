@@ -93,7 +93,6 @@ struct trie
     void find_node_internal(std::string &key, trie_node* &node, trie_node* &parent,
                             size_t &prefix_offset, size_t &key_offset, size_t &child_index)
     {
-        // p, i, c
         prefix_offset = key_offset = child_index = 0;
         while(key_offset < key.length()) {
         next:
@@ -232,7 +231,7 @@ struct trie
         return false;
     }
 
-    leaf_type* find_nearest_node(std::string key, size_t &key_offset)
+    leaf_type* find_nearest_leaf(std::string key, size_t &key_offset)
     {
         // find nearest matching node
         trie_node *node = root_node, *parent = nullptr;

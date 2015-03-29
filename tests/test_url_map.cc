@@ -47,20 +47,25 @@ public:
         
         url_map.print();
         
-        CPPUNIT_ASSERT(node = url_map.find_nearest_node("/bar/bang", key_offset));
+        CPPUNIT_ASSERT(node = url_map.find_nearest_leaf("/bar/bang", key_offset));
         CPPUNIT_ASSERT(node->prefix == "bar/");
+        CPPUNIT_ASSERT(std::string("/bar/").substr(0, key_offset) == "/bar/");
         CPPUNIT_ASSERT(node->val == 1);
 
-        CPPUNIT_ASSERT(node = url_map.find_nearest_node("/foo/woo", key_offset));
+        CPPUNIT_ASSERT(node = url_map.find_nearest_leaf("/foo/woo", key_offset));
         CPPUNIT_ASSERT(node->prefix == "");
+        CPPUNIT_ASSERT(std::string("/foo/woo").substr(0, key_offset) == "/foo/");
         CPPUNIT_ASSERT(node->val == 2);
 
-        CPPUNIT_ASSERT(node = url_map.find_nearest_node("/foo/bar/baz", key_offset));
+        CPPUNIT_ASSERT(node = url_map.find_nearest_leaf("/foo/bar/baz", key_offset));
         CPPUNIT_ASSERT(node->prefix == "r/");
+        CPPUNIT_ASSERT(std::string("/foo/bar/").substr(0, key_offset) == "/foo/bar/");
         CPPUNIT_ASSERT(node->val == 3);
 
-        CPPUNIT_ASSERT(node = url_map.find_nearest_node("/foo/bang", key_offset));
+        CPPUNIT_ASSERT(node = url_map.find_nearest_leaf("/foo/bang", key_offset));
         CPPUNIT_ASSERT(node->prefix == "ng/");
+        CPPUNIT_ASSERT(std::string("/foo/bang").substr(0, key_offset) == "/foo/bang");
+        //CPPUNIT_ASSERT(std::string("/foo/bang/").substr(0, key_offset) == "/foo/");
         CPPUNIT_ASSERT(node->val == 4);
 }
 };
