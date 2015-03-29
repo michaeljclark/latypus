@@ -92,6 +92,7 @@ bool http_server_handler_func::handle_request()
     
     // create response
     status_text = http_constants::get_status_text(status_code);
+    mime_type = "text/plain";
     const char* str = "Hello World\n";
     size_t len = strlen(str);
     response_buffer.set(str, len);
