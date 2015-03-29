@@ -231,6 +231,37 @@ struct trie
         // not found
         return false;
     }
+
+    leaf_type* find_nearest_node(std::string key)
+    {
+        // find nearest matching node
+        trie_node *node = root_node, *parent = nullptr;
+        size_t prefix_offset, key_offset, child_index;
+        find_node_internal(key, node, parent, prefix_offset, key_offset, child_index);
+        
+        // exact match
+        if (key.length() == key_offset) {
+            if (node->get_type() == trie_node_type_leaf) {
+                return static_cast<leaf_type*>(node);
+            } else if (node->get_type() == trie_node_type_branch) {
+                branch_type *branch = static_cast<branch_type*>(node);
+                // Check if first child node is sentinel ""
+                // Note: depends on nodes being sorted
+                if (branch->nodes.size() > 0 &&
+                    branch->nodes[0]->get_type() == trie_node_type_leaf &&
+                    branch->nodes[0]->prefix.size() == 0)
+                {
+                    return static_cast<leaf_type*>(branch->nodes[0]);
+                }
+            }
+        }
+        if (node->get_type() == trie_node_type_leaf) {
+            return static_cast<leaf_type*>(node);
+        }
+        
+        // not found
+        return nullptr;
+    }
 };
 
 #endif

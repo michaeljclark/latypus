@@ -100,3 +100,6 @@ target_link_libraries(test_netdev latypus pthread cppunit)
 
 add_executable(test_url tests/test_url.cc)
 target_link_libraries(test_url latypus pthread cppunit)
+
+add_executable(test_url_map tests/test_url_map.cc)
+target_link_libraries(test_url_map latypus pthread cppunit)

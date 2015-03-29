@@ -6,10 +6,11 @@
 #include <cstdint>
 #include <string>
 #include <iostream>
-#include <memory>
-#include <map>
+#include <iomanip>
+#include <vector>
 
 #include "url.h"
+#include "trie.h"
 
 #include <cppunit/TestCase.h>
 #include <cppunit/TestFixture.h>
@@ -35,29 +36,32 @@ public:
     
     void test_url_map_1()
     {
-        typedef std::map<std::string,uint32_t> map_type;
-        typedef std::pair<std::string,uint32_t> pair_type;
-        map_type map;
+        trie<uint32_t> url_map;
+        trie<uint32_t>::leaf_type *node;
         
-        map.insert(pair_type("/bar/", 1));
-        map.insert(pair_type("/foo/", 1));
-        map.insert(pair_type("/foo/bar/", 1));
-        map.insert(pair_type("/foo/bang/", 1));
+        url_map.insert("/bar/", 1);
+        url_map.insert("/foo/", 2);
+        url_map.insert("/foo/bar/", 3);
+        url_map.insert("/foo/bang/", 4);
         
-        auto i_1 = map.lower_bound("/bar/bang");
-        auto i_2 = map.upper_bound("/bar/bang");
-        auto i_3 = map.lower_bound("/foo/baz");
-        auto i_4 = map.upper_bound("/foo/baz");
-        auto i_5 = map.lower_bound("/foo/bang/boo");
-        auto i_6 = map.upper_bound("/foo/bang/bar");
+        url_map.print();
         
-        if (i_1 != map.end()) printf("i1_ %s\n", i_1->first.c_str());
-        if (i_2 != map.end()) printf("i2_ %s\n", i_2->first.c_str());
-        if (i_3 != map.end()) printf("i3_ %s\n", i_3->first.c_str());
-        if (i_4 != map.end()) printf("i4_ %s\n", i_4->first.c_str());
-        if (i_5 != map.end()) printf("i5_ %s\n", i_5->first.c_str());
-        if (i_6 != map.end()) printf("i6_ %s\n", i_6->first.c_str());
-    }
+        CPPUNIT_ASSERT(node = url_map.find_nearest_node("/bar/bang"));
+        CPPUNIT_ASSERT(node->prefix == "bar/");
+        CPPUNIT_ASSERT(node->val == 1);
+
+        //CPPUNIT_ASSERT(node = url_map.find_nearest_node("/foo/woo"));
+        //CPPUNIT_ASSERT(node->prefix == "foo/");
+        //CPPUNIT_ASSERT(node->val == 2);
+
+        CPPUNIT_ASSERT(node = url_map.find_nearest_node("/foo/bar/baz"));
+        CPPUNIT_ASSERT(node->prefix == "r/");
+        CPPUNIT_ASSERT(node->val == 3);
+
+        CPPUNIT_ASSERT(node = url_map.find_nearest_node("/foo/bang"));
+        CPPUNIT_ASSERT(node->prefix == "ng/");
+        CPPUNIT_ASSERT(node->val == 4);
+}
 };
 
 int main(int argc, const char * argv[])
