@@ -18,6 +18,7 @@ a modern, portable and scalable high performance C++1y m:n threaded HTTP client 
   * [boringssl](https://boringssl.googlesource.com/boringssl/)
   * [libssh](https://www.libssh.org/) (soon)
   * [wrk](https://github.com/wg/wrk/) (soon)
+  * [CRaft](https://github.com/willemt/raft) (soon)
 
 ### Submodules
   * Fetching
