@@ -205,7 +205,7 @@ struct trie
         return true;
     }
     
-    T find(std::string key, T &val)
+    T find(std::string key)
     {
         // find nearest matching node
         trie_node *node = root_node, *parent = nullptr;

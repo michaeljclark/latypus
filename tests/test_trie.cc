@@ -32,8 +32,7 @@ void trie_lookup(trie<uint32_t> &trie, std::vector<std::string> &words)
     size_t i = 0;
     const auto t1 = std::chrono::high_resolution_clock::now();
     for (auto word: words) {
-        uint32_t result;
-        if (trie.find(word, result) == i) i++;
+        if (trie.find(word) == i) i++;
         else printf("%s couldn't find \"%s\"\n", __func__, word.c_str());
     }
     const auto t2 = std::chrono::high_resolution_clock::now();
