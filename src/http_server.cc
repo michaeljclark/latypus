@@ -685,11 +685,20 @@ void http_server::worker_process_request(protocol_thread_delegate *delegate, pro
     http_conn->response.set_http_version(kHTTPVersion11);
     http_conn->response.set_header_field(kHTTPHeaderServer, format_string("%s/%s", ServerName, ServerVersion));
     http_conn->response.set_header_field(kHTTPHeaderDate, http_date(current_time).to_header_string(date_buf, sizeof(date_buf)));
-    http_server_handler_info_ptr handler_info = get_engine_state(delegate)->handler_map.find(http_conn->request.get_request_path());
+    auto handler_info = get_engine_state(delegate)->handler_map.find_nearest(http_conn->request.get_request_path());
     if (handler_info) {
         http_conn->handler = handler_info->factory->new_handler();
+        if (delegate->get_debug_mask() & protocol_debug_handler) {
+            log_debug("path=%s handler_name=%s",
+                      http_conn->request.get_request_path(),
+                      handler_info->factory->get_name().c_str());
+        }
     } else {
         http_conn->handler = std::make_shared<http_server_handler_file>();
+        if (delegate->get_debug_mask() & protocol_debug_handler) {
+            log_debug("path=%s default handler",
+                      http_conn->request.get_request_path());
+        }
     }
     http_conn->handler->init();
     http_conn->handler->set_delegate(delegate);
