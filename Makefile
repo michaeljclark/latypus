@@ -112,20 +112,20 @@ src_deps =      $(subst $(SRC_DIR),$(DEP_DIR),$(subst .cc,.cc.P,$(1)))
 
 # target source and objects
 LATYPUS_SRCS =  $(SRC_DIR)/io.cc \
-				$(SRC_DIR)/pollset.cc \
-				$(SRC_DIR)/pollset_poll.cc \
-				$(SRC_DIR)/pollset_epoll.cc \
-				$(SRC_DIR)/pollset_kqueue.cc \
-				$(SRC_DIR)/connection_ssl.cc \
-				$(SRC_DIR)/connection_tcp.cc \
-				$(SRC_DIR)/resolver.cc \
-				$(SRC_DIR)/netdev.cc \
-				$(SRC_DIR)/socket.cc \
-				$(SRC_DIR)/url.cc \
-				$(SRC_DIR)/cmdline_options.cc \
-				$(SRC_DIR)/config.cc \
-				$(SRC_DIR)/config_parser.cc \
-				$(SRC_DIR)/config_cpu.cc \
+                $(SRC_DIR)/pollset.cc \
+                $(SRC_DIR)/pollset_poll.cc \
+                $(SRC_DIR)/pollset_epoll.cc \
+                $(SRC_DIR)/pollset_kqueue.cc \
+                $(SRC_DIR)/connection_ssl.cc \
+                $(SRC_DIR)/connection_tcp.cc \
+                $(SRC_DIR)/resolver.cc \
+                $(SRC_DIR)/netdev.cc \
+                $(SRC_DIR)/socket.cc \
+                $(SRC_DIR)/url.cc \
+                $(SRC_DIR)/cmdline_options.cc \
+                $(SRC_DIR)/config.cc \
+                $(SRC_DIR)/config_parser.cc \
+                $(SRC_DIR)/config_cpu.cc \
                 $(SRC_DIR)/log.cc \
                 $(SRC_DIR)/log_thread.cc \
                 $(SRC_DIR)/http_common.cc \
