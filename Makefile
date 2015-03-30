@@ -128,16 +128,17 @@ LATYPUS_SRCS =  $(SRC_DIR)/io.cc \
 				$(SRC_DIR)/config_cpu.cc \
                 $(SRC_DIR)/log.cc \
                 $(SRC_DIR)/log_thread.cc \
-				$(SRC_DIR)/http_common.cc \
-				$(SRC_DIR)/http_constants.cc \
-				$(SRC_DIR)/http_date.cc \
-				$(SRC_DIR)/http_parser.cc \
-				$(SRC_DIR)/http_request.cc \
-				$(SRC_DIR)/http_response.cc \
-				$(SRC_DIR)/http_client.cc \
-				$(SRC_DIR)/http_client_handler_file.cc \
-				$(SRC_DIR)/http_server.cc \
-				$(SRC_DIR)/http_server_handler_file.cc \
+                $(SRC_DIR)/http_common.cc \
+                $(SRC_DIR)/http_constants.cc \
+                $(SRC_DIR)/http_date.cc \
+                $(SRC_DIR)/http_parser.cc \
+                $(SRC_DIR)/http_request.cc \
+                $(SRC_DIR)/http_response.cc \
+                $(SRC_DIR)/http_client.cc \
+                $(SRC_DIR)/http_client_handler_file.cc \
+                $(SRC_DIR)/http_server.cc \
+                $(SRC_DIR)/http_server_handler_file.cc \
+                $(SRC_DIR)/http_server_handler_func.cc \
                 $(SRC_DIR)/protocol.cc \
                 $(SRC_DIR)/protocol_engine.cc \
                 $(SRC_DIR)/protocol_thread.cc
