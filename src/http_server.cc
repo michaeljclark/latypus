@@ -131,9 +131,6 @@ bool http_server_connection_tmpl<connection_tcp>::init(protocol_engine_delegate 
     response_has_body = false;
     connection_close = true;
     state = &http_server::connection_state_free;
-#if 0
-    handler = std::make_shared<http_server_handler_file>();
-#endif
     if (buffer.size() == 0) {
         auto cfg = delegate->get_config();
         buffer.resize(cfg->io_buffer_size);
@@ -689,14 +686,11 @@ void http_server::worker_process_request(protocol_thread_delegate *delegate, pro
     http_conn->response.set_header_field(kHTTPHeaderServer, format_string("%s/%s", ServerName, ServerVersion));
     http_conn->response.set_header_field(kHTTPHeaderDate, http_date(current_time).to_header_string(date_buf, sizeof(date_buf)));
     http_server_handler_info_ptr handler_info = get_engine_state(delegate)->handler_map.find(http_conn->request.get_request_path());
-    if (!handler_info) {
-        log_debug("%90s:%p: %s: no request handler",
-                  delegate->get_thread_string().c_str(),
-                  delegate->get_thread_id(),
-                  obj->to_string().c_str());
-        abort_connection(delegate, http_conn);
+    if (handler_info) {
+        http_conn->handler = handler_info->factory->new_handler();
+    } else {
+        http_conn->handler = std::make_shared<http_server_handler_file>();
     }
-    http_conn->handler = handler_info->factory->new_handler();
     http_conn->handler->init();
     http_conn->handler->set_delegate(delegate);
     http_conn->handler->set_connection(http_conn);
