@@ -221,10 +221,28 @@ struct http_server : protocol
 
 struct http_server_engine_state : protocol_engine_state, protocol_connection_state<http_server_connection>
 {
-    listening_socket_list               listens;
-    trie<http_server_handler_info_ptr>  handler_map;
+    listening_socket_list                       listens;
+    std::vector<http_server_handler_info_ptr>   handler_list;
     
     protocol* get_proto() const { return http_server::get_proto(); }
+    
+    http_server_handler_info_ptr lookup_handler(std::string path)
+    {
+        // find longest match
+        ssize_t best_offset = -1;
+        http_server_handler_info_ptr best_match;
+        for (auto handler_info : handler_list) {
+            ssize_t i = 0;
+            while (i < path.length() && i < handler_info->path.length() && path[i] == handler_info->path[i]) {
+                i++;
+            }
+            if (i > best_offset) {
+                best_offset = i;
+                best_match = handler_info;
+            }
+        }
+        return best_match;
+    }
 };
 
 

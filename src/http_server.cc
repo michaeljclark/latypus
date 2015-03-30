@@ -187,7 +187,7 @@ void http_server::register_route(http_server_engine_state *engine_state,
         log_error("%s couldn't find handler factory: %s", get_proto()->name.c_str(), handler.c_str());
     } else {
         log_info("%s registering route \"%s\" -> %s", get_proto()->name.c_str(), path.c_str(), handler.c_str());
-        engine_state->handler_map.insert(path, std::make_shared<http_server_handler_info>(path, fi->second));
+        engine_state->handler_list.push_back(std::make_shared<http_server_handler_info>(path, fi->second));
     }
 }
 
@@ -685,7 +685,7 @@ void http_server::worker_process_request(protocol_thread_delegate *delegate, pro
     http_conn->response.set_http_version(kHTTPVersion11);
     http_conn->response.set_header_field(kHTTPHeaderServer, format_string("%s/%s", ServerName, ServerVersion));
     http_conn->response.set_header_field(kHTTPHeaderDate, http_date(current_time).to_header_string(date_buf, sizeof(date_buf)));
-    auto handler_info = get_engine_state(delegate)->handler_map.find_nearest(http_conn->request.get_request_path());
+    auto handler_info = get_engine_state(delegate)->lookup_handler(http_conn->request.get_request_path());
     if (handler_info) {
         http_conn->handler = handler_info->factory->new_handler();
         if (delegate->get_debug_mask() & protocol_debug_handler) {
