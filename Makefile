@@ -1,7 +1,7 @@
 # architecture detection
-OS :=			$(shell uname -s | sed 's/ /_/' | tr A-Z a-z)
-CPU :=			$(shell uname -m | sed 's/ /_/' | tr A-Z a-z)
-ARCH :=			$(OS)_$(CPU)
+OS :=           $(shell uname -s | sed 's/ /_/' | tr A-Z a-z)
+CPU :=          $(shell uname -m | sed 's/ /_/' | tr A-Z a-z)
+ARCH :=         $(OS)_$(CPU)
 
 # check which compiler to use (default clang). e.g. make prefer_gcc=1
 ifeq ($(prefer_gcc),1)
@@ -14,8 +14,8 @@ endif
 
 # linker, archiver and ragel parser generator
 LD :=           $(CXX)
-AR :=			$(shell which ar)
-RAGEL :=		$(shell which ragel)
+AR :=           $(shell which ar)
+RAGEL :=        $(shell which ragel)
 
 # compiler function tests
 check_opt =     $(shell T=$$(mktemp /tmp/test.XXXX.$(2)); echo 'int main() { return 0; }' > $$T ; $(1) $(3) $$T -o /dev/null >/dev/null 2>&1 ; echo $$?; rm $$T)
@@ -31,12 +31,12 @@ RELROF_FLAGS =  -Wl,-z,relro,-z,now
 NOEXEC_FLAGS =  -Wl,-z,noexecstack
 
 # default optimizer, debug and warning flags
-OPT_FLAGS =		-O3
-DEBUG_FLAGS =	-g
-WARN_FLAGS =	-Wall -Wpedantic -Wsign-compare
+OPT_FLAGS =     -O3
+DEBUG_FLAGS =   -g
+WARN_FLAGS =    -Wall -Wpedantic -Wsign-compare
 CPPFLAGS =
-CXXFLAGS =		-std=c++11 $(OPT_FLAGS) $(DEBUG_FLAGS) $(WARN_FLAGS)
-LDFLAGS =		-lpthread
+CXXFLAGS =      -std=c++11 $(OPT_FLAGS) $(DEBUG_FLAGS) $(WARN_FLAGS)
+LDFLAGS =       -lpthread
 
 # check if we can use libc++
 ifeq ($(call check_opt,$(CXX),cc,$(LIBCPP_FLAGS)), 0)
@@ -101,10 +101,10 @@ endif
 # directories
 SRC_DIR =       src
 BUILD_DIR =     build
-BIN_DIR =		$(BUILD_DIR)/$(ARCH)/bin
-LIB_DIR =		$(BUILD_DIR)/$(ARCH)/lib
-OBJ_DIR =		$(BUILD_DIR)/$(ARCH)/obj
-DEP_DIR	=       $(BUILD_DIR)/$(ARCH)/dep
+BIN_DIR =       $(BUILD_DIR)/$(ARCH)/bin
+LIB_DIR =       $(BUILD_DIR)/$(ARCH)/lib
+OBJ_DIR =       $(BUILD_DIR)/$(ARCH)/obj
+DEP_DIR =       $(BUILD_DIR)/$(ARCH)/dep
 
 # helper functions
 src_objs =      $(subst $(SRC_DIR),$(OBJ_DIR),$(subst .cc,.o,$(1)))
@@ -159,13 +159,13 @@ NETD_OBJS =     $(call src_objs, $(NETD_SRCS))
 NETD_BIN =      $(BIN_DIR)/netd
 
 ALL_SRCS =      $(LATYPUS_SRCS) $(NETB_SRCS) $(NETC_SRCS) $(NETD_SRCS)
-BINARIES =		$(NETB_BIN) $(NETC_BIN) $(NETD_BIN)
+BINARIES =      $(NETB_BIN) $(NETC_BIN) $(NETD_BIN)
 
 # don't build library if LTO is enabled
 ifeq ($(enable_lto),1)
 LIBS =
 else
-LIBS = 			$(LATYPUS_LIB)
+LIBS =          $(LATYPUS_LIB)
 endif
 
 # build rules
