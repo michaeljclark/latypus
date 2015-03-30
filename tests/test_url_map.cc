@@ -27,6 +27,7 @@ class test_url_map : public CppUnit::TestFixture
 {
     CPPUNIT_TEST_SUITE(test_url_map);
     CPPUNIT_TEST(test_url_map_1);
+    CPPUNIT_TEST(test_url_map_2);
     CPPUNIT_TEST_SUITE_END();
     
 public:
@@ -57,6 +58,18 @@ public:
         CPPUNIT_ASSERT(url_map.find_nearest("/woo/tang") == 1);
         CPPUNIT_ASSERT(url_map.find_nearest("/woo/tang/bar") == 6);
         CPPUNIT_ASSERT(url_map.find_nearest("/woo/tang/baz") == 6);
+    }
+
+    void test_url_map_2()
+    {
+        trie<uint32_t> url_map;
+        
+        CPPUNIT_ASSERT(url_map.insert("/", 1) == true);
+        CPPUNIT_ASSERT(url_map.insert("/func/", 2) == true);
+
+        CPPUNIT_ASSERT(url_map.find_nearest("/bar") == 1);
+        CPPUNIT_ASSERT(url_map.find_nearest("/func/") == 2);
+        CPPUNIT_ASSERT(url_map.find_nearest("/favicon.ico") == 0);
     }
 };
 
