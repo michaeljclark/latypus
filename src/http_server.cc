@@ -187,9 +187,9 @@ void http_server::register_route(http_server_engine_state *engine_state,
     init_handlers();
     auto fi = handler_factory_map.find(handler);
     if (fi == handler_factory_map.end()) {
-        log_error("couldn't find handler factory: %s", handler.c_str());
+        log_error("%s couldn't find handler factory: %s", get_proto()->name.c_str(), handler.c_str());
     } else {
-        log_debug("registering route \"%s\" -> %s", path.c_str(), handler.c_str());
+        log_info("%s registering route \"%s\" -> %s", get_proto()->name.c_str(), path.c_str(), handler.c_str());
         engine_state->handler_map.insert(path, std::make_shared<http_server_handler_info>(path, fi->second));
     }
 }
