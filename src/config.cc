@@ -77,6 +77,9 @@ config::config() :
     fn_map["ipc_buffer_size"] =     {2,  2,  [&] (config_line &line) { ipc_buffer_size = atoi(line[1].c_str()); }};
     fn_map["keepalive_timeout"] =   {2,  2,  [&] (config_line &line) { keepalive_timeout = atoi(line[1].c_str()); }};
     fn_map["connection_timeout"] =  {2,  2,  [&] (config_line &line) { connection_timeout = atoi(line[1].c_str()); }};
+    fn_map["http_route"] =          {3,  3,  [&] (config_line &line) {
+        http_routes.push_back(std::pair<std::string,std::string>(line[1], line[2]));
+    }};
     fn_map["client_threads"] =      {3,  3,  [&] (config_line &line) {
         client_threads.push_back(std::pair<std::string,size_t>(line[1], atoi(line[2].c_str())));
     }};
@@ -191,6 +194,9 @@ std::string config::to_string()
     ss << "access_log          " << access_log << ";" << std::endl;
     ss << "pid_file            " << pid_file << ";" << std::endl;
     ss << "root                " << root << ";" << std::endl;
+    for (auto http_route : http_routes) {
+        ss << "http_route          " << http_route.first << " " << http_route.second << ";" << std::endl;
+    }
     for (auto thread : client_threads) {
         ss << "client_threads      " << thread.first << " " << thread.second << ";" << std::endl;
     }

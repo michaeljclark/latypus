@@ -71,6 +71,7 @@ struct config : config_parser
     std::vector<std::pair<protocol*,config_addr_ptr>> proto_listeners;
     std::map<std::string,std::string> mime_types;
     std::vector<std::string> index_files;
+    std::vector<std::pair<std::string,std::string>> http_routes;
     
     void read(std::string cfg_file);
     void symbol(const char *value, size_t length);

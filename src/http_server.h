@@ -12,8 +12,37 @@ struct http_server_thread_state;
 struct http_server_handler;
 typedef std::shared_ptr<http_server_handler> http_server_handler_ptr;
 
+struct http_server_handler_factory;
+typedef std::shared_ptr<http_server_handler_factory> http_server_handler_factory_ptr;
+typedef std::pair<std::string,http_server_handler_factory_ptr> http_server_handler_factory_entry;
+
+struct http_server_handler_info;
+typedef std::shared_ptr<http_server_handler_info> http_server_handler_info_ptr;
+
 template <typename TransportConnection> struct http_server_connection_tmpl;
 typedef http_server_connection_tmpl<connection_tcp> http_server_connection;
+
+
+/* http_server_handler_factory */
+
+struct http_server_handler_factory
+{
+    virtual ~http_server_handler_factory() {}
+    
+    virtual std::string get_name() = 0;
+    virtual http_server_handler_ptr new_handler() = 0;
+};
+
+template <typename T>
+struct http_server_handler_factory_impl : http_server_handler_factory
+{
+    std::string name;
+    
+    http_server_handler_factory_impl(std::string name) : name(name) {}
+    
+    std::string get_name() { return name; }
+    http_server_handler_ptr new_handler() { return http_server_handler_ptr(new T()); }
+};
 
 
 /* http_server_handler */
@@ -34,6 +63,18 @@ struct http_server_handler
     virtual bool populate_response() = 0;
     virtual io_result write_response_body() = 0;
     virtual bool end_request() = 0;
+};
+
+
+/* http_server_handler_info */
+
+struct http_server_handler_info
+{
+    std::string                     path;
+    http_server_handler_factory_ptr factory;
+    
+    http_server_handler_info(std::string path, http_server_handler_factory_ptr factory) :
+        path(path), factory(factory) {}
 };
 
 
@@ -68,26 +109,26 @@ struct http_server_connection_tmpl : protocol_object
 
 struct http_server : protocol
 {
-    // sock
+    /* sock */
     static protocol_sock server_sock_tcp_listen;
     static protocol_sock server_sock_tcp_connection;
     static protocol_sock server_sock_tcp_tls_listen;
     static protocol_sock server_sock_tcp_tls_connection;
     
-    // actions
+    /* actions */
     static protocol_action action_router_process_headers;
     static protocol_action action_worker_process_request;
     static protocol_action action_keepalive_wait_connection;
     static protocol_action action_linger_read_connection;
     
-    // threads
+    /* threads */
     static protocol_mask thread_mask_listener;
     static protocol_mask thread_mask_router;
     static protocol_mask thread_mask_keepalive;
     static protocol_mask thread_mask_worker;
     static protocol_mask thread_mask_linger;
     
-    // states
+    /* states */
     static protocol_state connection_state_free;
     static protocol_state connection_state_client_request;
     static protocol_state connection_state_client_body;
@@ -96,21 +137,40 @@ struct http_server : protocol
     static protocol_state connection_state_waiting;
     static protocol_state connection_state_lingering_close;
 
-    // id
+    /* id */
     static const char* ServerName;
     static const char* ServerVersion;
 
+    /* handlers */
+    
+    static std::once_flag handler_init;
+    static std::map<std::string,http_server_handler_factory_ptr> handler_factory_map;
+
+    template <typename T>
+    static void register_handler(std::string name)
+    {
+        http_server_handler_factory_ptr factory(new http_server_handler_factory_impl<T>(name));
+        handler_factory_map.insert(http_server_handler_factory_entry(name, factory));
+    }
+    
+    static void init_handlers();
+    
+    void register_route(http_server_engine_state *engine_state,
+                        std::string path, std::string handler) const;
+    
+    /* constructor, destructor */
+    
     http_server(std::string name);
     virtual ~http_server();
-
-    static protocol* get_proto();
-
+    
     /* state helpers */
 
     static http_server_engine_state* get_engine_state(protocol_thread_delegate *delegate);
     static http_server_engine_state* get_engine_state(protocol_engine_delegate *delegate);
 
     /* protocol */
+
+    static protocol* get_proto();
 
     protocol_engine_state* create_engine_state() const;
     protocol_thread_state* create_thread_state() const;
@@ -161,7 +221,8 @@ struct http_server : protocol
 
 struct http_server_engine_state : protocol_engine_state, protocol_connection_state<http_server_connection>
 {
-    listening_socket_list           listens;
+    listening_socket_list               listens;
+    trie<http_server_handler_info_ptr>  handler_map;
     
     protocol* get_proto() const { return http_server::get_proto(); }
 };

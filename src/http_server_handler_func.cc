@@ -13,6 +13,7 @@
 #include <cerrno>
 #include <csignal>
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -29,6 +30,7 @@
 #include "io.h"
 #include "url.h"
 #include "log.h"
+#include "trie.h"
 #include "socket.h"
 #include "resolver.h"
 #include "config_parser.h"
@@ -60,6 +62,11 @@ http_server_handler_func::http_server_handler_func()
 
 http_server_handler_func::~http_server_handler_func()
 {
+}
+
+void http_server_handler_func::init_handler()
+{
+    http_server::register_handler<http_server_handler_func>("http_server_handler_func");
 }
 
 void http_server_handler_func::init()

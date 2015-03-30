@@ -32,6 +32,8 @@ struct http_server_handler_file : http_server_handler
     http_server_handler_file();
     ~http_server_handler_file();
     
+    static void init_handler();
+    
     virtual void translate_path();
     virtual size_t create_error_response();
     virtual int open_resource(int oflag, int mask);

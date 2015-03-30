@@ -88,21 +88,21 @@ struct http_client_connection_tmpl : protocol_object
 
 struct http_client : protocol
 {
-    // sock
+    /* sock */
     static protocol_sock client_sock_tcp_connection;
     static protocol_sock client_sock_tcp_tls_connection;
     
-    // actions
+    /* actions */
     static protocol_action action_connect_host;
     static protocol_action action_process_next_request;
     static protocol_action action_keepalive_wait_connection;
     
-    // threads
+    /* threads */
     static protocol_mask thread_mask_connect;
     static protocol_mask thread_mask_processor;
     static protocol_mask thread_mask_keepalive;
     
-    // states
+    /* states */
     static protocol_state connection_state_free;
     static protocol_state connection_state_client_request;
     static protocol_state connection_state_client_body;
@@ -110,14 +110,14 @@ struct http_client : protocol
     static protocol_state connection_state_server_body;
     static protocol_state connection_state_waiting;
 
-    // id
+    /* id */
     static const char* ClientName;
     static const char* ClientVersion;
 
+    /* constructor, destructor */
+    
     http_client(std::string name);
     virtual ~http_client();
-    
-    static protocol* get_proto();
     
     /* state helpers */
     
@@ -125,7 +125,9 @@ struct http_client : protocol
     static http_client_engine_state* get_engine_state(protocol_engine_delegate *delegate);
     
     /* protocol */
-    
+
+    static protocol* get_proto();
+
     protocol_engine_state* create_engine_state() const;
     protocol_thread_state* create_thread_state() const;
     

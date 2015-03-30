@@ -18,6 +18,8 @@
 #include <cstring>
 #include <ctime>
 
+#include <iostream>
+#include <iomanip>
 #include <sstream>
 #include <string>
 #include <memory>
@@ -37,6 +39,7 @@
 #include "io.h"
 #include "url.h"
 #include "log.h"
+#include "trie.h"
 #include "socket.h"
 #include "netdev.h"
 #include "resolver.h"

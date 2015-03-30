@@ -13,6 +13,7 @@
 #include <cerrno>
 #include <csignal>
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -29,6 +30,7 @@
 #include "io.h"
 #include "url.h"
 #include "log.h"
+#include "trie.h"
 #include "socket.h"
 #include "resolver.h"
 #include "config_parser.h"
@@ -48,6 +50,7 @@
 #include "http_response.h"
 #include "http_date.h"
 #include "http_server.h"
+#include "http_server_handler_func.h"
 #include "http_server_handler_file.h"
 
 #define USE_NODELAY 1
@@ -128,7 +131,9 @@ bool http_server_connection_tmpl<connection_tcp>::init(protocol_engine_delegate 
     response_has_body = false;
     connection_close = true;
     state = &http_server::connection_state_free;
+#if 0
     handler = std::make_shared<http_server_handler_file>();
+#endif
     if (buffer.size() == 0) {
         auto cfg = delegate->get_config();
         buffer.resize(cfg->io_buffer_size);
@@ -156,6 +161,9 @@ bool http_server_connection_tmpl<connection_tcp>::free(protocol_engine_delegate 
 const char* http_server::ServerName = "netd";
 const char* http_server::ServerVersion = "0.0.0";
 
+std::once_flag http_server::handler_init;
+std::map<std::string,http_server_handler_factory_ptr> http_server::handler_factory_map;
+
 http_server::http_server(std::string name) : protocol(name) {}
 http_server::~http_server() {}
 
@@ -163,6 +171,27 @@ protocol* http_server::get_proto()
 {
     static http_server proto("http_server");
     return &proto;
+}
+
+void http_server::init_handlers()
+{
+    std::call_once(handler_init, [](){
+        http_server_handler_func::init_handler();
+        http_server_handler_file::init_handler();
+    });
+}
+
+void http_server::register_route(http_server_engine_state *engine_state,
+                                 std::string path, std::string handler) const
+{
+    init_handlers();
+    auto fi = handler_factory_map.find(handler);
+    if (fi == handler_factory_map.end()) {
+        log_error("couldn't find handler factory: %s", handler.c_str());
+    } else {
+        log_debug("registering route \"%s\" -> %s", path.c_str(), handler.c_str());
+        engine_state->handler_map.insert(path, std::make_shared<http_server_handler_info>(path, fi->second));
+    }
 }
 
 http_server_engine_state* http_server::get_engine_state(protocol_thread_delegate *delegate) {
@@ -187,6 +216,11 @@ void http_server::engine_init(protocol_engine_delegate *delegate) const
 {
     // get config
     auto cfg = delegate->get_config();
+    
+    // initialize routes
+    for (auto http_route : cfg->http_routes) {
+        register_route(get_engine_state(delegate), http_route.first, http_route.second);
+    }
     
     // initialize connection table
     get_engine_state(delegate)->init(delegate, cfg->server_connections);
@@ -654,6 +688,15 @@ void http_server::worker_process_request(protocol_thread_delegate *delegate, pro
     http_conn->response.set_http_version(kHTTPVersion11);
     http_conn->response.set_header_field(kHTTPHeaderServer, format_string("%s/%s", ServerName, ServerVersion));
     http_conn->response.set_header_field(kHTTPHeaderDate, http_date(current_time).to_header_string(date_buf, sizeof(date_buf)));
+    http_server_handler_info_ptr handler_info = get_engine_state(delegate)->handler_map.find(http_conn->request.get_request_path());
+    if (!handler_info) {
+        log_debug("%90s:%p: %s: no request handler",
+                  delegate->get_thread_string().c_str(),
+                  delegate->get_thread_id(),
+                  obj->to_string().c_str());
+        abort_connection(delegate, http_conn);
+    }
+    http_conn->handler = handler_info->factory->new_handler();
     http_conn->handler->init();
     http_conn->handler->set_delegate(delegate);
     http_conn->handler->set_connection(http_conn);

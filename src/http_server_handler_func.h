@@ -24,7 +24,9 @@ struct http_server_handler_func : http_server_handler
     
     http_server_handler_func();
     ~http_server_handler_func();
-        
+    
+    static void init_handler();
+    
     virtual void init();
     virtual bool handle_request();
     virtual io_result read_request_body();
