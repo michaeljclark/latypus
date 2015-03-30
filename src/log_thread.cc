@@ -109,7 +109,8 @@ retry:
         }
         goto retry;
     }
-    strlcpy(buffer, message, buffer_size);
+    strncpy(buffer, message, buffer_size - 1);
+    buffer[buffer_size - 1] = '\0';
     if (!log_buffers_inuse.push_back(buffer)) {
         log_error("%s: error pushing log buffer", __func__);
         return;
