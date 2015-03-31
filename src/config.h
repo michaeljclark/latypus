@@ -66,7 +66,6 @@ struct config : config_parser
 
     std::vector<std::pair<std::string,size_t>> client_threads;
     std::vector<std::pair<std::string,size_t>> server_threads;
-    std::vector<config_addr_ptr> listeners;
     std::vector<std::pair<std::string,size_t>> proto_threads;
     std::vector<std::pair<protocol*,config_addr_ptr>> proto_listeners;
     std::map<std::string,std::string> mime_types;

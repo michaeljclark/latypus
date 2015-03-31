@@ -86,14 +86,6 @@ config::config() :
     fn_map["server_threads"] =      {3,  3,  [&] (config_line &line) {
         server_threads.push_back(std::pair<std::string,size_t>(line[1], atoi(line[2].c_str())));
     }};
-    fn_map["listener"] =            {2,  2,  [&] (config_line &line) {
-        auto addr = config_addr::decode(line[1]);
-        if (!addr) {
-            log_error("configuration error: listener: invalid address: %s", line[1].c_str());
-        } else {
-            listeners.push_back(addr);
-        }
-    }};
     fn_map["proto_threads"] =      {3,  3,  [&] (config_line &line) {
         proto_threads.push_back(std::pair<std::string,size_t>(line[1], atoi(line[2].c_str())));
     }};
@@ -203,8 +195,8 @@ std::string config::to_string()
     for (auto thread : server_threads) {
         ss << "server_threads      " << thread.first << " " << thread.second << ";" << std::endl;
     }
-    for (auto addr : listeners) {
-        ss << "listener            " << addr->to_string() << ";" << std::endl;
+    for (auto proto_listener : proto_listeners) {
+        ss << "proto_listener      " << proto_listener.first->name << " " << proto_listener.second->to_string() << ";" << std::endl;
     }
     for (auto mime_type_ent : mime_types) {
         ss << "mime_type           " << mime_type_ent.first << " " << mime_type_ent.second << ";" << std::endl;
