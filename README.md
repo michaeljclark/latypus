@@ -17,8 +17,9 @@ a modern, portable and scalable high performance C++1y m:n threaded HTTP client 
   * [cppunit](http://www.freedesktop.org/wiki/Software/cppunit/)
   * [boringssl](https://boringssl.googlesource.com/boringssl/)
   * [libssh](https://www.libssh.org/) (soon)
-  * [wrk](https://github.com/wg/wrk/) (soon)
   * [CRaft](https://github.com/willemt/raft) (soon)
+  * [jsoncpp](https://github.com/open-source-parsers/jsoncpp) (soon)
+  * [lmdb](https://github.com/clibs/lmdb) (soon)
 
 ### Submodules
   * Fetching
