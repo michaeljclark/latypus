@@ -53,6 +53,7 @@ brew install cmake ragel
 
 ### Windows
   * python, perl, yasm, ninja, CMake
+  * Note: Windows is not yet supported
 
 ## Building
   * GNU Makefile build on Linux, Mac OS X
