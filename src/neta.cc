@@ -18,7 +18,7 @@ int main(int argc, const char * argv[])
         void operator()(http_server_connection *conn)
         {
             std::string request_path = conn->request.get_request_path();
-            //conn->response->set_response(200, "echo " + request_path);
+            //conn->set_response(200, "echo " + request_path);
         }
     };
     
