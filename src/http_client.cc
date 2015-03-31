@@ -142,10 +142,19 @@ bool http_client_connection_tmpl<connection_tcp>::free(protocol_engine_delegate 
 }
 
 
+/* http_client_config_factory */
+
+void http_client_config_factory::make_config(config_ptr cfg) const
+{
+}
+
+
 /* http_client */
 
 const char* http_client::ClientName = "netd";
 const char* http_client::ClientVersion = "0.0.0";
+
+std::once_flag http_client::protocol_init;
 
 http_client::http_client(std::string name) : protocol(name) {}
 http_client::~http_client() {}
@@ -154,6 +163,14 @@ protocol* http_client::get_proto()
 {
     static http_client proto("http_client");
     return &proto;
+}
+
+void http_client::proto_init()
+{
+    std::call_once(protocol_init, [](){
+        protocol_engine::config_factory_map.insert
+            (protocol_config_factory_entry(get_proto()->name, std::make_shared<http_client_config_factory>()));
+    });
 }
 
 http_client_engine_state* http_client::get_engine_state(protocol_thread_delegate *delegate) {

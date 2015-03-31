@@ -22,11 +22,13 @@ struct protocol_engine : protocol_engine_delegate
     protocol_thread_next_map        threads_next;
     std::condition_variable         threads_cond;
     
+    static protocol_config_factory_map config_factory_map;
     static std::vector<protocol_engine*> engine_list;
     static std::mutex engine_lock;
     
     static void signal_handler(int signum, siginfo_t *info, void *);
     
+    void default_config(std::string protocol);
     void read_config(std::string config_file);
     void run();
     void stop();

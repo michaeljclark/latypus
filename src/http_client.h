@@ -84,6 +84,14 @@ struct http_client_connection_tmpl : protocol_object
 };
 
 
+/* http_client_config_factory */
+
+struct http_client_config_factory : protocol_config_factory
+{
+    void make_config(config_ptr cfg) const;
+};
+
+
 /* http_client */
 
 struct http_client : protocol
@@ -114,6 +122,10 @@ struct http_client : protocol
     static const char* ClientName;
     static const char* ClientVersion;
 
+    /* initialization */
+    
+    static std::once_flag protocol_init;
+    
     /* constructor, destructor */
     
     http_client(std::string name);
@@ -127,6 +139,7 @@ struct http_client : protocol
     /* protocol */
 
     static protocol* get_proto();
+    void proto_init();
 
     protocol_engine_state* create_engine_state() const;
     protocol_thread_state* create_thread_state() const;

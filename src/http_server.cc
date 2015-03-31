@@ -153,12 +153,49 @@ bool http_server_connection_tmpl<connection_tcp>::free(protocol_engine_delegate 
 }
 
 
+/* http_server_config_factory */
+
+void http_server_config_factory::make_config(config_ptr cfg) const
+{
+    log_info("%s using default config", http_server::get_proto()->name.c_str());
+    cfg->listen_backlog = LISTEN_BACKLOG_DEFAULT;
+    cfg->server_connections = SERVER_CONNECTIONS_DEFAULT;
+    cfg->connection_timeout = CONNETION_TIMEOUT_DEFAULT;
+    cfg->keepalive_timeout = KEEPALIVE_TIMEOUT_DEFAULT;
+    cfg->max_headers = MAX_HEADERS_DEFAULT;
+    cfg->header_buffer_size = HEADER_BUFFER_SIZE_DEFAULT;
+    cfg->io_buffer_size = IO_BUFFER_SIZE_DEFAULT;
+    cfg->proto_listeners.push_back(std::pair<protocol*,config_addr_ptr>
+                                   (http_server::get_proto(), config_addr::decode("[]:8080")));
+    cfg->proto_listeners.push_back(std::pair<protocol*,config_addr_ptr>
+                                   (http_server::get_proto(), config_addr::decode("127.0.0.1:8080")));
+    cfg->proto_threads.push_back(std::pair<std::string,size_t>("http_server/listener", 1));
+    cfg->proto_threads.push_back(std::pair<std::string,size_t>("http_server/router,http_server/worker,http_server/keepalive,http_server/linger", std::thread::hardware_concurrency()));
+    cfg->root = "html";
+    cfg->http_routes.push_back(std::pair<std::string,std::string>("/", "http_server_handler_file"));
+    cfg->http_routes.push_back(std::pair<std::string,std::string>("/func/", "http_server_handler_func"));
+    cfg->mime_types["html"] = "text/html";
+    cfg->mime_types["htm"] = "text/html";
+    cfg->mime_types["txt"] = "text/plain";
+    cfg->mime_types["css"] = "text/css";
+    cfg->mime_types["js"] = "text/java-script";
+    cfg->mime_types["gif"] = "image/gif";
+    cfg->mime_types["jpeg"] = "image/jpeg";
+    cfg->mime_types["jpg"] = "image/jpeg";
+    cfg->mime_types["png"] = "image/png";
+    cfg->mime_types["crt"] = "application/x-x509-ca-cert";
+    cfg->mime_types["default"] = "application/octet-stream";
+    cfg->index_files.push_back("index.html");
+    cfg->index_files.push_back("index.htm");
+}
+
+
 /* http_server */
 
 const char* http_server::ServerName = "netd";
 const char* http_server::ServerVersion = "0.0.0";
 
-std::once_flag http_server::handler_init;
+std::once_flag http_server::protocol_init;
 std::map<std::string,http_server_handler_factory_ptr> http_server::handler_factory_map;
 
 http_server::http_server(std::string name) : protocol(name) {}
@@ -170,9 +207,11 @@ protocol* http_server::get_proto()
     return &proto;
 }
 
-void http_server::init_handlers()
+void http_server::proto_init()
 {
-    std::call_once(handler_init, [](){
+    std::call_once(protocol_init, [](){
+        protocol_engine::config_factory_map.insert
+            (protocol_config_factory_entry(get_proto()->name, std::make_shared<http_server_config_factory>()));
         http_server_handler_func::init_handler();
         http_server_handler_file::init_handler();
     });
@@ -181,7 +220,6 @@ void http_server::init_handlers()
 void http_server::register_route(http_server_engine_state *engine_state,
                                  std::string path, std::string handler) const
 {
-    init_handlers();
     auto fi = handler_factory_map.find(handler);
     if (fi == handler_factory_map.end()) {
         log_error("%s couldn't find handler factory: %s", get_proto()->name.c_str(), handler.c_str());

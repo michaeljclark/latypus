@@ -237,6 +237,6 @@ std::string protocol::to_string() const { return name; }
 
 void protocol::init()
 {
-    http_client::get_proto();
-    http_server::get_proto();
+    http_client::get_proto()->proto_init();
+    http_server::get_proto()->proto_init();
 }

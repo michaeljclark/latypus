@@ -105,6 +105,14 @@ struct http_server_connection_tmpl : protocol_object
 };
 
 
+/* http_server_config_factory */
+
+struct http_server_config_factory : protocol_config_factory
+{
+    void make_config(config_ptr cfg) const;
+};
+
+
 /* http_server */
 
 struct http_server : protocol
@@ -141,9 +149,12 @@ struct http_server : protocol
     static const char* ServerName;
     static const char* ServerVersion;
 
+    /* initialization */
+    
+    static std::once_flag protocol_init;
+
     /* handlers */
     
-    static std::once_flag handler_init;
     static std::map<std::string,http_server_handler_factory_ptr> handler_factory_map;
 
     template <typename T>
@@ -152,9 +163,7 @@ struct http_server : protocol
         http_server_handler_factory_ptr factory(new http_server_handler_factory_impl<T>(name));
         handler_factory_map.insert(http_server_handler_factory_entry(name, factory));
     }
-    
-    static void init_handlers();
-    
+        
     void register_route(http_server_engine_state *engine_state,
                         std::string path, std::string handler) const;
     
@@ -171,6 +180,7 @@ struct http_server : protocol
     /* protocol */
 
     static protocol* get_proto();
+    void proto_init();
 
     protocol_engine_state* create_engine_state() const;
     protocol_thread_state* create_thread_state() const;

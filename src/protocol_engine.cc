@@ -41,6 +41,7 @@
 
 /* protocol_engine */
 
+protocol_config_factory_map protocol_engine::config_factory_map;
 std::vector<protocol_engine*> protocol_engine::engine_list;
 std::mutex protocol_engine::engine_lock;
 
@@ -109,6 +110,15 @@ void protocol_engine::signal_handler(int signum, siginfo_t *info, void *)
             break;
         default:
             break;
+    }
+}
+
+void protocol_engine::default_config(std::string protocol)
+{
+    cfg = config_ptr(new config());
+    auto cfi = config_factory_map.find(protocol);
+    if (cfi != config_factory_map.end()) {
+        cfi->second->make_config(cfg);
     }
 }
 
