@@ -57,6 +57,9 @@ add_library(
     src/protocol_thread.cc
 )
 
+add_executable(neta src/neta.cc)
+target_link_libraries(neta latypus pthread)
+
 add_executable(netb src/netb.cc)
 target_link_libraries(netb latypus pthread)
 

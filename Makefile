@@ -146,6 +146,10 @@ LATYPUS_SRCS =  $(SRC_DIR)/io.cc \
 LATYPUS_OBJS =  $(call src_objs, $(LATYPUS_SRCS))
 LATYPUS_LIB =   $(LIB_DIR)/liblatypus.a
 
+NETA_SRCS =     $(SRC_DIR)/neta.cc
+NETA_OBJS =     $(call src_objs, $(NETA_SRCS))
+NETA_BIN =      $(BIN_DIR)/neta
+
 NETB_SRCS =     $(SRC_DIR)/netb.cc
 NETB_OBJS =     $(call src_objs, $(NETB_SRCS))
 NETB_BIN =      $(BIN_DIR)/netb
@@ -179,11 +183,13 @@ dist: clean ; dir=$$(basename $$(pwd)) ; cd .. && tar --exclude .git -czf $${dir
 
 # build targets
 ifeq ($(enable_lto),1)
+$(NETA_BIN): $(NETA_OBJS) $(LATYPUS_OBJS) ; $(call cmd, LD $@, $(LD) $(CXXFLAGS) $(LDFLAGS) $^ -o $@)
 $(NETB_BIN): $(NETB_OBJS) $(LATYPUS_OBJS) ; $(call cmd, LD $@, $(LD) $(CXXFLAGS) $(LDFLAGS) $^ -o $@)
 $(NETC_BIN): $(NETC_OBJS) $(LATYPUS_OBJS) ; $(call cmd, LD $@, $(LD) $(CXXFLAGS) $(LDFLAGS) $^ -o $@)
 $(NETD_BIN): $(NETD_OBJS) $(LATYPUS_OBJS) ; $(call cmd, LD $@, $(LD) $(CXXFLAGS) $(LDFLAGS) $^ -o $@)
 else
 $(LATYPUS_LIB): $(LATYPUS_OBJS) ; $(call cmd, AR $@, $(AR) cr $@ $^)
+$(NETA_BIN): $(NETA_OBJS) $(LATYPUS_LIB) ; $(call cmd, LD $@, $(LD) $(CXXFLAGS) $(LDFLAGS) $^ -o $@)
 $(NETB_BIN): $(NETB_OBJS) $(LATYPUS_LIB) ; $(call cmd, LD $@, $(LD) $(CXXFLAGS) $(LDFLAGS) $^ -o $@)
 $(NETC_BIN): $(NETC_OBJS) $(LATYPUS_LIB) ; $(call cmd, LD $@, $(LD) $(CXXFLAGS) $(LDFLAGS) $^ -o $@)
 $(NETD_BIN): $(NETD_OBJS) $(LATYPUS_LIB) ; $(call cmd, LD $@, $(LD) $(CXXFLAGS) $(LDFLAGS) $^ -o $@)

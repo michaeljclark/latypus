@@ -13,6 +13,7 @@
 			buildPhases = (
 			);
 			dependencies = (
+				659789211AC9DE9F006DCA7F /* PBXTargetDependency */,
 				656070401A3D7C4600391264 /* PBXTargetDependency */,
 				659620671A89ED4E006D9ECB /* PBXTargetDependency */,
 				6560703E1A3D7C4600391264 /* PBXTargetDependency */,
@@ -132,6 +133,9 @@
 		6597890E1AC7A971006DCA7F /* test_trie.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6597890D1AC7A971006DCA7F /* test_trie.cc */; };
 		6597890F1AC7A971006DCA7F /* test_trie.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6597890D1AC7A971006DCA7F /* test_trie.cc */; };
 		659789101AC7AA17006DCA7F /* test_resolver.cc in Sources */ = {isa = PBXBuildFile; fileRef = 65559832185F55B80009A109 /* test_resolver.cc */; };
+		659789171AC9DD62006DCA7F /* liblatypus.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 657E691719020F330024A28F /* liblatypus.a */; };
+		6597891E1AC9DD84006DCA7F /* neta.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6597891D1AC9DD84006DCA7F /* neta.cc */; };
+		6597891F1AC9DD84006DCA7F /* neta.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6597891D1AC9DD84006DCA7F /* neta.cc */; };
 		65A70965181528BC00522F22 /* test_config.cc in Sources */ = {isa = PBXBuildFile; fileRef = 65A70962181528BC00522F22 /* test_config.cc */; };
 		65A70966181528BC00522F22 /* test_http_request.cc in Sources */ = {isa = PBXBuildFile; fileRef = 65A70963181528BC00522F22 /* test_http_request.cc */; };
 		65C65D951A8B2F7A00C01C2E /* libcppunit.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6560713A1A4662E300391264 /* libcppunit.a */; };
@@ -850,6 +854,20 @@
 			remoteGlobalIDString = 657E691619020F330024A28F;
 			remoteInfo = http;
 		};
+		659789131AC9DD62006DCA7F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 65B2458F1810C4FF007123E8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 657E691619020F330024A28F;
+			remoteInfo = libhttp;
+		};
+		659789201AC9DE9F006DCA7F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 65B2458F1810C4FF007123E8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 659789111AC9DD62006DCA7F;
+			remoteInfo = neta;
+		};
 		65C65D8F1A8B2F7A00C01C2E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 656071351A4662E200391264 /* cppunit.xcodeproj */;
@@ -1076,6 +1094,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 		};
+		659789181AC9DD62006DCA7F /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
 		65A708DC1813936100522F22 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1233,6 +1260,8 @@
 		659788FB1AC7A84C006DCA7F /* trie.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = trie.h; path = src/trie.h; sourceTree = "<group>"; };
 		6597890C1AC7A956006DCA7F /* test_trie */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = test_trie; sourceTree = BUILT_PRODUCTS_DIR; };
 		6597890D1AC7A971006DCA7F /* test_trie.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test_trie.cc; sourceTree = "<group>"; };
+		6597891C1AC9DD62006DCA7F /* neta */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = neta; sourceTree = BUILT_PRODUCTS_DIR; };
+		6597891D1AC9DD84006DCA7F /* neta.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = neta.cc; path = src/neta.cc; sourceTree = "<group>"; };
 		65A708D81813895F00522F22 /* httpbis.abnf */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = httpbis.abnf; path = grammar/httpbis.abnf; sourceTree = "<group>"; };
 		65A708DE1813936100522F22 /* test_http_request */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = test_http_request; sourceTree = BUILT_PRODUCTS_DIR; };
 		65A7091A1814648500522F22 /* config_parser.rl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = config_parser.rl; path = src/config_parser.rl; sourceTree = "<group>"; };
@@ -1368,6 +1397,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		659789161AC9DD62006DCA7F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				659789171AC9DD62006DCA7F /* liblatypus.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		65A708DB1813936100522F22 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -1438,6 +1475,7 @@
 		65606D071A385CCE00391264 /* apps */ = {
 			isa = PBXGroup;
 			children = (
+				6597891D1AC9DD84006DCA7F /* neta.cc */,
 				65606D151A385D9C00391264 /* netb.cc */,
 				659620641A89EC32006D9ECB /* netc.cc */,
 				6534C32E19ABA17600FC7948 /* netd.cc */,
@@ -1736,6 +1774,7 @@
 				653FB65D1AC4CA710070BA70 /* test_log */,
 				653FB6721AC601D60070BA70 /* test_url copy */,
 				6597890C1AC7A956006DCA7F /* test_trie */,
+				6597891C1AC9DD62006DCA7F /* neta */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -2015,6 +2054,24 @@
 			productReference = 6597890C1AC7A956006DCA7F /* test_trie */;
 			productType = "com.apple.product-type.tool";
 		};
+		659789111AC9DD62006DCA7F /* neta */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 659789191AC9DD62006DCA7F /* Build configuration list for PBXNativeTarget "neta" */;
+			buildPhases = (
+				659789141AC9DD62006DCA7F /* Sources */,
+				659789161AC9DD62006DCA7F /* Frameworks */,
+				659789181AC9DD62006DCA7F /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				659789121AC9DD62006DCA7F /* PBXTargetDependency */,
+			);
+			name = neta;
+			productName = http_server;
+			productReference = 6597891C1AC9DD62006DCA7F /* neta */;
+			productType = "com.apple.product-type.tool";
+		};
 		65A708DD1813936100522F22 /* test_http_request */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 65A708E41813936100522F22 /* Build configuration list for PBXNativeTarget "test_http_request" */;
@@ -2186,6 +2243,7 @@
 			projectRoot = "";
 			targets = (
 				657E691619020F330024A28F /* latypus */,
+				659789111AC9DD62006DCA7F /* neta */,
 				65606D081A385D0A00391264 /* netb */,
 				659620571A89EC01006D9ECB /* netc */,
 				6534C31F19ABA12300FC7948 /* netd */,
@@ -2813,6 +2871,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				6597890F1AC7A971006DCA7F /* test_trie.cc in Sources */,
+				6597891F1AC9DD84006DCA7F /* neta.cc in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		659789141AC9DD62006DCA7F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6597891E1AC9DD84006DCA7F /* neta.cc in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3024,6 +3091,16 @@
 			isa = PBXTargetDependency;
 			target = 657E691619020F330024A28F /* latypus */;
 			targetProxy = 659789021AC7A956006DCA7F /* PBXContainerItemProxy */;
+		};
+		659789121AC9DD62006DCA7F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 657E691619020F330024A28F /* latypus */;
+			targetProxy = 659789131AC9DD62006DCA7F /* PBXContainerItemProxy */;
+		};
+		659789211AC9DE9F006DCA7F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 659789111AC9DD62006DCA7F /* neta */;
+			targetProxy = 659789201AC9DE9F006DCA7F /* PBXContainerItemProxy */;
 		};
 		65C65D8E1A8B2F7A00C01C2E /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -3453,6 +3530,21 @@
 			};
 			name = Release;
 		};
+		6597891A1AC9DD62006DCA7F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_PREPROCESSOR_DEFINITIONS = "";
+				PRODUCT_NAME = neta;
+			};
+			name = Debug;
+		};
+		6597891B1AC9DD62006DCA7F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = neta;
+			};
+			name = Release;
+		};
 		65A708E51813936100522F22 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -3800,6 +3892,15 @@
 			buildConfigurations = (
 				6597890A1AC7A956006DCA7F /* Debug */,
 				6597890B1AC7A956006DCA7F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		659789191AC9DD62006DCA7F /* Build configuration list for PBXNativeTarget "neta" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6597891A1AC9DD62006DCA7F /* Debug */,
+				6597891B1AC9DD62006DCA7F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
