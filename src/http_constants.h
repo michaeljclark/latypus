@@ -331,6 +331,7 @@ struct http_constants
     static MapValueText method_code_text;
     static MapTextText  header_text;
 
+    static std::once_flag constants_init;
     static void init();
     
     static const char* get_status_text(int code);

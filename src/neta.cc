@@ -11,9 +11,6 @@
 
 int main(int argc, const char * argv[])
 {
-    http_constants::init();
-    protocol::init();
-    
     struct fn {
         void operator()(http_server_connection *conn)
         {

@@ -208,8 +208,6 @@ void netc::run()
 
 int main(int argc, const char *argv[])
 {
-    http_constants::init();
-    
     netc bench;
     
     // parse command line arguments

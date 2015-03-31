@@ -212,6 +212,8 @@ protocol_state  protocol::state_none(nullptr, "none");
 
 bool protocol::debug = false;
 
+std::once_flag protocol::protocol_init;
+
 protocol_map* protocol::get_map()
 {
     static protocol_map map;
@@ -237,6 +239,8 @@ std::string protocol::to_string() const { return name; }
 
 void protocol::init()
 {
-    http_client::get_proto()->proto_init();
-    http_server::get_proto()->proto_init();
+    std::call_once(protocol_init, [](){
+        http_client::get_proto()->proto_init();
+        http_server::get_proto()->proto_init();
+    });
 }

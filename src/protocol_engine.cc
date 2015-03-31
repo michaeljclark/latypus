@@ -47,6 +47,8 @@ std::mutex protocol_engine::engine_lock;
 
 protocol_engine::protocol_engine() : debug_mask(0)
 {
+    protocol::init();
+    
     // block signals before taking engine lock so we don't deadlock in signal handlers
     sigset_t set;
     sigemptyset(&set);

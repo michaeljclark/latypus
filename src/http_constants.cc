@@ -7,6 +7,7 @@
 #include <memory>
 #include <string>
 #include <atomic>
+#include <mutex>
 
 #include "http_constants.h"
 
@@ -351,28 +352,30 @@ http_constants::MapTextValue http_constants::method_text_code;
 http_constants::MapValueText http_constants::method_code_text;
 http_constants::MapTextText  http_constants::header_text;
 
+std::once_flag http_constants::constants_init;
+
 void http_constants::init()
 {
-    static volatile std::atomic<int> init(0);
-    if (init.fetch_add(1, std::memory_order_acq_rel) != 0) return;
-
-    for (auto status_ent = kHTTPStatusTable; status_ent->code != HTTPStatusCodeLast; status_ent++) {
-        status_code_text.insert(PairValueText(status_ent->code, status_ent->text));
-    }
-    
-    for (auto version_ent = kHTTPVersionTable; version_ent->version != HTTPVersionLast; version_ent++) {
-        version_text_code.insert(PairTextValue(version_ent->text, version_ent->version));
-        version_code_text.insert(PairValueText(version_ent->version, version_ent->text));
-    }
-    
-    for (auto method_ent = kHTTPMethodTable; method_ent->method != HTTPMethodLast; method_ent++) {
-        method_text_code.insert(PairTextValue(method_ent->text, method_ent->method));
-        method_code_text.insert(PairValueText(method_ent->method, method_ent->text));
-    }
-    
-    for (auto header_ent = kHTTPHeaderTable; header_ent->type != HTTPHeaderTypeNone; header_ent++) {
-        header_text.insert(PairTextText(header_ent->text, header_ent->text));
-    }
+    std::call_once(constants_init, []()
+    {
+        for (auto status_ent = kHTTPStatusTable; status_ent->code != HTTPStatusCodeLast; status_ent++) {
+            status_code_text.insert(PairValueText(status_ent->code, status_ent->text));
+        }
+        
+        for (auto version_ent = kHTTPVersionTable; version_ent->version != HTTPVersionLast; version_ent++) {
+            version_text_code.insert(PairTextValue(version_ent->text, version_ent->version));
+            version_code_text.insert(PairValueText(version_ent->version, version_ent->text));
+        }
+        
+        for (auto method_ent = kHTTPMethodTable; method_ent->method != HTTPMethodLast; method_ent++) {
+            method_text_code.insert(PairTextValue(method_ent->text, method_ent->method));
+            method_code_text.insert(PairValueText(method_ent->method, method_ent->text));
+        }
+        
+        for (auto header_ent = kHTTPHeaderTable; header_ent->type != HTTPHeaderTypeNone; header_ent++) {
+            header_text.insert(PairTextText(header_ent->text, header_ent->text));
+        }
+    });
 }
 
 const char* http_constants::get_status_text(int code)

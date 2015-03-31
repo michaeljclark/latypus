@@ -206,8 +206,6 @@ void netb::run()
 
 int main(int argc, const char *argv[])
 {
-    http_constants::init();
-    
     netb bench;
     
     // parse command line arguments

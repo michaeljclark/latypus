@@ -87,9 +87,6 @@ void netd::run()
 
 int main(int argc, const char * argv[])
 {
-    http_constants::init();
-    protocol::init();
-    
     netd server;
     
     // parse command line arguments

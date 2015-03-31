@@ -256,6 +256,8 @@ struct protocol_object
 struct protocol
 {
     static bool                     debug;
+    
+    static std::once_flag           protocol_init;
 
     static protocol                 proto_none;
     static protocol_sock            sock_none;
