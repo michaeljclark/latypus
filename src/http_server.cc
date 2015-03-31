@@ -724,7 +724,7 @@ void http_server::worker_process_request(protocol_thread_delegate *delegate, pro
     http_conn->response.set_http_version(kHTTPVersion11);
     http_conn->response.set_header_field(kHTTPHeaderServer, format_string("%s/%s", ServerName, ServerVersion));
     http_conn->response.set_header_field(kHTTPHeaderDate, http_date(current_time).to_header_string(date_buf, sizeof(date_buf)));
-    auto handler_info = get_engine_state(delegate)->lookup_handler(http_conn->request.get_request_path());
+    auto handler_info = get_engine_state(delegate)->lookup_handler(http_conn);
     if (handler_info) {
         http_conn->handler = handler_info->factory->new_handler();
         if (delegate->get_debug_mask() & protocol_debug_handler) {
@@ -914,4 +914,25 @@ void http_server::abort_connection(protocol_thread_delegate *delegate, protocol_
 void http_server::close_connection(protocol_thread_delegate *delegate, protocol_object *obj)
 {
     get_engine_state(delegate)->close_connection(delegate->get_engine_delegate(), obj);
+}
+
+http_server_handler_info_ptr http_server_engine_state::lookup_handler(http_server_connection *http_conn)
+{
+    // find longest match
+    std::string path = http_conn->request.get_request_path();
+    ssize_t best_offset = -1;
+    http_server_handler_info_ptr best_match;
+    for (auto handler_info : handler_list) {
+        ssize_t i = 0;
+        while (i < (ssize_t)path.length() &&
+               i < (ssize_t)handler_info->path.length() &&
+               path[i] == handler_info->path[i]) {
+            i++;
+        }
+        if (i > best_offset) {
+            best_offset = i;
+            best_match = handler_info;
+        }
+    }
+    return best_match;
 }
