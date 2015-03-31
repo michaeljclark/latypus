@@ -73,7 +73,6 @@ void http_server_handler_func::init()
 {
     reader = nullptr;
     response_buffer.reset();
-    extension.clear();
     mime_type.clear();
     status_text.clear();
     status_code = 0;
@@ -107,10 +106,8 @@ bool http_server_handler_func::handle_request()
     reader = &response_buffer;
     
     if (delegate->get_debug_mask() & protocol_debug_handler) {
-        log_debug("handle_request: status_code=%d status_text=%s "
-                  "extension=%s mime_type=%s",
-                  status_code, status_text.c_str(),
-                  extension.c_str(), mime_type.c_str());
+        log_debug("handle_request: status_code=%d status_text=%s mime_type=%s",
+                  status_code, status_text.c_str(), mime_type.c_str());
     }
     
     return true;

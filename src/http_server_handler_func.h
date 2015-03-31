@@ -12,7 +12,6 @@ struct http_server_handler_func : http_server_handler
 {
     HTTPVersion     http_version;
     HTTPMethod      request_method;
-    std::string     extension;
     std::string     mime_type;
     std::string     status_text;
     io_reader*      reader;

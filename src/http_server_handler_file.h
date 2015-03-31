@@ -14,7 +14,6 @@ struct http_server_handler_file : http_server_handler
     HTTPMethod      request_method;
     std::string     open_path;
     std::string     translated_path;
-    std::string     extension;
     std::string     mime_type;
     std::string     status_text;
     io_reader*      reader;

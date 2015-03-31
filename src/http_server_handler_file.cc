@@ -164,7 +164,6 @@ void http_server_handler_file::init()
     reader = nullptr;
     file_resource.close();
     error_buffer.reset();
-    extension.clear();
     mime_type.clear();
     status_text.clear();
     open_err = 0;
@@ -207,7 +206,6 @@ bool http_server_handler_file::handle_request()
     status_text = http_constants::get_status_text(status_code);
     if (status_code == HTTPStatusCodeOK) {
         auto ext_mime_type = delegate->get_config()->lookup_mime_type(open_path);
-        extension = ext_mime_type.first;
         mime_type = ext_mime_type.second;
         content_length = stat_result.st_size;
         reader = &file_resource;
@@ -220,10 +218,10 @@ bool http_server_handler_file::handle_request()
     }
     
     if (delegate->get_debug_mask() & protocol_debug_handler) {
-        log_debug("handle_request: status_code=%d status_text=%s open_path=%s "
-                  "translated_path=%s extension=%s mime_type=%s",
+        log_debug("handle_request: status_code=%d status_text=%s "
+                  "open_path=%s translated_path=%s mime_type=%s",
                   status_code, status_text.c_str(), open_path.c_str(),
-                  translated_path.c_str(), extension.c_str(), mime_type.c_str());
+                  translated_path.c_str(), mime_type.c_str());
     }
     
     return true;
