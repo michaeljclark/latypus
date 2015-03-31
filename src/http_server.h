@@ -243,7 +243,9 @@ struct http_server_engine_state : protocol_engine_state, protocol_connection_sta
         http_server_handler_info_ptr best_match;
         for (auto handler_info : handler_list) {
             ssize_t i = 0;
-            while (i < path.length() && i < handler_info->path.length() && path[i] == handler_info->path[i]) {
+            while (i < (ssize_t)path.length() &&
+                   i < (ssize_t)handler_info->path.length() &&
+                   path[i] == handler_info->path[i]) {
                 i++;
             }
             if (i > best_offset) {
