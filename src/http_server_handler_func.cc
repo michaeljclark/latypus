@@ -172,7 +172,6 @@ bool http_server_handler_func::populate_response()
             http_conn->connection_close = true;
             break;
     }
-    //http_conn->response.set_header_field(kHTTPHeaderAcceptRanges, "bytes");
     
     return true;
 }
@@ -189,7 +188,6 @@ io_result http_server_handler_func::write_response_body()
     }
     
     // write buffer to socket
-    // TODO - move buffer_write into http_server::handle_state_server_body
     if (buffer.bytes_readable() > 0) {
         io_result result = buffer.buffer_write(http_conn->conn);
         if (result.has_error()) {
