@@ -423,8 +423,13 @@ void http_client::handle_state_server_response(protocol_thread_delegate *delegat
     }
 
     // incrementally parse headers
+#if USE_RINGBUFFER
     /* size_t bytes_parsed = */ http_conn->response.parse(buffer.data() + buffer.back - result.size(), result.size());
     buffer.front += result.size();
+#else
+    /* size_t bytes_parsed = */ http_conn->response.parse(buffer.data() + buffer.offset(), result.size());
+    buffer.set_offset(buffer.offset() + result.size());
+#endif
     
     // switch state if response processing is finished
     if (http_conn->response.is_finished()) {
@@ -671,7 +676,11 @@ ssize_t http_client::populate_request_headers(protocol_thread_delegate *delegate
         abort_connection(delegate, http_conn);
         return length;
     }
+#if USE_RINGBUFFER
     buffer.back = length;
+#else
+    buffer.set_length(length);
+#endif
 
     // debug request
     if (delegate->get_debug_mask() & protocol_debug_headers) {

@@ -6,6 +6,8 @@
 #include <cstdlib>
 #include <cstdarg>
 #include <cassert>
+#include <cstring>
+#include <cerrno>
 #include <string>
 #include <vector>
 #include <queue>

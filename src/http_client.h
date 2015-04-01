@@ -5,6 +5,8 @@
 #ifndef http_cient_h
 #define http_cient_h
 
+//#define USE_RINGBUFFER 1
+
 struct http_client;
 struct http_client_engine_state;
 struct http_client_thread_state;
@@ -59,7 +61,11 @@ template <typename TransportConnection>
 struct http_client_connection_tmpl : protocol_object
 {
     TransportConnection         conn;
+#if USE_RINGBUFFER
     io_ring_buffer              buffer;
+#else
+    io_buffer                   buffer;
+#endif
     protocol_state              *state;
     http_request                request;
     http_response               response;

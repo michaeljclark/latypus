@@ -514,15 +514,24 @@ void http_server::handle_state_client_request(protocol_thread_delegate *delegate
     }
 
     // Close connection if we get EOF reading headers
+#if USE_RINGBUFFER
     if (result.size() == 0 && buffer.back == 0) {
+#else
+    if (result.size() == 0 && buffer.offset() == 0) {
+#endif
         delegate->remove_events(http_conn);
         close_connection(delegate, http_conn);
         return;
     }
     
     // incrementally parse headers
+#if USE_RINGBUFFER
     /* size_t bytes_parsed = */ http_conn->request.parse(buffer.data() + buffer.back - result.size(), result.size());
     buffer.front += result.size();
+#else
+    /* size_t bytes_parsed = */ http_conn->request.parse(buffer.data() + buffer.offset(), result.size());
+    buffer.set_offset(buffer.offset() + result.size());
+#endif
     
     // switch state if request processing is finished
     if (http_conn->request.is_finished()) {
@@ -828,7 +837,11 @@ ssize_t http_server::populate_response_headers(protocol_thread_delegate *delegat
         abort_connection(delegate, http_conn);
         return length;
     }
+#if USE_RINGBUFFER
     buffer.back = length;
+#else
+    buffer.set_length(length);
+#endif
     
     // debug response
     if (delegate->get_debug_mask() & protocol_debug_headers) {

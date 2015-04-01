@@ -5,6 +5,8 @@
 #ifndef http_server_h
 #define http_server_h
 
+//#define USE_RINGBUFFER 1
+
 struct http_server;
 struct http_server_engine_state;
 struct http_server_thread_state;
@@ -21,7 +23,6 @@ typedef std::shared_ptr<http_server_handler_info> http_server_handler_info_ptr;
 
 template <typename TransportConnection> struct http_server_connection_tmpl;
 typedef http_server_connection_tmpl<connection_tcp> http_server_connection;
-
 
 /* http_server_handler_factory */
 
@@ -84,7 +85,11 @@ template <typename TransportConnection>
 struct http_server_connection_tmpl : protocol_object
 {
     TransportConnection         conn;
+#if USE_RINGBUFFER
     io_ring_buffer              buffer;
+#else
+    io_buffer                   buffer;
+#endif
     protocol_state              *state;
     http_request                request;
     http_response               response;
