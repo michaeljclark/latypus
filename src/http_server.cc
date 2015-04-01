@@ -212,7 +212,7 @@ void http_server::proto_init()
     std::call_once(protocol_init, [](){
         http_constants::init();
         protocol_engine::config_factory_map.insert
-            (protocol_config_factory_entry(get_proto()->name, std::make_shared<http_server_config_factory>()));
+            (protocol_config_factory_entry(get_proto(), std::make_shared<http_server_config_factory>()));
         http_server_handler_func::init_handler();
         http_server_handler_file::init_handler();
     });

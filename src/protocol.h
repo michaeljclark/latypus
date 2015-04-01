@@ -45,8 +45,8 @@ struct protocol_engine_delegate;
 struct protocol_thread_delegate;
 struct protocol_config_factory;
 typedef std::shared_ptr<protocol_config_factory> protocol_config_factory_ptr;
-typedef std::map<std::string,protocol_config_factory_ptr> protocol_config_factory_map;
-typedef std::pair<std::string,protocol_config_factory_ptr> protocol_config_factory_entry;
+typedef std::map<protocol*,protocol_config_factory_ptr> protocol_config_factory_map;
+typedef std::pair<protocol*,protocol_config_factory_ptr> protocol_config_factory_entry;
 
 typedef void (protocol_cb) (protocol_thread_delegate *, protocol_object *);
 typedef std::map<protocol_action*,protocol_cb*> protocol_action_funcs;

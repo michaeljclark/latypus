@@ -115,10 +115,10 @@ void protocol_engine::signal_handler(int signum, siginfo_t *info, void *)
     }
 }
 
-void protocol_engine::default_config(std::string protocol)
+void protocol_engine::default_config(protocol* proto)
 {
     cfg = config_ptr(new config());
-    auto cfi = config_factory_map.find(protocol);
+    auto cfi = config_factory_map.find(proto);
     if (cfi != config_factory_map.end()) {
         cfi->second->make_config(cfg);
     }

@@ -28,7 +28,7 @@ struct protocol_engine : protocol_engine_delegate
     
     static void signal_handler(int signum, siginfo_t *info, void *);
     
-    void default_config(std::string protocol);
+    void default_config(protocol* proto);
     void read_config(std::string config_file);
     void run();
     void stop();
