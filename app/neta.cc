@@ -11,7 +11,7 @@
 
 int main(int argc, const char * argv[])
 {
-    struct echo_fn : http_server_func {
+    struct echo_fn {
         std::string operator()(http_server_connection *conn) {
             return std::string("echo ") + conn->request.get_request_path();
         }
@@ -19,7 +19,7 @@ int main(int argc, const char * argv[])
     
     protocol_engine engine;
     engine.default_config<http_server>();
-    engine.bind_function<http_server,http_server_connection>("/echo/", echo_fn());
+    engine.bind_function<http_server,http_server_connection>("/echo", echo_fn());
     engine.run();
     engine.join();
     
