@@ -57,16 +57,16 @@ add_library(
     src/protocol_thread.cc
 )
 
-add_executable(neta src/neta.cc)
+add_executable(neta app/neta.cc)
 target_link_libraries(neta latypus pthread)
 
-add_executable(netb src/netb.cc)
+add_executable(netb app/netb.cc)
 target_link_libraries(netb latypus pthread)
 
-add_executable(netc src/netc.cc)
+add_executable(netc app/netc.cc)
 target_link_libraries(netc latypus pthread)
 
-add_executable(netd src/netd.cc)
+add_executable(netd app/netd.cc)
 target_link_libraries(netd latypus pthread)
 
 add_executable(test_config tests/test_config.cc)

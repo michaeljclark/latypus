@@ -31,11 +31,12 @@ RELROF_FLAGS =  -Wl,-z,relro,-z,now
 NOEXEC_FLAGS =  -Wl,-z,noexecstack
 
 # default optimizer, debug and warning flags
+INCLUDES :=     -I$(shell pwd)/src
 OPT_FLAGS =     -O3
 DEBUG_FLAGS =   -g
 WARN_FLAGS =    -Wall -Wpedantic -Wsign-compare
 CPPFLAGS =
-CXXFLAGS =      -std=c++11 $(OPT_FLAGS) $(DEBUG_FLAGS) $(WARN_FLAGS)
+CXXFLAGS =      -std=c++11 $(OPT_FLAGS) $(DEBUG_FLAGS) $(WARN_FLAGS) $(INCLUDES)
 LDFLAGS =       -lpthread
 
 # check if we can use libc++
@@ -99,7 +100,8 @@ CPPFLAGS +=     -D_FILE_OFFSET_BITS=64
 endif
 
 # directories
-SRC_DIR =       src
+APP_SRC_DIR =   app
+LIB_SRC_DIR =   src
 BUILD_DIR =     build
 BIN_DIR =       $(BUILD_DIR)/$(ARCH)/bin
 LIB_DIR =       $(BUILD_DIR)/$(ARCH)/lib
@@ -107,63 +109,63 @@ OBJ_DIR =       $(BUILD_DIR)/$(ARCH)/obj
 DEP_DIR =       $(BUILD_DIR)/$(ARCH)/dep
 
 # helper functions
-src_objs =      $(subst $(SRC_DIR),$(OBJ_DIR),$(subst .cc,.o,$(1)))
-src_deps =      $(subst $(SRC_DIR),$(DEP_DIR),$(subst .cc,.cc.P,$(1)))
+src_objs =      $(subst $(APP_SRC_DIR),$(OBJ_DIR),$(subst $(LIB_SRC_DIR),$(OBJ_DIR),$(subst .cc,.o,$(1))))
+src_deps =      $(subst $(APP_SRC_DIR),$(DEP_DIR),$(subst $(LIB_SRC_DIR),$(DEP_DIR),$(subst .cc,.cc.P,$(1))))
 
 # target source and objects
-LATYPUS_SRCS =  $(SRC_DIR)/io.cc \
-                $(SRC_DIR)/pollset.cc \
-                $(SRC_DIR)/pollset_poll.cc \
-                $(SRC_DIR)/pollset_epoll.cc \
-                $(SRC_DIR)/pollset_kqueue.cc \
-                $(SRC_DIR)/connection_ssl.cc \
-                $(SRC_DIR)/connection_tcp.cc \
-                $(SRC_DIR)/resolver.cc \
-                $(SRC_DIR)/netdev.cc \
-                $(SRC_DIR)/socket.cc \
-                $(SRC_DIR)/url.cc \
-                $(SRC_DIR)/cmdline_options.cc \
-                $(SRC_DIR)/config.cc \
-                $(SRC_DIR)/config_parser.cc \
-                $(SRC_DIR)/config_cpu.cc \
-                $(SRC_DIR)/log.cc \
-                $(SRC_DIR)/log_thread.cc \
-                $(SRC_DIR)/http_common.cc \
-                $(SRC_DIR)/http_constants.cc \
-                $(SRC_DIR)/http_date.cc \
-                $(SRC_DIR)/http_parser.cc \
-                $(SRC_DIR)/http_request.cc \
-                $(SRC_DIR)/http_response.cc \
-                $(SRC_DIR)/http_client.cc \
-                $(SRC_DIR)/http_client_handler_file.cc \
-                $(SRC_DIR)/http_server.cc \
-                $(SRC_DIR)/http_server_handler_file.cc \
-                $(SRC_DIR)/http_server_handler_func.cc \
-                $(SRC_DIR)/protocol.cc \
-                $(SRC_DIR)/protocol_engine.cc \
-                $(SRC_DIR)/protocol_thread.cc
+LATYPUS_SRCS =  $(LIB_SRC_DIR)/io.cc \
+                $(LIB_SRC_DIR)/pollset.cc \
+                $(LIB_SRC_DIR)/pollset_poll.cc \
+                $(LIB_SRC_DIR)/pollset_epoll.cc \
+                $(LIB_SRC_DIR)/pollset_kqueue.cc \
+                $(LIB_SRC_DIR)/connection_ssl.cc \
+                $(LIB_SRC_DIR)/connection_tcp.cc \
+                $(LIB_SRC_DIR)/resolver.cc \
+                $(LIB_SRC_DIR)/netdev.cc \
+                $(LIB_SRC_DIR)/socket.cc \
+                $(LIB_SRC_DIR)/url.cc \
+                $(LIB_SRC_DIR)/cmdline_options.cc \
+                $(LIB_SRC_DIR)/config.cc \
+                $(LIB_SRC_DIR)/config_parser.cc \
+                $(LIB_SRC_DIR)/config_cpu.cc \
+                $(LIB_SRC_DIR)/log.cc \
+                $(LIB_SRC_DIR)/log_thread.cc \
+                $(LIB_SRC_DIR)/http_common.cc \
+                $(LIB_SRC_DIR)/http_constants.cc \
+                $(LIB_SRC_DIR)/http_date.cc \
+                $(LIB_SRC_DIR)/http_parser.cc \
+                $(LIB_SRC_DIR)/http_request.cc \
+                $(LIB_SRC_DIR)/http_response.cc \
+                $(LIB_SRC_DIR)/http_client.cc \
+                $(LIB_SRC_DIR)/http_client_handler_file.cc \
+                $(LIB_SRC_DIR)/http_server.cc \
+                $(LIB_SRC_DIR)/http_server_handler_file.cc \
+                $(LIB_SRC_DIR)/http_server_handler_func.cc \
+                $(LIB_SRC_DIR)/protocol.cc \
+                $(LIB_SRC_DIR)/protocol_engine.cc \
+                $(LIB_SRC_DIR)/protocol_thread.cc
 
 LATYPUS_OBJS =  $(call src_objs, $(LATYPUS_SRCS))
 LATYPUS_LIB =   $(LIB_DIR)/liblatypus.a
 
-NETA_SRCS =     $(SRC_DIR)/neta.cc
+NETA_SRCS =     $(APP_SRC_DIR)/neta.cc
 NETA_OBJS =     $(call src_objs, $(NETA_SRCS))
 NETA_BIN =      $(BIN_DIR)/neta
 
-NETB_SRCS =     $(SRC_DIR)/netb.cc
+NETB_SRCS =     $(APP_SRC_DIR)/netb.cc
 NETB_OBJS =     $(call src_objs, $(NETB_SRCS))
 NETB_BIN =      $(BIN_DIR)/netb
 
-NETC_SRCS =     $(SRC_DIR)/netc.cc
+NETC_SRCS =     $(APP_SRC_DIR)/netc.cc
 NETC_OBJS =     $(call src_objs, $(NETC_SRCS))
 NETC_BIN =      $(BIN_DIR)/netc
 
-NETD_SRCS =     $(SRC_DIR)/netd.cc
+NETD_SRCS =     $(APP_SRC_DIR)/netd.cc
 NETD_OBJS =     $(call src_objs, $(NETD_SRCS))
 NETD_BIN =      $(BIN_DIR)/netd
 
-ALL_SRCS =      $(LATYPUS_SRCS) $(NETB_SRCS) $(NETC_SRCS) $(NETD_SRCS)
-BINARIES =      $(NETB_BIN) $(NETC_BIN) $(NETD_BIN)
+ALL_SRCS =      $(LATYPUS_SRCS) $(NETA_SRCS) $(NETB_SRCS) $(NETC_SRCS) $(NETD_SRCS)
+BINARIES =      $(NETA_BIN) $(NETB_BIN) $(NETC_BIN) $(NETD_BIN)
 
 # don't build library if LTO is enabled
 ifeq ($(enable_lto),1)
@@ -202,9 +204,12 @@ else
 cmd = @echo "$1"; $2
 endif
 
-$(OBJ_DIR)/%.o : $(SRC_DIR)/%.cc ; $(call cmd, CXX $@, $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $< -o $@)
-$(SRC_DIR)/%.cc : $(SRC_DIR)/%.rl ; $(call cmd, RAGEL $@, $(RAGEL) $< -o $@)
-$(DEP_DIR)/%.cc.P : $(SRC_DIR)/%.cc ; @mkdir -p $(DEP_DIR) ;
+$(OBJ_DIR)/%.o : $(APP_SRC_DIR)/%.cc ; $(call cmd, CXX $@, $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $< -o $@)
+$(OBJ_DIR)/%.o : $(LIB_SRC_DIR)/%.cc ; $(call cmd, CXX $@, $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $< -o $@)
+$(LIB_SRC_DIR)/%.cc : $(LIB_SRC_DIR)/%.rl ; $(call cmd, RAGEL $@, $(RAGEL) $< -o $@)
+$(DEP_DIR)/%.cc.P : $(APP_SRC_DIR)/%.cc ; @mkdir -p $(DEP_DIR) ;
+	$(call cmd, MKDEP $@, $(CXX) $(CXXFLAGS) -MM $< | sed "s#\(.*\)\.o#$(OBJ_DIR)/\1.o $(DEP_DIR)/\1.P#"  > $@)
+$(DEP_DIR)/%.cc.P : $(LIB_SRC_DIR)/%.cc ; @mkdir -p $(DEP_DIR) ;
 	$(call cmd, MKDEP $@, $(CXX) $(CXXFLAGS) -MM $< | sed "s#\(.*\)\.o#$(OBJ_DIR)/\1.o $(DEP_DIR)/\1.P#"  > $@)
 
 # make dependencies

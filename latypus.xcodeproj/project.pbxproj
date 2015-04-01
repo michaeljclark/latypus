@@ -53,7 +53,6 @@
 		65293FF41948539300E3F5F7 /* pollset_epoll.cc in Sources */ = {isa = PBXBuildFile; fileRef = 65293FF21948539300E3F5F7 /* pollset_epoll.cc */; };
 		65293FF51948539300E3F5F7 /* pollset_epoll.h in Headers */ = {isa = PBXBuildFile; fileRef = 65293FF31948539300E3F5F7 /* pollset_epoll.h */; };
 		6534C32519ABA12300FC7948 /* liblatypus.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 657E691719020F330024A28F /* liblatypus.a */; };
-		6534C32F19ABA17600FC7948 /* netd.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6534C32E19ABA17600FC7948 /* netd.cc */; };
 		653FB5D11AC3B6080070BA70 /* random_seed.h in Headers */ = {isa = PBXBuildFile; fileRef = 653FB5CD1AC3B6080070BA70 /* random_seed.h */; };
 		653FB5D21AC3B6080070BA70 /* random_seed.cc in Sources */ = {isa = PBXBuildFile; fileRef = 653FB5CE1AC3B6080070BA70 /* random_seed.cc */; };
 		653FB63D1AC3B6F50070BA70 /* cpu.cc in Sources */ = {isa = PBXBuildFile; fileRef = 653FB63B1AC3B6F50070BA70 /* cpu.cc */; };
@@ -123,8 +122,6 @@
 		65949FBB192920DF004375FD /* config_cpu.cc in Sources */ = {isa = PBXBuildFile; fileRef = 65949FB9192920DF004375FD /* config_cpu.cc */; };
 		65949FBC192920DF004375FD /* config_cpu.h in Headers */ = {isa = PBXBuildFile; fileRef = 65949FBA192920DF004375FD /* config_cpu.h */; };
 		6596205D1A89EC01006D9ECB /* liblatypus.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 657E691719020F330024A28F /* liblatypus.a */; };
-		659620631A89EC22006D9ECB /* netb.cc in Sources */ = {isa = PBXBuildFile; fileRef = 65606D151A385D9C00391264 /* netb.cc */; };
-		659620651A89EC32006D9ECB /* netc.cc in Sources */ = {isa = PBXBuildFile; fileRef = 659620641A89EC32006D9ECB /* netc.cc */; };
 		659788F81AC78D96006DCA7F /* http_server_handler_func.h in Headers */ = {isa = PBXBuildFile; fileRef = 659788F61AC78D96006DCA7F /* http_server_handler_func.h */; };
 		659788F91AC78D96006DCA7F /* http_server_handler_func.cc in Sources */ = {isa = PBXBuildFile; fileRef = 659788F71AC78D96006DCA7F /* http_server_handler_func.cc */; };
 		659788FD1AC7A84C006DCA7F /* trie.h in Headers */ = {isa = PBXBuildFile; fileRef = 659788FB1AC7A84C006DCA7F /* trie.h */; };
@@ -134,8 +131,10 @@
 		6597890F1AC7A971006DCA7F /* test_trie.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6597890D1AC7A971006DCA7F /* test_trie.cc */; };
 		659789101AC7AA17006DCA7F /* test_resolver.cc in Sources */ = {isa = PBXBuildFile; fileRef = 65559832185F55B80009A109 /* test_resolver.cc */; };
 		659789171AC9DD62006DCA7F /* liblatypus.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 657E691719020F330024A28F /* liblatypus.a */; };
-		6597891E1AC9DD84006DCA7F /* neta.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6597891D1AC9DD84006DCA7F /* neta.cc */; };
-		6597891F1AC9DD84006DCA7F /* neta.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6597891D1AC9DD84006DCA7F /* neta.cc */; };
+		6597896C1ACCB128006DCA7F /* neta.cc in Sources */ = {isa = PBXBuildFile; fileRef = 659789681ACCB121006DCA7F /* neta.cc */; };
+		6597896D1ACCB12E006DCA7F /* netd.cc in Sources */ = {isa = PBXBuildFile; fileRef = 659789691ACCB121006DCA7F /* netd.cc */; };
+		6597896E1ACCB131006DCA7F /* netc.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6597896A1ACCB121006DCA7F /* netc.cc */; };
+		6597896F1ACCB134006DCA7F /* netb.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6597896B1ACCB121006DCA7F /* netb.cc */; };
 		65A70965181528BC00522F22 /* test_config.cc in Sources */ = {isa = PBXBuildFile; fileRef = 65A70962181528BC00522F22 /* test_config.cc */; };
 		65A70966181528BC00522F22 /* test_http_request.cc in Sources */ = {isa = PBXBuildFile; fileRef = 65A70963181528BC00522F22 /* test_http_request.cc */; };
 		65C65D951A8B2F7A00C01C2E /* libcppunit.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6560713A1A4662E300391264 /* libcppunit.a */; };
@@ -1178,7 +1177,6 @@
 		65293FF21948539300E3F5F7 /* pollset_epoll.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = pollset_epoll.cc; path = src/pollset_epoll.cc; sourceTree = "<group>"; };
 		65293FF31948539300E3F5F7 /* pollset_epoll.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = pollset_epoll.h; path = src/pollset_epoll.h; sourceTree = "<group>"; };
 		6534C32A19ABA12300FC7948 /* netd */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = netd; sourceTree = BUILT_PRODUCTS_DIR; };
-		6534C32E19ABA17600FC7948 /* netd.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = netd.cc; path = src/netd.cc; sourceTree = "<group>"; };
 		653FB5CD1AC3B6080070BA70 /* random_seed.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = random_seed.h; path = src/random_seed.h; sourceTree = "<group>"; };
 		653FB5CE1AC3B6080070BA70 /* random_seed.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = random_seed.cc; path = src/random_seed.cc; sourceTree = "<group>"; };
 		653FB63B1AC3B6F50070BA70 /* cpu.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = cpu.cc; path = src/cpu.cc; sourceTree = "<group>"; };
@@ -1205,7 +1203,6 @@
 		65559832185F55B80009A109 /* test_resolver.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test_resolver.cc; sourceTree = "<group>"; };
 		65606D031A37F12200391264 /* protocol_connection.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = protocol_connection.h; path = src/protocol_connection.h; sourceTree = "<group>"; };
 		65606D131A385D0A00391264 /* netb */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = netb; sourceTree = BUILT_PRODUCTS_DIR; };
-		65606D151A385D9C00391264 /* netb.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = netb.cc; path = src/netb.cc; sourceTree = "<group>"; };
 		65606DFE1A393AD700391264 /* BoringSSL.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = BoringSSL.xcodeproj; path = third_party/build/boringssl/BoringSSL.xcodeproj; sourceTree = "<group>"; };
 		65606FA71A399C3500391264 /* netd.cfg.large */ = {isa = PBXFileReference; lastKnownFileType = text; name = netd.cfg.large; path = config/netd.cfg.large; sourceTree = "<group>"; };
 		65606FA81A399C3500391264 /* netd.cfg.medium */ = {isa = PBXFileReference; lastKnownFileType = text; name = netd.cfg.medium; path = config/netd.cfg.medium; sourceTree = "<group>"; };
@@ -1254,14 +1251,16 @@
 		659620521A899D7A006D9ECB /* build-liquid.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; name = "build-liquid.sh"; path = "snippits/build-liquid.sh"; sourceTree = "<group>"; };
 		659620531A899D7A006D9ECB /* bench-100K.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; name = "bench-100K.sh"; path = "snippits/bench-100K.sh"; sourceTree = "<group>"; };
 		659620621A89EC01006D9ECB /* netc */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = netc; sourceTree = BUILT_PRODUCTS_DIR; };
-		659620641A89EC32006D9ECB /* netc.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = netc.cc; path = src/netc.cc; sourceTree = "<group>"; };
 		659788F61AC78D96006DCA7F /* http_server_handler_func.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = http_server_handler_func.h; path = src/http_server_handler_func.h; sourceTree = "<group>"; };
 		659788F71AC78D96006DCA7F /* http_server_handler_func.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = http_server_handler_func.cc; path = src/http_server_handler_func.cc; sourceTree = "<group>"; };
 		659788FB1AC7A84C006DCA7F /* trie.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = trie.h; path = src/trie.h; sourceTree = "<group>"; };
 		6597890C1AC7A956006DCA7F /* test_trie */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = test_trie; sourceTree = BUILT_PRODUCTS_DIR; };
 		6597890D1AC7A971006DCA7F /* test_trie.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test_trie.cc; sourceTree = "<group>"; };
 		6597891C1AC9DD62006DCA7F /* neta */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = neta; sourceTree = BUILT_PRODUCTS_DIR; };
-		6597891D1AC9DD84006DCA7F /* neta.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = neta.cc; path = src/neta.cc; sourceTree = "<group>"; };
+		659789681ACCB121006DCA7F /* neta.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = neta.cc; path = app/neta.cc; sourceTree = "<group>"; };
+		659789691ACCB121006DCA7F /* netd.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = netd.cc; path = app/netd.cc; sourceTree = "<group>"; };
+		6597896A1ACCB121006DCA7F /* netc.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = netc.cc; path = app/netc.cc; sourceTree = "<group>"; };
+		6597896B1ACCB121006DCA7F /* netb.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = netb.cc; path = app/netb.cc; sourceTree = "<group>"; };
 		65A708D81813895F00522F22 /* httpbis.abnf */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = httpbis.abnf; path = grammar/httpbis.abnf; sourceTree = "<group>"; };
 		65A708DE1813936100522F22 /* test_http_request */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = test_http_request; sourceTree = BUILT_PRODUCTS_DIR; };
 		65A7091A1814648500522F22 /* config_parser.rl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = config_parser.rl; path = src/config_parser.rl; sourceTree = "<group>"; };
@@ -1475,10 +1474,10 @@
 		65606D071A385CCE00391264 /* apps */ = {
 			isa = PBXGroup;
 			children = (
-				6597891D1AC9DD84006DCA7F /* neta.cc */,
-				65606D151A385D9C00391264 /* netb.cc */,
-				659620641A89EC32006D9ECB /* netc.cc */,
-				6534C32E19ABA17600FC7948 /* netd.cc */,
+				659789681ACCB121006DCA7F /* neta.cc */,
+				6597896B1ACCB121006DCA7F /* netb.cc */,
+				6597896A1ACCB121006DCA7F /* netc.cc */,
+				659789691ACCB121006DCA7F /* netd.cc */,
 			);
 			name = apps;
 			sourceTree = "<group>";
@@ -2758,7 +2757,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6534C32F19ABA17600FC7948 /* netd.cc in Sources */,
+				6597896D1ACCB12E006DCA7F /* netd.cc in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2806,7 +2805,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				659620631A89EC22006D9ECB /* netb.cc in Sources */,
+				6597896F1ACCB134006DCA7F /* netb.cc in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2862,7 +2861,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				659620651A89EC32006D9ECB /* netc.cc in Sources */,
+				6597896E1ACCB131006DCA7F /* netc.cc in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2871,7 +2870,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				6597890F1AC7A971006DCA7F /* test_trie.cc in Sources */,
-				6597891F1AC9DD84006DCA7F /* neta.cc in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2879,7 +2877,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6597891E1AC9DD84006DCA7F /* neta.cc in Sources */,
+				6597896C1ACCB128006DCA7F /* neta.cc in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
