@@ -4,7 +4,10 @@
 
 #include "latypus.h"
 
-/* netc */
+/* netc
+ *
+ * http client
+ */
 
 #define NUM_REQUESTS_DEFAULT        1
 #define KEEPALIVE_REQUESTS_DEFAULT  0

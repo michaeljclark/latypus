@@ -6,7 +6,7 @@
 
 /* neta
  *
- * example application server (work in progress)
+ * http application server (work in progress)
  */
 
 int main(int argc, const char * argv[])

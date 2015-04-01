@@ -4,7 +4,10 @@
 
 #include "latypus.h"
 
-/* netd */
+/* netd
+ *
+ * http server
+ */
 
 struct netd
 {

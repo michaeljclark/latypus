@@ -4,7 +4,10 @@
 
 #include "latypus.h"
 
-/* netb */
+/* netb
+ *
+ * http benchmarking tool
+ */
 
 #define NUM_REQUESTS_DEFAULT        1
 #define KEEPALIVE_REQUESTS_DEFAULT  0
