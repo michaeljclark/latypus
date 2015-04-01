@@ -5,7 +5,7 @@
 #ifndef http_cient_h
 #define http_cient_h
 
-//#define USE_RINGBUFFER 1
+#define USE_RINGBUFFER 1
 
 struct http_client;
 struct http_client_engine_state;

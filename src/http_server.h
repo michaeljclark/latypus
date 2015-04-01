@@ -5,7 +5,7 @@
 #ifndef http_server_h
 #define http_server_h
 
-//#define USE_RINGBUFFER 1
+#define USE_RINGBUFFER 1
 
 struct http_server;
 struct http_server_engine_state;
