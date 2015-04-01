@@ -19,7 +19,7 @@ typedef std::shared_ptr<http_server_handler_factory> http_server_handler_factory
 typedef std::pair<std::string,http_server_handler_factory_ptr> http_server_handler_factory_entry;
 
 struct http_server_handler_info;
-typedef std::shared_ptr<http_server_handler_info> http_server_handler_info_ptr;
+typedef std::unique_ptr<http_server_handler_info> http_server_handler_info_ptr;
 
 template <typename TransportConnection> struct http_server_connection_tmpl;
 typedef http_server_connection_tmpl<connection_tcp> http_server_connection;
@@ -241,14 +241,14 @@ struct http_server_engine_state : protocol_engine_state, protocol_connection_sta
     
     protocol* get_proto() const { return http_server::get_proto(); }
     
-    http_server_handler_info_ptr lookup_handler(http_server_connection *http_conn);
+    http_server_handler_ptr lookup_handler(http_server_connection *http_conn);
 };
 
 
 /* http_server_thread_state */
 
 struct http_server_thread_state : protocol_thread_state
-{    
+{
     protocol* get_proto() const { return http_server::get_proto(); }
 };
 

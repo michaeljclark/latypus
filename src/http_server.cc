@@ -226,7 +226,7 @@ void http_server::register_route(http_server_engine_state *engine_state,
         log_error("%s couldn't find handler factory: %s", get_proto()->name.c_str(), handler.c_str());
     } else {
         log_info("%s registering route \"%s\" -> %s", get_proto()->name.c_str(), path.c_str(), handler.c_str());
-        engine_state->handler_list.push_back(std::make_shared<http_server_handler_info>(path, fi->second));
+        engine_state->handler_list.push_back(http_server_handler_info_ptr(new http_server_handler_info(path, fi->second)));
     }
 }
 
@@ -733,21 +733,7 @@ void http_server::worker_process_request(protocol_thread_delegate *delegate, pro
     http_conn->response.set_http_version(kHTTPVersion11);
     http_conn->response.set_header_field(kHTTPHeaderServer, format_string("%s/%s", ServerName, ServerVersion));
     http_conn->response.set_header_field(kHTTPHeaderDate, http_date(current_time).to_header_string(date_buf, sizeof(date_buf)));
-    auto handler_info = get_engine_state(delegate)->lookup_handler(http_conn);
-    if (handler_info) {
-        http_conn->handler = handler_info->factory->new_handler();
-        if (delegate->get_debug_mask() & protocol_debug_handler) {
-            log_debug("path=%s handler_name=%s",
-                      http_conn->request.get_request_path(),
-                      handler_info->factory->get_name().c_str());
-        }
-    } else {
-        http_conn->handler = std::make_shared<http_server_handler_file>();
-        if (delegate->get_debug_mask() & protocol_debug_handler) {
-            log_debug("path=%s default handler",
-                      http_conn->request.get_request_path());
-        }
-    }
+    http_conn->handler = get_engine_state(delegate)->lookup_handler(http_conn);
     http_conn->handler->init();
     http_conn->handler->set_delegate(delegate);
     http_conn->handler->set_connection(http_conn);
@@ -929,23 +915,26 @@ void http_server::close_connection(protocol_thread_delegate *delegate, protocol_
     get_engine_state(delegate)->close_connection(delegate->get_engine_delegate(), obj);
 }
 
-http_server_handler_info_ptr http_server_engine_state::lookup_handler(http_server_connection *http_conn)
+http_server_handler_ptr http_server_engine_state::lookup_handler(http_server_connection *http_conn)
 {
     // find longest match
     std::string path = http_conn->request.get_request_path();
     ssize_t best_offset = -1;
-    http_server_handler_info_ptr best_match;
-    for (auto handler_info : handler_list) {
+    http_server_handler_info_ptr *best_match = nullptr;
+    for (auto &handler_info : handler_list) {
         ssize_t i = 0;
         while (i < (ssize_t)path.length() &&
                i < (ssize_t)handler_info->path.length() &&
-               path[i] == handler_info->path[i]) {
-            i++;
-        }
+               path[i] == handler_info->path[i]) i++;
         if (i > best_offset) {
             best_offset = i;
-            best_match = handler_info;
+            best_match = &handler_info;
         }
     }
-    return best_match;
+    // return best match, or if no match, the default file handler
+    if (best_match) {
+        return (*best_match)->factory->new_handler();
+    } else {
+        return std::make_shared<http_server_handler_file>();
+    }
 }
