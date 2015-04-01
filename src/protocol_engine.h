@@ -5,6 +5,7 @@
 #ifndef protocol_engine_h
 #define protocol_engine_h
 
+#include <functional>
 
 /* protocol_engine */
 
@@ -27,6 +28,12 @@ struct protocol_engine : protocol_engine_delegate
     static std::mutex engine_lock;
     
     static void signal_handler(int signum, siginfo_t *info, void *);
+    
+    template <typename T> void default_config() { return default_config(T::get_proto()); }
+    template <typename T, typename C> void bind_function(std::string, std::function<std::string(C*)>)
+    {
+        // todo
+    }
     
     void default_config(protocol* proto);
     void read_config(std::string config_file);

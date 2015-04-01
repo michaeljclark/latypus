@@ -18,8 +18,8 @@ int main(int argc, const char * argv[])
     };
     
     protocol_engine engine;
-    engine.default_config(http_server::get_proto());
-    //http_server::get_proto()->bind_fn("/echo/", echo_fn());
+    engine.default_config<http_server>();
+    engine.bind_function<http_server,http_server_connection>("/echo/", echo_fn());
     engine.run();
     engine.join();
     
