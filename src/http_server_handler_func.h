@@ -19,7 +19,6 @@ struct http_server_handler_func : http_server_handler
     int             status_code;
     ssize_t         content_length;
     ssize_t         total_written;
-    http_date       last_modified;
     
     http_server_handler_func();
     ~http_server_handler_func();

@@ -120,8 +120,6 @@ io_result http_server_handler_func::read_request_body()
 
 bool http_server_handler_func::populate_response()
 {
-    char date_buf[32];
-    
     // set request body presence
     switch (request_method) {
         case HTTPMethodGET:
@@ -160,9 +158,6 @@ bool http_server_handler_func::populate_response()
     if (status_code != HTTPStatusCodeNotModified) {
         http_conn->response.set_header_field(kHTTPHeaderContentType, mime_type);
         http_conn->response.set_header_field(kHTTPHeaderContentLength, format_string("%lu", content_length));
-    }
-    if (status_code == HTTPStatusCodeOK || status_code == HTTPStatusCodeNotModified) {
-        http_conn->response.set_header_field(kHTTPHeaderLastModified, last_modified.to_header_string(date_buf, sizeof(date_buf)));
     }
     switch (http_version) {
         case HTTPVersion10:
