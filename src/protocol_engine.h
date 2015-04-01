@@ -29,13 +29,14 @@ struct protocol_engine : protocol_engine_delegate
     
     static void signal_handler(int signum, siginfo_t *info, void *);
     
-    template <typename T> void default_config() { return default_config(T::get_proto()); }
     template <typename T, typename C> void bind_function(std::string, std::function<std::string(C*)>)
     {
         // todo
     }
-    
+
+    template <typename T> void default_config() { return default_config(T::get_proto()); }
     void default_config(protocol* proto);
+    
     void read_config(std::string config_file);
     void run();
     void stop();
