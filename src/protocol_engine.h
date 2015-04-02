@@ -5,7 +5,6 @@
 #ifndef protocol_engine_h
 #define protocol_engine_h
 
-#include <functional>
 
 /* protocol_engine */
 
