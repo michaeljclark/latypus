@@ -181,7 +181,7 @@ http_header_string http_date::to_log_string(char *buf, size_t buf_len)
     *(p++) = '0' + (tm.tm_sec / 10);
     *(p++) = '0' + (tm.tm_sec % 10);
     *(p++) = ' ';
-    *(p++) = '-';
+    *(p++) = '+';
     *(p++) = '0';
     *(p++) = '0';
     *(p++) = '0';
