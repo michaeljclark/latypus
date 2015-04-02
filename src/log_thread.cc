@@ -28,7 +28,7 @@
 const bool log_thread::debug = true;
 const int log_thread::num_buffers = 65536;
 const int log_thread::buffer_size = 1024;
-const int log_thread::flush_interval_msecs = 10;
+const int log_thread::flush_interval_msecs = 1000;
 
 log_thread::log_thread(int fd) :
     file(fdopen(fd, "w")),

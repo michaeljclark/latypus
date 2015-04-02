@@ -223,6 +223,7 @@ struct http_server : protocol
 
     static void process_request_headers(protocol_thread_delegate *, protocol_object *);
     static ssize_t populate_response_headers(protocol_thread_delegate *, protocol_object *);
+    static void finished_request(protocol_thread_delegate *, protocol_object *);
     static void dispatch_connection(protocol_thread_delegate *, protocol_object *);
     static void work_connection(protocol_thread_delegate *, protocol_object *);
     static void keepalive_connection(protocol_thread_delegate *, protocol_object *);
@@ -254,6 +255,8 @@ struct http_server_engine_state : protocol_engine_state, protocol_connection_sta
     http_server_engine_stats                    stats;
     listening_socket_list                       listens;
     std::vector<http_server_handler_info_ptr>   handler_list;
+    io_file                                     access_log_file;
+    log_thread_ptr                              access_log_thread;
     
     protocol* get_proto() const { return http_server::get_proto(); }
     

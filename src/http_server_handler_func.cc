@@ -30,6 +30,7 @@
 #include "io.h"
 #include "url.h"
 #include "log.h"
+#include "log_thread.h"
 #include "trie.h"
 #include "socket.h"
 #include "resolver.h"

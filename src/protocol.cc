@@ -42,6 +42,7 @@
 #include "protocol_thread.h"
 #include "protocol_engine.h"
 #include "protocol_connection.h"
+#include "log_thread.h"
 
 #include "http_common.h"
 #include "http_constants.h"

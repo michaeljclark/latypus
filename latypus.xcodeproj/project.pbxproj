@@ -138,6 +138,7 @@
 		659789731ACCCC00006DCA7F /* http_server_handler_stats.cc in Sources */ = {isa = PBXBuildFile; fileRef = 659789711ACCCC00006DCA7F /* http_server_handler_stats.cc */; };
 		659789761ACD8262006DCA7F /* os.h in Headers */ = {isa = PBXBuildFile; fileRef = 659789741ACD8262006DCA7F /* os.h */; };
 		659789771ACD8262006DCA7F /* os.cc in Sources */ = {isa = PBXBuildFile; fileRef = 659789751ACD8262006DCA7F /* os.cc */; };
+		659789781ACDCC93006DCA7F /* log_thread.cc in Sources */ = {isa = PBXBuildFile; fileRef = 653FB64C1AC4A4B60070BA70 /* log_thread.cc */; };
 		65A70965181528BC00522F22 /* test_config.cc in Sources */ = {isa = PBXBuildFile; fileRef = 65A70962181528BC00522F22 /* test_config.cc */; };
 		65A70966181528BC00522F22 /* test_http_request.cc in Sources */ = {isa = PBXBuildFile; fileRef = 65A70963181528BC00522F22 /* test_http_request.cc */; };
 		65C65D951A8B2F7A00C01C2E /* libcppunit.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6560713A1A4662E300391264 /* libcppunit.a */; };
@@ -2853,6 +2854,7 @@
 				657E6A211902F5390024A28F /* http_server.cc in Sources */,
 				653FB5D21AC3B6080070BA70 /* random_seed.cc in Sources */,
 				659789771ACD8262006DCA7F /* os.cc in Sources */,
+				659789781ACDCC93006DCA7F /* log_thread.cc in Sources */,
 				657E6A31190306080024A28F /* http_client_handler_file.cc in Sources */,
 				657E6A35190306200024A28F /* http_server_handler_file.cc in Sources */,
 				657E69D31902121F0024A28F /* http_constants.cc in Sources */,

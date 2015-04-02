@@ -5,6 +5,11 @@
 #ifndef log_thread_h
 #define log_thread_h
 
+#include "queue_atomic.h"
+
+struct log_thread;
+typedef std::shared_ptr<log_thread> log_thread_ptr;
+
 struct log_thread : std::thread
 {
     static const bool               debug;

@@ -30,6 +30,7 @@
 #include "io.h"
 #include "url.h"
 #include "log.h"
+#include "log_thread.h"
 #include "trie.h"
 #include "socket.h"
 #include "resolver.h"
@@ -244,6 +245,7 @@ void http_server::engine_init(protocol_engine_delegate *delegate) const
 {
     // get config
     auto cfg = delegate->get_config();
+    auto engine_state = get_engine_state(delegate);
     
     // initialize routes
     for (auto &route : cfg->http_routes) {
@@ -254,23 +256,34 @@ void http_server::engine_init(protocol_engine_delegate *delegate) const
             log_error("%s couldn't find handler factory: %s", get_proto()->name.c_str(), handler.c_str());
         } else {
             log_info("%s registering route \"%s\" -> %s", get_proto()->name.c_str(), path.c_str(), handler.c_str());
-            get_engine_state(delegate)->handler_list.push_back
+            engine_state->handler_list.push_back
                 (http_server_handler_info_ptr(new http_server_handler_info(path, fi->second)));
         }
     }
     
     // initialize connection table
-    get_engine_state(delegate)->init(delegate, cfg->server_connections);
+    engine_state->init(delegate, cfg->server_connections);
     
     // create listening sockets for this protocol
     for (auto proto_listener : cfg->proto_listeners) {
         if (proto_listener.first != get_proto()) continue;
         auto listener = proto_listener.second;
-        get_engine_state(delegate)->listens.push_back(listening_socket_ptr(new listening_socket(listener->addr, cfg->listen_backlog)));
+        engine_state->listens.push_back(listening_socket_ptr(new listening_socket(listener->addr, cfg->listen_backlog)));
     }
     
+    // open log file
+    if (cfg->access_log.size() > 0 && cfg->access_log != "off") {
+        int log_fd = open(cfg->access_log.c_str(), O_WRONLY|O_CREAT|O_APPEND, 0755);
+        if (log_fd < 0) {
+            log_fatal_exit("unable to open log file: %s: %s",
+                           cfg->access_log.c_str(), strerror(errno));
+        }
+        engine_state->access_log_file.set_fd(log_fd);
+        engine_state->access_log_thread = log_thread_ptr(new log_thread(log_fd));
+    }
+
     // start listening
-    for (auto &listen : get_engine_state(delegate)->listens) {
+    for (auto &listen : engine_state->listens) {
         if (listen->start_listening()) {
             log_info("%s listening on: %s",
                      get_proto()->name.c_str(),
@@ -288,6 +301,12 @@ void http_server::engine_shutdown(protocol_engine_delegate *delegate) const
     // shutdown listeners
     for (auto &listen : get_engine_state(delegate)->listens) {
         listen->close_connection();
+    }
+    
+    // shutdown log thread
+    log_thread_ptr access_log_thread = get_engine_state(delegate)->access_log_thread;
+    if (access_log_thread) {
+        access_log_thread->shutdown();
     }
 }
 
@@ -372,7 +391,7 @@ void http_server::handle_accept(protocol_thread_delegate *delegate, const protoc
                       strerror(errno));
         }
         
-        static_cast<http_server_engine_state*>(get_engine_state(delegate))->stats.connections_accepted++;
+        get_engine_state(delegate)->stats.connections_accepted++;
         
         // send connection to a router
         dispatch_connection(delegate, http_conn);
@@ -636,11 +655,11 @@ void http_server::handle_state_server_response(protocol_thread_delegate *delegat
                           delegate->get_thread_id(),
                           obj->to_string().c_str());
             }
-            static_cast<http_server_engine_state*>(get_engine_state(delegate))->stats.requests_processed++;
+            get_engine_state(delegate)->stats.requests_processed++;
             delegate->remove_events(http_conn);
             close_connection(delegate, http_conn);
         } else {
-            static_cast<http_server_engine_state*>(get_engine_state(delegate))->stats.requests_processed++;
+            get_engine_state(delegate)->stats.requests_processed++;
             delegate->remove_events(http_conn);
             keepalive_connection(delegate, http_conn);
         }
@@ -677,17 +696,55 @@ void http_server::handle_state_server_body(protocol_thread_delegate *delegate, p
                           delegate->get_thread_id(),
                           obj->to_string().c_str());
             }
-            static_cast<http_server_engine_state*>(get_engine_state(delegate))->stats.requests_processed++;
+            finished_request(delegate, obj);
             delegate->remove_events(http_conn);
             close_connection(delegate, http_conn);
         } else {
-            static_cast<http_server_engine_state*>(get_engine_state(delegate))->stats.requests_processed++;
+            finished_request(delegate, obj);
             delegate->remove_events(http_conn);
             keepalive_connection(delegate, http_conn);
         }
     }
 }
 
+void http_server::finished_request(protocol_thread_delegate *delegate, protocol_object *obj)
+{
+    auto engine_state = get_engine_state(delegate);
+    engine_state->stats.requests_processed++;
+    if (engine_state->access_log_thread)
+    {
+        char date_buf[32], addr_buf[32];
+        char log_buffer[log_thread::buffer_size];
+        
+        // format date
+        time_t current_time = delegate->get_current_time();
+        http_date(current_time).to_log_string(date_buf, sizeof(date_buf));
+
+        // format address
+        auto http_conn = static_cast<http_server_connection*>(obj);
+        socket_addr &addr = http_conn->conn.get_peer_addr();
+        if (addr.saddr.sa_family == AF_INET) {
+            inet_ntop(addr.saddr.sa_family, (void*)&addr.ip4addr.sin_addr, addr_buf, sizeof(addr_buf));
+        }
+        if (addr.saddr.sa_family == AF_INET6) {
+            inet_ntop(addr.saddr.sa_family, (void*)&addr.ip6addr.sin6_addr, addr_buf, sizeof(addr_buf));
+        }
+        
+        // format log message
+        auto &request = http_conn->request;
+        auto &response = http_conn->response;
+        std::string request_method(request.request_method.data, request.request_method.length);
+        std::string request_path(request.request_path.data, request.request_path.length);
+        std::string http_version(request.http_version.data, request.http_version.length);
+        int status_code = response.status_code;
+        size_t bytes_transferred = 0; // todo
+        snprintf(log_buffer, sizeof(log_buffer), "%s - - %s \"%s %s %s\" %d %lu\n",
+                 addr_buf, date_buf, request_method.c_str(), request_path.c_str(), http_version.c_str(),
+                 status_code, bytes_transferred);
+        engine_state->access_log_thread->log(current_time, log_buffer);
+    }
+}
+    
 void http_server::handle_state_waiting(protocol_thread_delegate *delegate, protocol_object *obj)
 {
     auto http_conn = static_cast<http_server_connection*>(obj);
@@ -876,13 +933,13 @@ void http_server::keepalive_connection(protocol_thread_delegate *delegate, proto
     }
 #endif
     
-    static_cast<http_server_engine_state*>(get_engine_state(delegate))->stats.connections_keepalive++;
+    get_engine_state(delegate)->stats.connections_keepalive++;
     forward_connection(delegate, obj, thread_mask_keepalive, action_keepalive_wait_connection);
 }
 
 void http_server::linger_connection(protocol_thread_delegate *delegate, protocol_object *obj)
 {
-    static_cast<http_server_engine_state*>(get_engine_state(delegate))->stats.connections_linger++;
+    get_engine_state(delegate)->stats.connections_linger++;
     forward_connection(delegate, obj, thread_mask_linger, action_linger_read_connection);
 }
 
@@ -916,13 +973,13 @@ http_server_connection* http_server::get_connection(protocol_thread_delegate *de
 
 void http_server::abort_connection(protocol_thread_delegate *delegate, protocol_object *obj)
 {
-    static_cast<http_server_engine_state*>(get_engine_state(delegate))->stats.connections_aborted++;
+    get_engine_state(delegate)->stats.connections_aborted++;
     get_engine_state(delegate)->abort_connection(delegate->get_engine_delegate(), obj);
 }
 
 void http_server::close_connection(protocol_thread_delegate *delegate, protocol_object *obj)
 {
-    static_cast<http_server_engine_state*>(get_engine_state(delegate))->stats.connections_closed++;
+    get_engine_state(delegate)->stats.connections_closed++;
     get_engine_state(delegate)->close_connection(delegate->get_engine_delegate(), obj);
 }
 
