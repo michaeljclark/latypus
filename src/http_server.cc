@@ -733,14 +733,15 @@ void http_server::finished_request(protocol_thread_delegate *delegate, protocol_
         // format log message
         auto &request = http_conn->request;
         auto &response = http_conn->response;
+        std::string user = "-"; // todo
         std::string request_method(request.request_method.data, request.request_method.length);
         std::string request_path(request.request_path.data, request.request_path.length);
         std::string http_version(request.http_version.data, request.http_version.length);
         int status_code = response.status_code;
         size_t bytes_transferred = 0; // todo
-        snprintf(log_buffer, sizeof(log_buffer), "%s - - %s \"%s %s %s\" %d %lu\n",
-                 addr_buf, date_buf, request_method.c_str(), request_path.c_str(), http_version.c_str(),
-                 status_code, bytes_transferred);
+        snprintf(log_buffer, sizeof(log_buffer), "%s - %s %s \"%s %s %s\" %d %lu\n",
+                 addr_buf, user.c_str(), date_buf, request_method.c_str(), request_path.c_str(),
+                 http_version.c_str(), status_code, bytes_transferred);
         engine_state->access_log_thread->log(current_time, log_buffer);
     }
 }
