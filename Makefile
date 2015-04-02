@@ -113,7 +113,8 @@ src_objs =      $(subst $(APP_SRC_DIR),$(OBJ_DIR),$(subst $(LIB_SRC_DIR),$(OBJ_D
 src_deps =      $(subst $(APP_SRC_DIR),$(DEP_DIR),$(subst $(LIB_SRC_DIR),$(DEP_DIR),$(subst .cc,.cc.P,$(1))))
 
 # target source and objects
-LATYPUS_SRCS =  $(LIB_SRC_DIR)/io.cc \
+LATYPUS_SRCS =  $(LIB_SRC_DIR)/os.cc \
+                $(LIB_SRC_DIR)/io.cc \
                 $(LIB_SRC_DIR)/pollset.cc \
                 $(LIB_SRC_DIR)/pollset_poll.cc \
                 $(LIB_SRC_DIR)/pollset_epoll.cc \

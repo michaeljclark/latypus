@@ -36,6 +36,7 @@
 #include <thread>
 #include <condition_variable>
 
+#include "os.h"
 #include "io.h"
 #include "url.h"
 #include "log.h"

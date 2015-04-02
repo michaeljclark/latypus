@@ -24,6 +24,7 @@ endif()
 
 add_library(
     latypus STATIC
+    src/os.cc
     src/io.cc
     src/pollset.cc
     src/pollset_epoll.cc

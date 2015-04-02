@@ -17,6 +17,7 @@ static const char* ERROR_PREFIX = "ERROR";
 static const char* DEBUG_PREFIX = "DEBUG";
 static const char* INFO_PREFIX = "INFO";
 
+FILE* latypus_log_file = nullptr;
 
 std::string format_string(const char* fmt, ...)
 {
@@ -50,7 +51,12 @@ void log_prefix(const char* prefix, const char* fmt, va_list arg)
         vsnprintf(buf.data(), buf.capacity(), fmt, arg);
     }
     
-    fprintf(stderr, "%s: %s\n", prefix, buf.data());
+    if (latypus_log_file) {
+        fprintf(latypus_log_file, "%s: %s\n", prefix, buf.data());
+        fflush(latypus_log_file);
+    } else {
+        fprintf(stderr, "%s: %s\n", prefix, buf.data());
+    }
 }
 
 void log_fatal_exit(const char* fmt, ...)

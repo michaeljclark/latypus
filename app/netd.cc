@@ -13,6 +13,7 @@ struct netd
     protocol_engine engine;
     
     int             debug_level;
+    bool            foreground;
     bool            help_or_error;
     std::string     config_file;
     
@@ -23,6 +24,7 @@ struct netd
 
 netd::netd() :
     debug_level(0),
+    foreground(false),
     help_or_error(false),
     config_file("config/netd.cfg")
 {}
@@ -34,6 +36,9 @@ bool netd::process_cmdline(int argc, const char *argv[])
         { "-d", "--debug", cmdline_arg_type_none,
             "Increase debugging information",
             [&](std::string s) { ++debug_level; return true; } },
+        { "-f", "--foreground", cmdline_arg_type_none,
+            "Run as a foreground process",
+            [&](std::string s) { return (foreground = true); } },
         { "-h", "--help", cmdline_arg_type_none,
             "Show help",
             [&](std::string s) { return (help_or_error = true); } },
@@ -76,8 +81,15 @@ void netd::run()
                              protocol_debug_timeout);
     }
     
-    // run server
+    // read config
     engine.read_config(config_file);
+
+    // daemonize
+    if (!foreground) {
+        os::daemonize(engine.cfg->pid_file, engine.cfg->error_log);
+    }
+    
+    // run server
     engine.run();
     engine.join();
 }
