@@ -18,7 +18,7 @@ pid_file            /tmp/netd.pid;
 root                html;
 
 proto_threads       http_server/listener                                                                1;
-proto_threads       http_server/router,http_server/worker,http_server/keepalive,http_server/linger      12;
+proto_threads       http_server/router,http_server/worker,http_server/keepalive,http_server/linger      16;
 
 proto_listener      http_server 8080;               /* ipv4 ip addr any */
 proto_listener      http_server []:8886;            /* ipv6 ip addr any */
