@@ -22,9 +22,13 @@
 
 static const char* testdate_1_in = "Thu, 24 Oct 2013 00:11:57 GMT";
 static const char* testdate_1_out = "Thu, 24 Oct 2013 00:11:57 GMT";
+static const char* testdate_1_log = "24/Oct/2013:00:11:57 -0000";
+static const char* testdate_1_iso = "20131024001157";
 
 static const char* testdate_2_in = "Fri, 12 Apr 2013 00:31:11 GMT";
 static const char* testdate_2_out = "Fri, 12 Apr 2013 00:31:11 GMT";
+static const char* testdate_2_log = "12/Apr/2013:00:31:11 -0000";
+static const char* testdate_2_iso = "20130412003111";
 
 static const char* testdate_3_in = "Thu Oct 24 00:11:57 2013";
 static const char* testdate_3_out = "Thu, 24 Oct 2013 00:11:57 GMT";
@@ -63,12 +67,16 @@ public:
     {
         http_date date(testdate_1_in);
         CPPUNIT_ASSERT(date.to_string() == testdate_1_out);
+        CPPUNIT_ASSERT(date.to_string(http_date_format_log) == testdate_1_log);
+        CPPUNIT_ASSERT(date.to_string(http_date_format_iso) == testdate_1_iso);
     }
 
     void test_date_2()
     {
         http_date date(testdate_2_in);
         CPPUNIT_ASSERT(date.to_string() == testdate_2_out);
+        CPPUNIT_ASSERT(date.to_string(http_date_format_log) == testdate_2_log);
+        CPPUNIT_ASSERT(date.to_string(http_date_format_iso) == testdate_2_iso);
     }
 
     void test_date_3()

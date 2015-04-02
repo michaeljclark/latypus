@@ -147,9 +147,87 @@ http_header_string http_date::to_header_string(char *buf, size_t buf_len)
     return http_header_string(buf, 29);
 }
 
-std::string http_date::to_string()
+http_header_string http_date::to_log_string(char *buf, size_t buf_len)
+{
+    struct tm tm;
+    
+    if (buf_len < 30) {
+        return http_header_string("", 0);
+    }
+    
+    char *p = buf;
+    gmtime_r(&tod, &tm);
+    int mon = tm.tm_mon % 12;
+    int year = tm.tm_year + 1900;
+    *(p++) = '0' + (tm.tm_mday / 10);
+    *(p++) = '0' + (tm.tm_mday % 10);
+    *(p++) = '/';
+    *(p++) = month_names[mon][0];
+    *(p++) = month_names[mon][1];
+    *(p++) = month_names[mon][2];
+    *(p++) = '/';
+    *(p++) = '0' + (year / 1000);
+    *(p++) = '0' + (year / 100) % 10;
+    *(p++) = '0' + (year / 10) % 10;
+    *(p++) = '0' + year % 10;
+    *(p++) = ':';
+    *(p++) = '0' + (tm.tm_hour / 10);
+    *(p++) = '0' + (tm.tm_hour % 10);
+    *(p++) = ':';
+    *(p++) = '0' + (tm.tm_min / 10);
+    *(p++) = '0' + (tm.tm_min % 10);
+    *(p++) = ':';
+    *(p++) = '0' + (tm.tm_sec / 10);
+    *(p++) = '0' + (tm.tm_sec % 10);
+    *(p++) = ' ';
+    *(p++) = '-';
+    *(p++) = '0';
+    *(p++) = '0';
+    *(p++) = '0';
+    *(p++) = '0';
+    *(p++) = '\0';
+    
+    return http_header_string(buf, 29);
+}
+
+http_header_string http_date::to_iso_string(char *buf, size_t buf_len)
+{
+    struct tm tm;
+    
+    if (buf_len < 30) {
+        return http_header_string("", 0);
+    }
+    
+    char *p = buf;
+    gmtime_r(&tod, &tm);
+    int mon = tm.tm_mon % 12;
+    int year = tm.tm_year + 1900;
+    *(p++) = '0' + (year / 1000);
+    *(p++) = '0' + (year / 100) % 10;
+    *(p++) = '0' + (year / 10) % 10;
+    *(p++) = '0' + year % 10;
+    *(p++) = '0' + ((mon + 1) / 10);
+    *(p++) = '0' + ((mon + 1) % 10);
+    *(p++) = '0' + (tm.tm_mday / 10);
+    *(p++) = '0' + (tm.tm_mday % 10);
+    *(p++) = '0' + (tm.tm_hour / 10);
+    *(p++) = '0' + (tm.tm_hour % 10);
+    *(p++) = '0' + (tm.tm_min / 10);
+    *(p++) = '0' + (tm.tm_min % 10);
+    *(p++) = '0' + (tm.tm_sec / 10);
+    *(p++) = '0' + (tm.tm_sec % 10);
+    *(p++) = '\0';
+    
+    return http_header_string(buf, 29);
+}
+
+std::string http_date::to_string(http_date_format fmt)
 {
     char buf[32];
-    to_header_string(buf, 32);
+    switch (fmt) {
+        case http_date_format_header:   to_header_string(buf, 32);  break;
+        case http_date_format_log:      to_log_string(buf, 32);     break;
+        case http_date_format_iso:      to_iso_string(buf, 32);     break;
+    }
     return buf;
 }
