@@ -121,6 +121,12 @@ bool http_server_handler_stats::handle_request()
         for (auto &handler : http_engine_state->handler_list) {
             ss << "    " << handler->factory->get_name() << " " << handler->path << std::endl;
         }
+        size_t connections_total = http_engine_state->connections_all.size();
+        size_t connections_free = http_engine_state->connections_free.size();
+        ss << "  connections" << std::endl;
+        ss << "    total " << connections_total << std::endl;
+        ss << "    free  " << connections_free << std::endl;
+        ss << "    inuse " << (connections_total - connections_free) << std::endl;
     }
     
     std::string str = ss.str();;
