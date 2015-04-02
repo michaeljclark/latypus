@@ -13,6 +13,9 @@ a modern, portable and scalable high performance C++1y m:n threaded HTTP client 
   * protocol states have an associated coroutine
   * pipes or unix sockets are used to route connections between threads
 
+## Screenshot
+![Screenshot of latypus](https://raw.githubusercontent.com/metaparadigm/latypus/master/screenshot.png)
+
 ## Third Party Dependencies
   * [cppunit](http://www.freedesktop.org/wiki/Software/cppunit/)
   * [boringssl](https://boringssl.googlesource.com/boringssl/)
