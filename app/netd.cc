@@ -1,13 +1,10 @@
 //
 //  netd.cc
 //
+//  http server
+//
 
 #include "latypus.h"
-
-/* netd
- *
- * http server
- */
 
 struct netd
 {

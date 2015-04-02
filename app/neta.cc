@@ -1,13 +1,10 @@
 //
 //  neta.cc
 //
+//  http application server
+//
 
 #include "latypus.h"
-
-/* neta
- *
- * http application server
- */
 
 int main(int argc, const char * argv[])
 {

@@ -1,13 +1,10 @@
 //
 //  netc.cc
 //
+//  http client
+//
 
 #include "latypus.h"
-
-/* netc
- *
- * http client
- */
 
 #define NUM_REQUESTS_DEFAULT        1
 #define KEEPALIVE_REQUESTS_DEFAULT  0

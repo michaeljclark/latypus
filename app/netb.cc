@@ -1,13 +1,10 @@
 //
 //  netb.cc
 //
+//  http benchmarking tool
+//
 
 #include "latypus.h"
-
-/* netb
- *
- * http benchmarking tool
- */
 
 #define NUM_REQUESTS_DEFAULT        1
 #define KEEPALIVE_REQUESTS_DEFAULT  0
