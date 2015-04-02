@@ -134,10 +134,13 @@ ninja
 ````
 ./build/<arch>/bin/netc -O http://127.0.0.1:8080/index.html
 ````
-
   * benchmark tool
 ````
 ./build/<arch>/bin/netb -n 300000 -k 1000 -c 500  http://127.0.0.1:8080/index.html
+````
+  * application
+````
+./build/<arch>/bin/neta
 ````
 
 ## Benchmarking
