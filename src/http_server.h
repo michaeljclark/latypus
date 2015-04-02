@@ -247,9 +247,10 @@ struct http_server_engine_state : protocol_engine_state, protocol_connection_sta
     protocol* get_proto() const { return http_server::get_proto(); }
     
     http_server_handler_ptr lookup_handler(http_server_connection *http_conn);
+    
     void bind_function(std::string path, typename http_server::function_type)
     {
-        
+        // TODO
     }
 };
 
