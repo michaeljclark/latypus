@@ -57,7 +57,7 @@
 
 http_server_handler_stats::http_server_handler_stats()
 {
-    response_buffer.resize(1024);
+    response_buffer.resize(8192);
 }
 
 http_server_handler_stats::~http_server_handler_stats()
@@ -124,9 +124,14 @@ bool http_server_handler_stats::handle_request()
         size_t connections_total = http_engine_state->connections_all.size();
         size_t connections_free = http_engine_state->connections_free.size();
         ss << "  connections" << std::endl;
-        ss << "    total " << connections_total << std::endl;
-        ss << "    free  " << connections_free << std::endl;
-        ss << "    inuse " << (connections_total - connections_free) << std::endl;
+        ss << "    total      " << connections_total << std::endl;
+        ss << "    free       " << connections_free << std::endl;
+        ss << "    inuse      " << (connections_total - connections_free) << std::endl;
+        ss << "    accepts    " << http_engine_state->stats.connections_accepted << std::endl;
+        ss << "    closes     " << http_engine_state->stats.connections_closed << std::endl;
+        ss << "    keepalives " << http_engine_state->stats.connections_keepalive << std::endl;
+        ss << "    lingers    " << http_engine_state->stats.connections_linger << std::endl;
+        ss << "    requests   " << http_engine_state->stats.requests_processed << std::endl;
     }
     
     std::string str = ss.str();;

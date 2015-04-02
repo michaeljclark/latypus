@@ -238,10 +238,23 @@ struct http_server : protocol
 };
 
 
+/* http_server_engine_stats */
+
+struct http_server_engine_stats
+{
+    std::atomic<unsigned long> connections_accepted;
+    std::atomic<unsigned long> connections_aborted;
+    std::atomic<unsigned long> connections_closed;
+    std::atomic<unsigned long> connections_keepalive;
+    std::atomic<unsigned long> connections_linger;
+    std::atomic<unsigned long> requests_processed;
+};
+
 /* http_server_engine_state */
 
 struct http_server_engine_state : protocol_engine_state, protocol_connection_state<http_server_connection>
 {
+    http_server_engine_stats                    stats;
     listening_socket_list                       listens;
     std::vector<http_server_handler_info_ptr>   handler_list;
     
@@ -251,7 +264,6 @@ struct http_server_engine_state : protocol_engine_state, protocol_connection_sta
     
     void bind_function(std::string path, typename http_server::function_type);
 };
-
 
 /* http_server_thread_state */
 

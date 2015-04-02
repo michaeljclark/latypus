@@ -372,6 +372,8 @@ void http_server::handle_accept(protocol_thread_delegate *delegate, const protoc
                       strerror(errno));
         }
         
+        static_cast<http_server_engine_state*>(get_engine_state(delegate))->stats.connections_accepted++;
+        
         // send connection to a router
         dispatch_connection(delegate, http_conn);
     }
@@ -634,9 +636,11 @@ void http_server::handle_state_server_response(protocol_thread_delegate *delegat
                           delegate->get_thread_id(),
                           obj->to_string().c_str());
             }
+            static_cast<http_server_engine_state*>(get_engine_state(delegate))->stats.requests_processed++;
             delegate->remove_events(http_conn);
             close_connection(delegate, http_conn);
         } else {
+            static_cast<http_server_engine_state*>(get_engine_state(delegate))->stats.requests_processed++;
             delegate->remove_events(http_conn);
             keepalive_connection(delegate, http_conn);
         }
@@ -673,9 +677,11 @@ void http_server::handle_state_server_body(protocol_thread_delegate *delegate, p
                           delegate->get_thread_id(),
                           obj->to_string().c_str());
             }
+            static_cast<http_server_engine_state*>(get_engine_state(delegate))->stats.requests_processed++;
             delegate->remove_events(http_conn);
             close_connection(delegate, http_conn);
         } else {
+            static_cast<http_server_engine_state*>(get_engine_state(delegate))->stats.requests_processed++;
             delegate->remove_events(http_conn);
             keepalive_connection(delegate, http_conn);
         }
@@ -870,11 +876,13 @@ void http_server::keepalive_connection(protocol_thread_delegate *delegate, proto
     }
 #endif
     
+    static_cast<http_server_engine_state*>(get_engine_state(delegate))->stats.connections_keepalive++;
     forward_connection(delegate, obj, thread_mask_keepalive, action_keepalive_wait_connection);
 }
 
 void http_server::linger_connection(protocol_thread_delegate *delegate, protocol_object *obj)
 {
+    static_cast<http_server_engine_state*>(get_engine_state(delegate))->stats.connections_linger++;
     forward_connection(delegate, obj, thread_mask_linger, action_linger_read_connection);
 }
 
@@ -908,11 +916,13 @@ http_server_connection* http_server::get_connection(protocol_thread_delegate *de
 
 void http_server::abort_connection(protocol_thread_delegate *delegate, protocol_object *obj)
 {
+    static_cast<http_server_engine_state*>(get_engine_state(delegate))->stats.connections_aborted++;
     get_engine_state(delegate)->abort_connection(delegate->get_engine_delegate(), obj);
 }
 
 void http_server::close_connection(protocol_thread_delegate *delegate, protocol_object *obj)
 {
+    static_cast<http_server_engine_state*>(get_engine_state(delegate))->stats.connections_closed++;
     get_engine_state(delegate)->close_connection(delegate->get_engine_delegate(), obj);
 }
 
