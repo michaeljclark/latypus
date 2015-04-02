@@ -44,7 +44,14 @@ int main(int argc, const char * argv[])
 }
 ```
 
-### Submodules
+## Applications
+
+ * `neta` - http application server
+ * `netb` - http benchmarking tool
+ * `netc` - http client
+ * `netd` - http server
+
+## Submodules
   * Fetching
 ````
 git submodule update --init --recursive
