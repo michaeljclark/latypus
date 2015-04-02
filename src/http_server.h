@@ -122,6 +122,9 @@ struct http_server_config_factory : protocol_config_factory
 
 struct http_server : protocol
 {
+    typedef http_server_connection connection_type;
+    typedef std::function<std::string(typename http_server::connection_type*)> function_type;
+    
     /* sock */
     static protocol_sock server_sock_tcp_listen;
     static protocol_sock server_sock_tcp_connection;

@@ -6,13 +6,6 @@
 #define http_server_handler_func_h
 
 
-/* http_server_func */
-
-struct http_server_func
-{
-    void set_response(std::string) {}
-};
-
 /* http_server_handler_func */
 
 struct http_server_handler_func : http_server_handler
