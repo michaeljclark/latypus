@@ -110,7 +110,7 @@ mkdir build
 cd build
 cmake -G Xcode..
 ````
-  * CMake ninja on Windows (Windows support in progress)
+  * CMake ninja on Windows (Windows is not yet supported)
 ````
 "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat" amd64
 mkdir build
