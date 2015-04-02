@@ -122,6 +122,11 @@ struct http_server_config_factory : protocol_config_factory
 
 struct http_server : protocol
 {
+    typedef http_server_engine_state engine_state_type;
+    typedef http_server_thread_state thread_state_type;
+    typedef http_server_connection connection_type;
+    typedef std::function<std::string(typename http_server::connection_type*)> function_type;
+    
     /* sock */
     static protocol_sock server_sock_tcp_listen;
     static protocol_sock server_sock_tcp_connection;
@@ -242,6 +247,10 @@ struct http_server_engine_state : protocol_engine_state, protocol_connection_sta
     protocol* get_proto() const { return http_server::get_proto(); }
     
     http_server_handler_ptr lookup_handler(http_server_connection *http_conn);
+    void bind_function(std::string path, typename http_server::function_type)
+    {
+        
+    }
 };
 
 
