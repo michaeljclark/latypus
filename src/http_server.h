@@ -174,9 +174,6 @@ struct http_server : protocol
         http_server_handler_factory_ptr factory(new http_server_handler_factory_impl<T>(name));
         handler_factory_map.insert(http_server_handler_factory_entry(name, factory));
     }
-        
-    void register_route(http_server_engine_state *engine_state,
-                        std::string path, std::string handler) const;
     
     /* constructor, destructor */
     

@@ -219,18 +219,6 @@ void http_server::proto_init()
     });
 }
 
-void http_server::register_route(http_server_engine_state *engine_state,
-                                 std::string path, std::string handler) const
-{
-    auto fi = handler_factory_map.find(handler);
-    if (fi == handler_factory_map.end()) {
-        log_error("%s couldn't find handler factory: %s", get_proto()->name.c_str(), handler.c_str());
-    } else {
-        log_info("%s registering route \"%s\" -> %s", get_proto()->name.c_str(), path.c_str(), handler.c_str());
-        engine_state->handler_list.push_back(http_server_handler_info_ptr(new http_server_handler_info(path, fi->second)));
-    }
-}
-
 http_server_engine_state* http_server::get_engine_state(protocol_thread_delegate *delegate) {
     return static_cast<http_server_engine_state*>(delegate->get_engine_delegate()->get_engine_state(get_proto()));
 }
@@ -255,8 +243,17 @@ void http_server::engine_init(protocol_engine_delegate *delegate) const
     auto cfg = delegate->get_config();
     
     // initialize routes
-    for (auto http_route : cfg->http_routes) {
-        register_route(get_engine_state(delegate), http_route.first, http_route.second);
+    for (auto &route : cfg->http_routes) {
+        auto &path = route.first;
+        auto &handler = route.second;
+        auto fi = handler_factory_map.find(handler);
+        if (fi == handler_factory_map.end()) {
+            log_error("%s couldn't find handler factory: %s", get_proto()->name.c_str(), handler.c_str());
+        } else {
+            log_info("%s registering route \"%s\" -> %s", get_proto()->name.c_str(), path.c_str(), handler.c_str());
+            get_engine_state(delegate)->handler_list.push_back
+                (http_server_handler_info_ptr(new http_server_handler_info(path, fi->second)));
+        }
     }
     
     // initialize connection table
