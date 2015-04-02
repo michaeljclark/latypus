@@ -3,6 +3,7 @@
 a modern, portable and scalable high performance C++1y m:n threaded HTTP client and server
 
 ## Overview
+  * Designed for embedding
   * Supports Linux, FreeBSD and Mac OS X
   * Hybrid message/event driven m:n threaded protocol agnostic state machine
   * Scalable event driven protocol threads (kqueue, epoll, poll, select)
@@ -20,6 +21,29 @@ a modern, portable and scalable high performance C++1y m:n threaded HTTP client 
   * [CRaft](https://github.com/willemt/raft) (soon)
   * [jsoncpp](https://github.com/open-source-parsers/jsoncpp) (soon)
   * [lmdb](https://github.com/clibs/lmdb) (soon)
+
+## Example
+Example http echo server
+```c++
+#include "latypus.h"
+
+int main(int argc, const char * argv[])
+{
+  struct echo_fn {
+    std::string operator()(http_server_connection *conn) {
+      return std::string("echo ") + conn->request.get_request_path();
+    }
+  };
+
+  protocol_engine engine;
+  engine.default_config<http_server>();
+  engine.bind_function<http_server>("/echo", echo_fn());
+  engine.run();
+  engine.join();
+
+  return 0;
+}
+```
 
 ### Submodules
   * Fetching
