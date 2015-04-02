@@ -197,7 +197,7 @@ void http_server_config_factory::make_config(config_ptr cfg) const
 
 /* http_server */
 
-const char* http_server::ServerName = "netd";
+const char* http_server::ServerName = "latypus";
 const char* http_server::ServerVersion = "0.0.0";
 
 std::once_flag http_server::protocol_init;

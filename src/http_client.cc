@@ -151,7 +151,7 @@ void http_client_config_factory::make_config(config_ptr cfg) const
 
 /* http_client */
 
-const char* http_client::ClientName = "netd";
+const char* http_client::ClientName = "latypus";
 const char* http_client::ClientVersion = "0.0.0";
 
 std::once_flag http_client::protocol_init;
