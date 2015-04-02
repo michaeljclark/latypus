@@ -2,6 +2,8 @@
 
 a modern, portable and scalable high performance C++1y m:n threaded HTTP client and server
 
+**NOTE:** *latypus is currently* ***experimental***
+
 ## Overview
   * Supports Linux, FreeBSD and Mac OS X
   * Hybrid message/event driven m:n threaded protocol agnostic state machine
