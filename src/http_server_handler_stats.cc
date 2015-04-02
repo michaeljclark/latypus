@@ -129,6 +129,7 @@ bool http_server_handler_stats::handle_request()
         ss << "    inuse      " << (connections_total - connections_free) << std::endl;
         ss << "    accepts    " << http_engine_state->stats.connections_accepted << std::endl;
         ss << "    closes     " << http_engine_state->stats.connections_closed << std::endl;
+        ss << "    aborts     " << http_engine_state->stats.connections_aborted << std::endl;
         ss << "    keepalives " << http_engine_state->stats.connections_keepalive << std::endl;
         ss << "    lingers    " << http_engine_state->stats.connections_linger << std::endl;
         ss << "    requests   " << http_engine_state->stats.requests_processed << std::endl;
