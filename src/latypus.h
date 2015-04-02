@@ -66,6 +66,7 @@
 #include "http_server.h"
 #include "http_server_handler_file.h"
 #include "http_server_handler_func.h"
+#include "http_server_handler_stats.h"
 #include "http_client.h"
 #include "http_client_handler_file.h"
 

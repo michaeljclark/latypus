@@ -24,6 +24,8 @@ typedef std::unique_ptr<http_server_handler_info> http_server_handler_info_ptr;
 template <typename TransportConnection> struct http_server_connection_tmpl;
 typedef http_server_connection_tmpl<connection_tcp> http_server_connection;
 
+typedef std::function<std::string(http_server_connection*)> http_server_function;
+
 /* http_server_handler_factory */
 
 struct http_server_handler_factory
@@ -44,7 +46,6 @@ struct http_server_handler_factory_impl : http_server_handler_factory
     std::string get_name() { return name; }
     http_server_handler_ptr new_handler() { return http_server_handler_ptr(new T()); }
 };
-
 
 /* http_server_handler */
 
@@ -125,7 +126,7 @@ struct http_server : protocol
     typedef http_server_engine_state engine_state_type;
     typedef http_server_thread_state thread_state_type;
     typedef http_server_connection connection_type;
-    typedef std::function<std::string(typename http_server::connection_type*)> function_type;
+    typedef std::function<std::string(http_server_connection*)> function_type;
     
     /* sock */
     static protocol_sock server_sock_tcp_listen;
@@ -248,10 +249,7 @@ struct http_server_engine_state : protocol_engine_state, protocol_connection_sta
     
     http_server_handler_ptr lookup_handler(http_server_connection *http_conn);
     
-    void bind_function(std::string path, typename http_server::function_type)
-    {
-        // TODO
-    }
+    void bind_function(std::string path, typename http_server::function_type);
 };
 
 

@@ -1,5 +1,5 @@
 //
-//  http_server_handler_func.cc
+//  http_server_handler_stats.cc
 //
 
 #include "plat_os.h"
@@ -50,21 +50,26 @@
 #include "http_response.h"
 #include "http_date.h"
 #include "http_server.h"
-#include "http_server_handler_func.h"
+#include "http_server_handler_stats.h"
 
 
-/* http_server_handler_func */
+/* http_server_handler_stats */
 
-http_server_handler_func::http_server_handler_func(http_server_function fn) :fn(fn)
+http_server_handler_stats::http_server_handler_stats()
 {
     response_buffer.resize(1024);
 }
 
-http_server_handler_func::~http_server_handler_func()
+http_server_handler_stats::~http_server_handler_stats()
 {
 }
 
-void http_server_handler_func::init()
+void http_server_handler_stats::init_handler()
+{
+    http_server::register_handler<http_server_handler_stats>("http_server_handler_stats");
+}
+
+void http_server_handler_stats::init()
 {
     reader = nullptr;
     response_buffer.reset();
@@ -75,7 +80,7 @@ void http_server_handler_func::init()
     total_written = 0;
 }
 
-bool http_server_handler_func::handle_request()
+bool http_server_handler_stats::handle_request()
 {
     // get request http version and request method
     http_version = http_constants::get_version_type(http_conn->request.get_http_version());
@@ -94,9 +99,10 @@ bool http_server_handler_func::handle_request()
     // create response
     status_text = http_constants::get_status_text(status_code);
     mime_type = "text/plain";
-    std::string fn_result = fn(http_conn);
-    response_buffer.set(fn_result.c_str(), fn_result.length());
-    content_length = fn_result.length();
+    const char* str = "Server Statistics\n\nTo do...\n";
+    size_t len = strlen(str);
+    response_buffer.set(str, len);
+    content_length = len;
     reader = &response_buffer;
     
     if (delegate->get_debug_mask() & protocol_debug_handler) {
@@ -107,12 +113,12 @@ bool http_server_handler_func::handle_request()
     return true;
 }
 
-io_result http_server_handler_func::read_request_body()
+io_result http_server_handler_stats::read_request_body()
 {
     return io_result(0);
 }
 
-bool http_server_handler_func::populate_response()
+bool http_server_handler_stats::populate_response()
 {
     // set request body presence
     switch (request_method) {
@@ -170,7 +176,7 @@ bool http_server_handler_func::populate_response()
     return true;
 }
 
-io_result http_server_handler_func::write_response_body()
+io_result http_server_handler_stats::write_response_body()
 {    
     auto &buffer = http_conn->buffer;
     
@@ -194,7 +200,7 @@ io_result http_server_handler_func::write_response_body()
     return io_result(content_length - total_written);
 }
 
-bool http_server_handler_func::end_request()
+bool http_server_handler_stats::end_request()
 {
     return true;
 }

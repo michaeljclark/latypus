@@ -49,7 +49,6 @@
 
 /* Begin PBXBuildFile section */
 		650CD5211AC1205B006338A9 /* bits.h in Headers */ = {isa = PBXBuildFile; fileRef = 650CD5201AC1205A006338A9 /* bits.h */; };
-		650CD5DD1AC21A19006338A9 /* endian.h in Headers */ = {isa = PBXBuildFile; fileRef = 650CD5DC1AC21A19006338A9 /* endian.h */; };
 		65293FF41948539300E3F5F7 /* pollset_epoll.cc in Sources */ = {isa = PBXBuildFile; fileRef = 65293FF21948539300E3F5F7 /* pollset_epoll.cc */; };
 		65293FF51948539300E3F5F7 /* pollset_epoll.h in Headers */ = {isa = PBXBuildFile; fileRef = 65293FF31948539300E3F5F7 /* pollset_epoll.h */; };
 		6534C32519ABA12300FC7948 /* liblatypus.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 657E691719020F330024A28F /* liblatypus.a */; };
@@ -135,6 +134,8 @@
 		6597896D1ACCB12E006DCA7F /* netd.cc in Sources */ = {isa = PBXBuildFile; fileRef = 659789691ACCB121006DCA7F /* netd.cc */; };
 		6597896E1ACCB131006DCA7F /* netc.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6597896A1ACCB121006DCA7F /* netc.cc */; };
 		6597896F1ACCB134006DCA7F /* netb.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6597896B1ACCB121006DCA7F /* netb.cc */; };
+		659789721ACCCC00006DCA7F /* http_server_handler_stats.h in Headers */ = {isa = PBXBuildFile; fileRef = 659789701ACCCC00006DCA7F /* http_server_handler_stats.h */; };
+		659789731ACCCC00006DCA7F /* http_server_handler_stats.cc in Sources */ = {isa = PBXBuildFile; fileRef = 659789711ACCCC00006DCA7F /* http_server_handler_stats.cc */; };
 		65A70965181528BC00522F22 /* test_config.cc in Sources */ = {isa = PBXBuildFile; fileRef = 65A70962181528BC00522F22 /* test_config.cc */; };
 		65A70966181528BC00522F22 /* test_http_request.cc in Sources */ = {isa = PBXBuildFile; fileRef = 65A70963181528BC00522F22 /* test_http_request.cc */; };
 		65C65D951A8B2F7A00C01C2E /* libcppunit.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6560713A1A4662E300391264 /* libcppunit.a */; };
@@ -1169,7 +1170,6 @@
 
 /* Begin PBXFileReference section */
 		650CD5201AC1205A006338A9 /* bits.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = bits.h; path = src/bits.h; sourceTree = "<group>"; };
-		650CD5DC1AC21A19006338A9 /* endian.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = endian.h; path = src/endian.h; sourceTree = "<group>"; };
 		651ADD60185EAEDF00F2EEE3 /* pollset_poll.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = pollset_poll.cc; path = src/pollset_poll.cc; sourceTree = "<group>"; };
 		651ADD61185EAEDF00F2EEE3 /* pollset_poll.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = pollset_poll.h; path = src/pollset_poll.h; sourceTree = "<group>"; };
 		651ADD63185EB29F00F2EEE3 /* pollset_kqueue.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = pollset_kqueue.cc; path = src/pollset_kqueue.cc; sourceTree = "<group>"; };
@@ -1261,6 +1261,8 @@
 		659789691ACCB121006DCA7F /* netd.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = netd.cc; path = app/netd.cc; sourceTree = "<group>"; };
 		6597896A1ACCB121006DCA7F /* netc.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = netc.cc; path = app/netc.cc; sourceTree = "<group>"; };
 		6597896B1ACCB121006DCA7F /* netb.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = netb.cc; path = app/netb.cc; sourceTree = "<group>"; };
+		659789701ACCCC00006DCA7F /* http_server_handler_stats.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = http_server_handler_stats.h; path = src/http_server_handler_stats.h; sourceTree = "<group>"; };
+		659789711ACCCC00006DCA7F /* http_server_handler_stats.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = http_server_handler_stats.cc; path = src/http_server_handler_stats.cc; sourceTree = "<group>"; };
 		65A708D81813895F00522F22 /* httpbis.abnf */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = httpbis.abnf; path = grammar/httpbis.abnf; sourceTree = "<group>"; };
 		65A708DE1813936100522F22 /* test_http_request */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = test_http_request; sourceTree = BUILT_PRODUCTS_DIR; };
 		65A7091A1814648500522F22 /* config_parser.rl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = config_parser.rl; path = src/config_parser.rl; sourceTree = "<group>"; };
@@ -1564,10 +1566,12 @@
 				657E6A30190306080024A28F /* http_client_handler_file.h */,
 				657E6A231902F5550024A28F /* http_client.cc */,
 				657E6A241902F5550024A28F /* http_client.h */,
-				659788F71AC78D96006DCA7F /* http_server_handler_func.cc */,
-				659788F61AC78D96006DCA7F /* http_server_handler_func.h */,
 				657E6A33190306200024A28F /* http_server_handler_file.cc */,
 				657E6A34190306200024A28F /* http_server_handler_file.h */,
+				659788F71AC78D96006DCA7F /* http_server_handler_func.cc */,
+				659788F61AC78D96006DCA7F /* http_server_handler_func.h */,
+				659789711ACCCC00006DCA7F /* http_server_handler_stats.cc */,
+				659789701ACCCC00006DCA7F /* http_server_handler_stats.h */,
 				657E6A1F1902F5390024A28F /* http_server.cc */,
 				657E6A201902F5390024A28F /* http_server.h */,
 			);
@@ -1795,7 +1799,6 @@
 				65B8D83A18FADF920094281D /* cmdline_options.h */,
 				653FB63B1AC3B6F50070BA70 /* cpu.cc */,
 				653FB63C1AC3B6F50070BA70 /* cpu.h */,
-				650CD5DC1AC21A19006338A9 /* endian.h */,
 				65D05D701A93A9F900953207 /* latypus.h */,
 				65A709411814F77700522F22 /* log.cc */,
 				65A709421814F77700522F22 /* log.h */,
@@ -1820,12 +1823,12 @@
 			files = (
 				657E6A36190306200024A28F /* http_server_handler_file.h in Headers */,
 				65D05D751A94148600953207 /* plat_os.h in Headers */,
-				650CD5DD1AC21A19006338A9 /* endian.h in Headers */,
 				653FB63E1AC3B6F50070BA70 /* cpu.h in Headers */,
 				65949FBC192920DF004375FD /* config_cpu.h in Headers */,
 				657E6A1E1902F3410024A28F /* protocol.h in Headers */,
 				657E6A1A19022BA10024A28F /* connection_tcp.h in Headers */,
 				657E6A32190306080024A28F /* http_client_handler_file.h in Headers */,
+				659789721ACCCC00006DCA7F /* http_server_handler_stats.h in Headers */,
 				65606D051A37F12200391264 /* protocol_connection.h in Headers */,
 				657E6A221902F5390024A28F /* http_server.h in Headers */,
 				657E6A16190217090024A28F /* connection_ssl.h in Headers */,
@@ -2838,6 +2841,7 @@
 				657E6A1D1902F3410024A28F /* protocol.cc in Sources */,
 				657E6A3D1903E0880024A28F /* protocol_engine.cc in Sources */,
 				657E6A391903E06F0024A28F /* protocol_thread.cc in Sources */,
+				659789731ACCCC00006DCA7F /* http_server_handler_stats.cc in Sources */,
 				657E6A251902F5550024A28F /* http_client.cc in Sources */,
 				657E6A211902F5390024A28F /* http_server.cc in Sources */,
 				653FB5D21AC3B6080070BA70 /* random_seed.cc in Sources */,

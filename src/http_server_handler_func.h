@@ -10,6 +10,8 @@
 
 struct http_server_handler_func : http_server_handler
 {
+    http_server_function fn;
+    
     HTTPVersion     http_version;
     HTTPMethod      request_method;
     std::string     mime_type;
@@ -20,17 +22,26 @@ struct http_server_handler_func : http_server_handler
     ssize_t         content_length;
     ssize_t         total_written;
     
-    http_server_handler_func();
+    http_server_handler_func(http_server_function fn);
     ~http_server_handler_func();
-    
-    static void init_handler();
-    
+        
     virtual void init();
     virtual bool handle_request();
     virtual io_result read_request_body();
     virtual bool populate_response();
     virtual io_result write_response_body();
     virtual bool end_request();
+};
+
+struct http_server_handler_factory_func : http_server_handler_factory
+{
+    std::string name;
+    http_server_function fn;
+    
+    http_server_handler_factory_func(std::string name, http_server_function fn) : name(name), fn(fn) {}
+    
+    std::string get_name() { return name; }
+    http_server_handler_ptr new_handler() { return http_server_handler_ptr(new http_server_handler_func(fn)); }
 };
 
 #endif

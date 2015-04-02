@@ -50,8 +50,9 @@
 #include "http_response.h"
 #include "http_date.h"
 #include "http_server.h"
-#include "http_server_handler_func.h"
 #include "http_server_handler_file.h"
+#include "http_server_handler_func.h"
+#include "http_server_handler_stats.h"
 
 #define USE_NODELAY 1
 #define USE_NOPUSH 1
@@ -173,7 +174,7 @@ void http_server_config_factory::make_config(config_ptr cfg) const
     cfg->proto_threads.push_back(std::pair<std::string,size_t>("http_server/router,http_server/worker,http_server/keepalive,http_server/linger", std::thread::hardware_concurrency()));
     cfg->root = "html";
     cfg->http_routes.push_back(std::pair<std::string,std::string>("/", "http_server_handler_file"));
-    cfg->http_routes.push_back(std::pair<std::string,std::string>("/func/", "http_server_handler_func"));
+    cfg->http_routes.push_back(std::pair<std::string,std::string>("/stats/", "http_server_handler_stats"));
     cfg->mime_types["html"] = "text/html";
     cfg->mime_types["htm"] = "text/html";
     cfg->mime_types["txt"] = "text/plain";
@@ -213,8 +214,8 @@ void http_server::proto_init()
         http_constants::init();
         protocol_engine::config_factory_map.insert
             (protocol_config_factory_entry(get_proto(), std::make_shared<http_server_config_factory>()));
-        http_server_handler_func::init_handler();
         http_server_handler_file::init_handler();
+        http_server_handler_stats::init_handler();
     });
 }
 
@@ -937,4 +938,10 @@ http_server_handler_ptr http_server_engine_state::lookup_handler(http_server_con
     } else {
         return std::make_shared<http_server_handler_file>();
     }
+}
+
+void http_server_engine_state::bind_function(std::string path, typename http_server::function_type fn)
+{
+    http_server_handler_factory_ptr factory(new http_server_handler_factory_func(path, fn));
+    handler_list.push_back(http_server_handler_info_ptr(new http_server_handler_info(path, factory)));
 }

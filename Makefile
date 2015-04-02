@@ -141,6 +141,7 @@ LATYPUS_SRCS =  $(LIB_SRC_DIR)/io.cc \
                 $(LIB_SRC_DIR)/http_server.cc \
                 $(LIB_SRC_DIR)/http_server_handler_file.cc \
                 $(LIB_SRC_DIR)/http_server_handler_func.cc \
+                $(LIB_SRC_DIR)/http_server_handler_stats.cc \
                 $(LIB_SRC_DIR)/protocol.cc \
                 $(LIB_SRC_DIR)/protocol_engine.cc \
                 $(LIB_SRC_DIR)/protocol_thread.cc

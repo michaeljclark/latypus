@@ -52,6 +52,7 @@ add_library(
     src/http_server.cc
     src/http_server_handler_file.cc
     src/http_server_handler_func.cc
+    src/http_server_handler_stats.cc
     src/protocol.cc
     src/protocol_engine.cc
     src/protocol_thread.cc
