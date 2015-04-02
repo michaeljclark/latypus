@@ -102,6 +102,11 @@ struct http_client_config_factory : protocol_config_factory
 
 struct http_client : protocol
 {
+    typedef http_client_engine_state engine_state_type;
+    typedef http_client_thread_state thread_state_type;
+    typedef http_client_connection connection_type;
+    typedef std::function<std::string(http_client_connection*)> function_type;
+    
     /* sock */
     static protocol_sock client_sock_tcp_connection;
     static protocol_sock client_sock_tcp_tls_connection;
@@ -201,6 +206,11 @@ struct http_client : protocol
 struct http_client_engine_state : protocol_engine_state, protocol_connection_state<http_client_connection>
 {
     protocol* get_proto() const { return http_client::get_proto(); }
+
+    void bind_function(std::string path, typename http_client::function_type)
+    {
+        log_error("%s bind_function not implemented", get_proto()->name.c_str());
+    }
 };
 
 
