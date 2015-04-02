@@ -670,6 +670,7 @@ http_header_string http_date::to_log_string(char *buf, size_t buf_len)
     gmtime_r(&tod, &tm);
     int mon = tm.tm_mon % 12;
     int year = tm.tm_year + 1900;
+    *(p++) = '[';
     *(p++) = '0' + (tm.tm_mday / 10);
     *(p++) = '0' + (tm.tm_mday % 10);
     *(p++) = '/';
@@ -696,6 +697,7 @@ http_header_string http_date::to_log_string(char *buf, size_t buf_len)
     *(p++) = '0';
     *(p++) = '0';
     *(p++) = '0';
+    *(p++) = ']';
     *(p++) = '\0';
     
     return http_header_string(buf, 29);
