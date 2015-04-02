@@ -942,6 +942,7 @@ http_server_handler_ptr http_server_engine_state::lookup_handler(http_server_con
 
 void http_server_engine_state::bind_function(std::string path, typename http_server::function_type fn)
 {
-    http_server_handler_factory_ptr factory(new http_server_handler_factory_func(path, fn));
+    std::string handler_name = std::string("bind_function(") + path + std::string(")");
+    http_server_handler_factory_ptr factory(new http_server_handler_factory_func(handler_name, fn));
     handler_list.push_back(http_server_handler_info_ptr(new http_server_handler_info(path, factory)));
 }
