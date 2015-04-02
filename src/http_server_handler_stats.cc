@@ -99,10 +99,33 @@ bool http_server_handler_stats::handle_request()
     // create response
     status_text = http_constants::get_status_text(status_code);
     mime_type = "text/plain";
-    const char* str = "Server Statistics\n\nTo do...\n";
-    size_t len = strlen(str);
-    response_buffer.set(str, len);
-    content_length = len;
+    
+    std::stringstream ss;
+    size_t engine_num = 0;
+    ss << "server statistics" << std::endl << std::endl;
+    for (auto engine : protocol_engine::engine_list)
+    {
+        ss << "engine-" << engine_num++ << std::endl;
+        auto http_engine_state = static_cast<http_server_engine_state*>
+            (engine->get_engine_state(http_server::get_proto()));
+        ss << "  listens " << http_engine_state->listens.size() << std::endl;
+        for (auto listen : http_engine_state->listens) {
+            ss << "    " << socket_addr::addr_to_string(listen->addr) << std::endl;
+        }
+        ss << "  threads " << engine->threads_all.size() << std::endl;
+        for (auto &thread : engine->threads_all) {
+            std::string thread_mask = protocol_thread::thread_mask_to_string(thread->thread_mask);
+            ss << "    " << thread->get_thread_id() << " " << thread_mask << std::endl;
+        }
+        ss << "  handlers " << http_engine_state->handler_list.size() << std::endl;
+        for (auto &handler : http_engine_state->handler_list) {
+            ss << "    " << handler->factory->get_name() << " " << handler->path << std::endl;
+        }
+    }
+    
+    std::string str = ss.str();;
+    response_buffer.set(str.c_str(), str.length());
+    content_length = str.length();
     reader = &response_buffer;
     
     if (delegate->get_debug_mask() & protocol_debug_handler) {
