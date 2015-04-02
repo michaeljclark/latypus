@@ -3,7 +3,6 @@
 a modern, portable and scalable high performance C++1y m:n threaded HTTP client and server
 
 ## Overview
-  * Designed for embedding
   * Supports Linux, FreeBSD and Mac OS X
   * Hybrid message/event driven m:n threaded protocol agnostic state machine
   * Scalable event driven protocol threads (kqueue, epoll, poll, select)
