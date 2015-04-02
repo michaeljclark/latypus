@@ -159,6 +159,9 @@ bool http_server_connection_tmpl<connection_tcp>::free(protocol_engine_delegate 
 void http_server_config_factory::make_config(config_ptr cfg) const
 {
     log_info("%s using default config", http_server::get_proto()->name.c_str());
+    cfg->pid_file = "/tmp/latypus.pid";
+    cfg->error_log = "/tmp/latypus.errors";
+    cfg->access_log = "/tmp/latypus.access";
     cfg->listen_backlog = LISTEN_BACKLOG_DEFAULT;
     cfg->server_connections = SERVER_CONNECTIONS_DEFAULT;
     cfg->connection_timeout = CONNETION_TIMEOUT_DEFAULT;
