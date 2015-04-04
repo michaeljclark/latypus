@@ -193,7 +193,7 @@ int main(int argc, char **argv)
     
     while (true)
     {
-        int ret = poll(&poll_vec[0], (int)poll_vec.size(), -1);
+        int ret = poll(poll_vec.data(), (int)poll_vec.size(), -1);
         if (ret < 0 && (errno != EAGAIN || errno != EINTR))
         {
             log_fatal_exit("poll failed: %s", strerror(errno));

@@ -183,7 +183,7 @@ int main(int argc, char **argv)
     
     while (true)
     {
-        int ret = poll(&poll_vec[0], (int)poll_vec.size(), -1);
+        int ret = poll(poll_vec.data(), (int)poll_vec.size(), -1);
         if (ret < 0 && (errno != EAGAIN || errno != EINTR))
         {
             log_fatal_exit("poll failed: %s", strerror(errno));
@@ -209,7 +209,7 @@ int main(int argc, char **argv)
                         (fd, ssl_connection(fd, ssl)));
                 
                 ssl_connection &conn = si.first->second;
-                poll_vec.push_back({fd, POLLIN, 0});
+                poll_vec.push_back({fd, POLLIN|POLLOUT, 0});
                 size_t ni = poll_vec.size() - 1;
                 
                 int ret = SSL_do_handshake(conn.ssl);
