@@ -265,9 +265,9 @@ int main(int argc, char **argv)
                     buf[buf_len] = '\0';
                     printf("received: %s", buf);
                     
-                    SSL_free(conn.ssl);
                     // TODO - we should probably shutdown gracefully
                     // SSL_shutdown(conn.ssl);
+                    SSL_free(conn.ssl);
                     close(conn.fd);
                     auto pi = std::find_if(poll_vec.begin(), poll_vec.end(),
                             [fd] (const struct pollfd &pfd) { return pfd.fd == fd; });
