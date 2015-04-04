@@ -71,6 +71,12 @@ target_link_libraries(netc latypus pthread)
 add_executable(netd app/netd.cc)
 target_link_libraries(netd latypus pthread)
 
+add_executable(openssl_async_echo_client tests/openssl_async_echo_client.cc)
+target_link_libraries(openssl_async_echo_client ssl crypto)
+
+add_executable(openssl_async_echo_server tests/openssl_async_echo_server.cc)
+target_link_libraries(openssl_async_echo_server ssl crypto)
+
 add_executable(test_config tests/test_config.cc)
 target_link_libraries(test_config latypus pthread cppunit)
 
