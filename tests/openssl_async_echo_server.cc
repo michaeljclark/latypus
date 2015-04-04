@@ -68,7 +68,7 @@ struct ssl_connection
     ssl_state state;
 };
 
-void log_prefix(const char* prefix, const char* fmt, va_list args)
+static void log_prefix(const char* prefix, const char* fmt, va_list args)
 {
     std::vector<char> buf(256);
     int len = vsnprintf(buf.data(), buf.capacity(), fmt, args);
@@ -79,7 +79,7 @@ void log_prefix(const char* prefix, const char* fmt, va_list args)
     fprintf(stderr, "%s: %s\n", prefix, buf.data());
 }
 
-void log_fatal_exit(const char* fmt, ...)
+static void log_fatal_exit(const char* fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
@@ -88,7 +88,7 @@ void log_fatal_exit(const char* fmt, ...)
     exit(9);
 }
 
-void log_error(const char* fmt, ...)
+static void log_error(const char* fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
@@ -96,7 +96,7 @@ void log_error(const char* fmt, ...)
     va_end(args);
 }
 
-void log_debug(const char* fmt, ...)
+static void log_debug(const char* fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
@@ -104,7 +104,12 @@ void log_debug(const char* fmt, ...)
     va_end(args);
 }
 
-void update_state(struct pollfd &pfd, ssl_connection &ssl_conn, int events, ssl_state new_state)
+static int print_bio(const char *str, size_t len, void *bio)
+{
+    return BIO_write((BIO *)bio, str, (int)len);
+}
+
+static void update_state(struct pollfd &pfd, ssl_connection &ssl_conn, int events, ssl_state new_state)
 {
     log_debug("conn_fd=%d %s -> %s",
               pfd.fd, state_names[ssl_conn.state], state_names[new_state]);
@@ -112,7 +117,7 @@ void update_state(struct pollfd &pfd, ssl_connection &ssl_conn, int events, ssl_
     pfd.events = events;
 }
 
-void update_state(struct pollfd &pfd, ssl_connection &ssl_conn, int ssl_err)
+static void update_state(struct pollfd &pfd, ssl_connection &ssl_conn, int ssl_err)
 {
     switch (ssl_err) {
         case SSL_ERROR_WANT_READ:
@@ -133,14 +138,14 @@ int main(int argc, char **argv)
     SSL_CTX *ctx = SSL_CTX_new(TLSv1_server_method());
     
     if (SSL_CTX_use_certificate_file(ctx, ssl_cert_file, SSL_FILETYPE_PEM) <= 0) {
-        BIO_print_errors(bio_err);
+        ERR_print_errors_cb(print_bio, bio_err);
         log_fatal_exit("failed to load certificate: %s", ssl_cert_file);
     } else {
         log_debug("loaded cert: %s", ssl_cert_file);
     }
     
     if (SSL_CTX_use_PrivateKey_file(ctx, ssl_key_file, SSL_FILETYPE_PEM) <= 0) {
-        BIO_print_errors(bio_err);
+        ERR_print_errors_cb(print_bio, bio_err);
         log_fatal_exit("failed to load private key: %s", ssl_key_file);
     } else {
         log_debug("loaded key: %s", ssl_key_file);
