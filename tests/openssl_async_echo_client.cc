@@ -4,8 +4,8 @@
 //  clang++ -std=c++11 openssl_async_echo_client.cc -lcrypto -lssl -o openssl_async_echo_client
 //
 //  * example of non-blocking TLS
+//  * tested with openssl/boringssl
 //  * probably leaks
-//  * tested with boringssl
 //
 
 #include <netdb.h>
@@ -56,14 +56,13 @@ static const char* state_names[] =
 
 struct ssl_connection
 {
-    ssl_connection(int conn_fd, SSL *ssl, BIO *sbio)
-        : conn_fd(conn_fd), ssl(ssl), sbio(sbio), state(ssl_none) {}
+    ssl_connection(int fd, SSL *ssl)
+        : fd(fd), ssl(ssl), state(ssl_none) {}
     ssl_connection(const ssl_connection &o)
-        : conn_fd(o.conn_fd), ssl(o.ssl), sbio(o.sbio), state(o.state) {}
+        : fd(o.fd), ssl(o.ssl), state(o.state) {}
     
-    int conn_fd;
+    int fd;
     SSL *ssl;
-    BIO *sbio;
     ssl_state state;
 };
 
@@ -103,29 +102,33 @@ static void log_debug(const char* fmt, ...)
     va_end(args);
 }
 
-static int print_bio(const char *str, size_t len, void *bio)
+static int log_tls_errors(const char *str, size_t len, void *bio)
 {
-    return BIO_write((BIO *)bio, str, (int)len);
+    fprintf(stderr, "%s", str);
+    return 0;
 }
 
-static void update_state(struct pollfd &pfd, ssl_connection &ssl_conn, int events, ssl_state new_state)
+static void update_state(struct pollfd &pfd, ssl_connection &conn,
+                         int events, ssl_state new_state)
 {
-    log_debug("conn_fd=%d %s -> %s",
-              pfd.fd, state_names[ssl_conn.state], state_names[new_state]);
-    ssl_conn.state = new_state;
+    log_debug("fd=%d %s -> %s",
+              pfd.fd, state_names[conn.state], state_names[new_state]);
+    conn.state = new_state;
     pfd.events = events;
 }
 
-static void update_state(struct pollfd &pfd, ssl_connection &ssl_conn, int ssl_err)
+static void update_state(struct pollfd &pfd, ssl_connection &conn,
+                         int ssl_err)
 {
     switch (ssl_err) {
         case SSL_ERROR_WANT_READ:
-            update_state(pfd, ssl_conn, POLLIN, ssl_handshake_read);
+            update_state(pfd, conn, POLLIN, ssl_handshake_read);
             break;
         case SSL_ERROR_WANT_WRITE:
-            update_state(pfd, ssl_conn, POLLOUT, ssl_handshake_write);
+            update_state(pfd, conn, POLLOUT, ssl_handshake_write);
             break;
         default:
+            log_fatal_exit("unknown tls error: %d", ssl_err);
             break;
     }
 }
@@ -133,12 +136,11 @@ static void update_state(struct pollfd &pfd, ssl_connection &ssl_conn, int ssl_e
 int main(int argc, char **argv)
 {
     SSL_library_init();
-    BIO *bio_err = BIO_new_fp(stderr, BIO_NOCLOSE);
     SSL_CTX *ctx = SSL_CTX_new(TLSv1_client_method());
 
     if ((!SSL_CTX_load_verify_locations(ctx, ssl_cacert_file, NULL)) ||
         (!SSL_CTX_set_default_verify_paths(ctx))) {
-        ERR_print_errors_cb(print_bio, bio_err);
+        ERR_print_errors_cb(log_tls_errors, NULL);
         log_fatal_exit("failed to load cacert: %s", ssl_cacert_file);
     } else {
         log_debug("loaded cacert: %s", ssl_cacert_file);
@@ -174,7 +176,8 @@ int main(int argc, char **argv)
         log_fatal_exit("fcntl(F_SETFL, O_NONBLOCK) failed: %s", strerror(errno));
     }
     socklen_t addr_size = sizeof(sockaddr_in);
-    if (connect(connect_fd, (struct sockaddr *) &saddr, addr_size) < 0 && errno != EINPROGRESS) {
+    if (connect(connect_fd, (struct sockaddr *) &saddr, addr_size) < 0 &&
+            errno != EINPROGRESS) {
         log_fatal_exit("connect failed: %s", strerror(errno));
     }
     
@@ -192,8 +195,9 @@ int main(int argc, char **argv)
     SSL_set_fd(ssl, connect_fd);
     SSL_set_connect_state(ssl);
 
-    ssl_connection_map.insert(std::pair<int,ssl_connection>
-                                    (connect_fd, ssl_connection(connect_fd, ssl, NULL /*sbio */)));
+    ssl_connection_map.insert
+        (std::pair<int,ssl_connection>
+            (connect_fd, ssl_connection(connect_fd, ssl)));
     
     while (true)
     {
@@ -205,83 +209,79 @@ int main(int argc, char **argv)
         }
         for (size_t i = 0; i < poll_vec.size(); i++)
         {
-            int conn_fd = poll_vec[i].fd;
-            auto si = ssl_connection_map.find(conn_fd);
+            int fd = poll_vec[i].fd;
+            auto si = ssl_connection_map.find(fd);
             if (si == ssl_connection_map.end()) continue;
-            ssl_connection &ssl_conn = si->second;
+            ssl_connection &conn = si->second;
             
             if ((poll_vec[i].revents & POLLHUP) || (poll_vec[i].revents & POLLERR))
             {
                 log_debug("connection closed");
-                SSL_free(ssl_conn.ssl);
-                close(ssl_conn.conn_fd);
-                auto pi = std::find_if(poll_vec.begin(), poll_vec.end(), [conn_fd] (const struct pollfd &pfd){
-                    return pfd.fd == conn_fd;
-                });
-                if (pi != poll_vec.end()) {
-                    poll_vec.erase(pi);
+                SSL_free(conn.ssl);
+                close(conn.fd);
+                auto pi = std::find_if(poll_vec.begin(), poll_vec.end(),
+                    [fd] (const struct pollfd &pfd) { return pfd.fd == fd; });
+                if (pi != poll_vec.end()) poll_vec.erase(pi);
+            }
+            else if (conn.state == ssl_none && poll_vec[i].revents & POLLOUT)
+            {
+                int ret = SSL_do_handshake(conn.ssl);
+                if (ret < 0) {
+                    int ssl_err = SSL_get_error(conn.ssl, ret);
+                    update_state(poll_vec[i], conn, ssl_err);
                 }
             }
-            else if (ssl_conn.state == ssl_none && poll_vec[i].revents & POLLOUT)
+            else if (conn.state == ssl_handshake_read && poll_vec[i].revents & POLLIN)
             {
-                int ret = SSL_do_handshake(ssl_conn.ssl);
+                int ret = SSL_do_handshake(conn.ssl);
                 if (ret < 0) {
-                    int ssl_err = SSL_get_error(ssl_conn.ssl, ret);
-                    update_state(poll_vec[i], ssl_conn, ssl_err);
-                }
-            }
-            else if (ssl_conn.state == ssl_handshake_read && poll_vec[i].revents & POLLIN)
-            {
-                int ret = SSL_do_handshake(ssl_conn.ssl);
-                if (ret < 0) {
-                    int ssl_err = SSL_get_error(ssl_conn.ssl, ret);
-                    update_state(poll_vec[i], ssl_conn, ssl_err);
+                    int ssl_err = SSL_get_error(conn.ssl, ret);
+                    update_state(poll_vec[i], conn, ssl_err);
                 } else {
-                    update_state(poll_vec[i], ssl_conn, POLLOUT, ssl_app_write);
+                    update_state(poll_vec[i], conn, POLLOUT, ssl_app_write);
                 }
             }
-            else if (ssl_conn.state == ssl_handshake_write && poll_vec[i].revents & POLLOUT)
+            else if (conn.state == ssl_handshake_write && poll_vec[i].revents & POLLOUT)
             {
-                int ret = SSL_do_handshake(ssl_conn.ssl);
+                int ret = SSL_do_handshake(conn.ssl);
                 if (ret < 0) {
-                    int ssl_err = SSL_get_error(ssl_conn.ssl, ret);
-                    update_state(poll_vec[i], ssl_conn, ssl_err);
+                    int ssl_err = SSL_get_error(conn.ssl, ret);
+                    update_state(poll_vec[i], conn, ssl_err);
                 } else {
-                    update_state(poll_vec[i], ssl_conn, POLLOUT, ssl_app_write);
+                    update_state(poll_vec[i], conn, POLLOUT, ssl_app_write);
                 }
             }
-            else if (ssl_conn.state == ssl_app_write && poll_vec[i].revents & POLLOUT)
+            else if (conn.state == ssl_app_write && poll_vec[i].revents & POLLOUT)
             {
-                int ret = SSL_write(ssl_conn.ssl, buf, buf_len);
+                int ret = SSL_write(conn.ssl, buf, buf_len);
                 if (ret < 0) {
-                    int ssl_err = SSL_get_error(ssl_conn.ssl, ret);
-                    update_state(poll_vec[i], ssl_conn, ssl_err);
+                    int ssl_err = SSL_get_error(conn.ssl, ret);
+                    update_state(poll_vec[i], conn, ssl_err);
                 } else {
                     printf("sent: %s", buf);
-                    update_state(poll_vec[i], ssl_conn, POLLIN, ssl_app_read);
+                    update_state(poll_vec[i], conn, POLLIN, ssl_app_read);
                 }
             }
-            else if (ssl_conn.state == ssl_app_read && poll_vec[i].revents & POLLIN)
+            else if (conn.state == ssl_app_read && poll_vec[i].revents & POLLIN)
             {
-                int ret = SSL_read(ssl_conn.ssl, buf, sizeof(buf) - 1);
+                int ret = SSL_read(conn.ssl, buf, sizeof(buf) - 1);
                 if (ret < 0) {
-                    int ssl_err = SSL_get_error(ssl_conn.ssl, ret);
-                    update_state(poll_vec[i], ssl_conn, ssl_err);
+                    int ssl_err = SSL_get_error(conn.ssl, ret);
+                    update_state(poll_vec[i], conn, ssl_err);
                 } else {
                     buf_len = ret;
                     buf[buf_len] = '\0';
                     printf("received: %s", buf);
                     
-                    SSL_free(ssl_conn.ssl);
+                    SSL_free(conn.ssl);
                     // TODO - we should probably shutdown gracefully
-                    // SSL_shutdown(ssl_conn.ssl);
-                    close(ssl_conn.conn_fd);
-                    auto pi = std::find_if(poll_vec.begin(), poll_vec.end(), [conn_fd] (const struct pollfd &pfd){
-                        return pfd.fd == conn_fd;
-                    });
-                    if (pi != poll_vec.end()) {
-                        poll_vec.erase(pi);
-                    }
+                    // SSL_shutdown(conn.ssl);
+                    close(conn.fd);
+                    auto pi = std::find_if(poll_vec.begin(), poll_vec.end(),
+                            [fd] (const struct pollfd &pfd) { return pfd.fd == fd; });
+                    if (pi != poll_vec.end()) poll_vec.erase(pi);
+                    
+                    // exit
                     return 0;
                 }
             }
