@@ -87,14 +87,6 @@ static void log_fatal_exit(const char* fmt, ...)
     exit(9);
 }
 
-static void log_error(const char* fmt, ...)
-{
-    va_list args;
-    va_start(args, fmt);
-    log_prefix("error", fmt, args);
-    va_end(args);
-}
-
 static void log_debug(const char* fmt, ...)
 {
     va_list args;
@@ -194,8 +186,7 @@ int main(int argc, char **argv)
         int ret = poll(&poll_vec[0], (int)poll_vec.size(), -1);
         if (ret < 0 && (errno != EAGAIN || errno != EINTR))
         {
-            log_error("poll failed: %s", strerror(errno));
-            exit(9);
+            log_fatal_exit("poll failed: %s", strerror(errno));
         }
         for (size_t i = 0; i < poll_vec.size(); i++)
         {
