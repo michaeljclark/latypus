@@ -1,12 +1,9 @@
 //
 //  openssl_async_echo_client.cc
 //
-//    clang++ -std=c++11 openssl_async_echo_client.cc -lcrypto -lssl -o openssl_async_echo_client
+//  clang++ -std=c++11 openssl_async_echo_client.cc -lcrypto -lssl -o openssl_async_echo_client
 //
-//  (boring|open)ssl compatibility
-//
-//    sed -i '' s#BIO_print_errors#ERR_print_errors# openssl_async_echo_server.cc
-//    sed -i '' s#ERR_print_errors#BIO_print_errors# openssl_async_echo_server.cc
+//  tested with boringssl
 //
 
 #include <netdb.h>
