@@ -190,13 +190,20 @@ int main(int argc, char **argv)
         }
         for (size_t i = 0; i < poll_vec.size(); i++)
         {
-            if (poll_vec[i].fd == listen_fd && poll_vec[i].revents & POLLIN)
+            if (poll_vec[i].fd == listen_fd && (poll_vec[i].revents & POLLIN))
             {
                 sockaddr_in paddr;
                 char paddr_name[32];
                 int fd = accept(listen_fd, (struct sockaddr *) &paddr, &addr_size);
-                inet_ntop(paddr.sin_family, (void*)&paddr.sin_addr, paddr_name, sizeof(paddr_name));
+                if (fd < 0) {
+                    log_fatal_exit("accept failed: %s", strerror(errno));
+                }
                 
+                if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0) {
+                    log_fatal_exit("fcntl(F_SETFL, O_NONBLOCK) failed: %s", strerror(errno));
+                }
+
+                inet_ntop(paddr.sin_family, (void*)&paddr.sin_addr, paddr_name, sizeof(paddr_name));
                 log_debug("accepted connection from: %s:%d fd=%d",
                           paddr_name, ntohs(paddr.sin_port), fd);
                 
@@ -209,9 +216,9 @@ int main(int argc, char **argv)
                         (fd, ssl_connection(fd, ssl)));
                 
                 ssl_connection &conn = si.first->second;
-                poll_vec.push_back({fd, POLLIN|POLLOUT, 0});
+                poll_vec.push_back({fd, POLLIN, 0});
                 size_t ni = poll_vec.size() - 1;
-                
+
                 int ret = SSL_do_handshake(conn.ssl);
                 if (ret < 0) {
                     int ssl_err = SSL_get_error(conn.ssl, ret);
@@ -225,7 +232,7 @@ int main(int argc, char **argv)
             if (si == ssl_connection_map.end()) continue;
             ssl_connection &conn = si->second;
             
-            if ((poll_vec[i].revents & POLLHUP) || (poll_vec[i].revents & POLLERR))
+            if (poll_vec[i].revents & (POLLHUP | POLLERR))
             {
                 log_debug("connection closed");
                 SSL_free(conn.ssl);

@@ -206,7 +206,7 @@ int main(int argc, char **argv)
             if (si == ssl_connection_map.end()) continue;
             ssl_connection &conn = si->second;
             
-            if ((poll_vec[i].revents & POLLHUP) || (poll_vec[i].revents & POLLERR))
+            if (poll_vec[i].revents & (POLLHUP | POLLERR))
             {
                 log_debug("connection closed");
                 SSL_free(conn.ssl);
