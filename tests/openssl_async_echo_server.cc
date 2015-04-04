@@ -273,7 +273,7 @@ int main(int argc, char **argv)
             {
                 log_debug("connection closed");
                 SSL_free(ssl_conn.ssl);
-                // TODO - crashes if we close the fd
+                // TODO - crashes on subsequent connections if we close the fd. Why?
                 // close(ssl_conn.conn_fd);
                 auto pi = std::find_if(poll_vec.begin(), poll_vec.end(), [conn_fd] (const struct pollfd &pfd){
                     return pfd.fd == conn_fd;
