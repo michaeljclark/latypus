@@ -228,7 +228,6 @@ int main(int argc, char **argv)
     poll_vec.push_back({listen_fd, POLLIN, 0});
     
     while (true) {
-    retry:
         int ret = poll(&poll_vec[0], (int)poll_vec.size(), -1);
         if (ret < 0 && (errno != EAGAIN || errno != EINTR))
         {
