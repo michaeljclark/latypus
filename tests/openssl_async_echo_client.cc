@@ -1,5 +1,5 @@
 //
-//  openssl_async_echo_server.cc
+//  openssl_async_echo_client.cc
 //
 
 #include <netdb.h>
