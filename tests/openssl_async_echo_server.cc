@@ -104,40 +104,6 @@ void log_debug(const char* fmt, ...)
     va_end(args);
 }
 
-static EVP_PKEY *load_key(BIO *bio_err, const char *file)
-{
-    BIO *bio_key = BIO_new(BIO_s_file());
-    
-    if (bio_key == NULL) return NULL;
-    
-    if (BIO_read_filename(bio_key, file) <= 0) {
-        BIO_free(bio_key);
-        return NULL;
-    }
-    
-    EVP_PKEY *key = PEM_read_bio_PrivateKey(bio_key, NULL, NULL, NULL);
-    BIO_free(bio_key);
-    
-    return key;
-}
-
-static X509 *load_cert(BIO *bio_err, const char *file)
-{
-    BIO *bio_cert = BIO_new(BIO_s_file());
-
-    if (bio_cert == NULL) return NULL;
-    
-    if (BIO_read_filename(bio_cert, file) <= 0) {
-        BIO_free(bio_cert);
-        return NULL;
-    }
-    
-    X509 *cert = PEM_read_bio_X509_AUX(bio_cert, NULL, NULL, NULL);
-    BIO_free(bio_cert);
-    
-    return cert;
-}
-
 void update_state(struct pollfd &pfd, ssl_connection &ssl_conn, int events, ssl_state new_state)
 {
     log_debug("conn_fd=%d %s -> %s",
@@ -165,28 +131,20 @@ int main(int argc, char **argv)
     BIO *bio_err = BIO_new_fp(stderr, BIO_NOCLOSE);
     SSL_CTX *ctx = SSL_CTX_new(TLSv1_server_method());
     
-    X509 *cert = load_cert(bio_err, ssl_cert_file);
-    if (cert) {
-        log_debug("loaded cert: %s", ssl_cert_file);
+    SSL_library_init();
+    
+    if (SSL_CTX_use_certificate_file(ctx, ssl_cert_file, SSL_FILETYPE_PEM) <= 0) {
+        BIO_print_errors(bio_err);
+        log_fatal_exit("failed to load certificate: %s", ssl_cert_file);
     } else {
-        BIO_print_errors(bio_err);
-        log_fatal_exit("error loading certificate: %s", ssl_cert_file);
-    }
-    if (SSL_CTX_use_certificate(ctx, cert) <= 0) {
-        BIO_print_errors(bio_err);
-        log_fatal_exit("error using certificate");
+        log_debug("loaded cert: %s", ssl_cert_file);
     }
     
-    EVP_PKEY *key = load_key(bio_err, ssl_key_file);
-    if (key) {
-        log_debug("loaded key: %s", ssl_key_file);
+    if (SSL_CTX_use_PrivateKey_file(ctx, ssl_key_file, SSL_FILETYPE_PEM) <= 0) {
+        BIO_print_errors(bio_err);
+        log_fatal_exit("failed to load private key: %s", ssl_key_file);
     } else {
-        BIO_print_errors(bio_err);
-        log_fatal_exit("error loading private key: %s", ssl_key_file);
-    }
-    if (SSL_CTX_use_PrivateKey(ctx, key) <= 0) {
-        BIO_print_errors(bio_err);
-        log_fatal_exit("error using private key");
+        log_debug("loaded key: %s", ssl_key_file);
     }
     
     sockaddr_in saddr;

@@ -130,6 +130,8 @@ int main(int argc, char **argv)
     BIO *bio_err = BIO_new_fp(stderr, BIO_NOCLOSE);
     SSL_CTX *ctx = SSL_CTX_new(TLSv1_client_method());
 
+    SSL_library_init();
+
     sockaddr_in saddr;
     memset(&saddr, 0, sizeof(saddr));
     saddr.sin_family = AF_INET;
@@ -175,7 +177,9 @@ int main(int argc, char **argv)
     if ((!SSL_CTX_load_verify_locations(ctx, ssl_cacert_file, NULL)) ||
         (!SSL_CTX_set_default_verify_paths(ctx))) {
         BIO_print_errors(bio_err);
-        log_fatal_exit("error loading CA file");
+        log_fatal_exit("failed to load cacert: %s", ssl_cacert_file);
+    } else {
+        log_debug("loaded cacert: %s", ssl_cacert_file);
     }
     SSL_CTX_set_verify(ctx,SSL_VERIFY_PEER, NULL);
     SSL_CTX_set_verify_depth(ctx, 9);
