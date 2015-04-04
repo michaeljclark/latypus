@@ -127,10 +127,9 @@ void update_state(struct pollfd &pfd, ssl_connection &ssl_conn, int ssl_err)
 
 int main(int argc, char **argv)
 {
+    SSL_library_init();
     BIO *bio_err = BIO_new_fp(stderr, BIO_NOCLOSE);
     SSL_CTX *ctx = SSL_CTX_new(TLSv1_client_method());
-
-    SSL_library_init();
 
     sockaddr_in saddr;
     memset(&saddr, 0, sizeof(saddr));
