@@ -1,6 +1,13 @@
 //
 //  openssl_async_echo_server.cc
 //
+//    clang++ -std=c++11 openssl_async_echo_server.cc -lcrypto -lssl -o openssl_async_echo_server
+//
+//  (boring|open)ssl compatibility
+//
+//    sed -i '' s#BIO_print_errors#ERR_print_errors# openssl_async_echo_server.cc
+//    sed -i '' s#ERR_print_errors#BIO_print_errors# openssl_async_echo_server.cc
+//
 
 #include <netdb.h>
 #include <unistd.h>
