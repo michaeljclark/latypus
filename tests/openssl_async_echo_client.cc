@@ -136,6 +136,16 @@ int main(int argc, char **argv)
     BIO *bio_err = BIO_new_fp(stderr, BIO_NOCLOSE);
     SSL_CTX *ctx = SSL_CTX_new(TLSv1_client_method());
 
+    if ((!SSL_CTX_load_verify_locations(ctx, ssl_cacert_file, NULL)) ||
+        (!SSL_CTX_set_default_verify_paths(ctx))) {
+        ERR_print_errors_cb(print_bio, bio_err);
+        log_fatal_exit("failed to load cacert: %s", ssl_cacert_file);
+    } else {
+        log_debug("loaded cacert: %s", ssl_cacert_file);
+    }
+    SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL);
+    SSL_CTX_set_verify_depth(ctx, 9);
+
     sockaddr_in saddr;
     memset(&saddr, 0, sizeof(saddr));
     saddr.sin_family = AF_INET;
@@ -178,16 +188,6 @@ int main(int argc, char **argv)
     std::map<int,ssl_connection> ssl_connection_map;
     poll_vec.push_back({connect_fd, POLLOUT, 0});
     
-    if ((!SSL_CTX_load_verify_locations(ctx, ssl_cacert_file, NULL)) ||
-        (!SSL_CTX_set_default_verify_paths(ctx))) {
-        ERR_print_errors_cb(print_bio, bio_err);
-        log_fatal_exit("failed to load cacert: %s", ssl_cacert_file);
-    } else {
-        log_debug("loaded cacert: %s", ssl_cacert_file);
-    }
-    SSL_CTX_set_verify(ctx,SSL_VERIFY_PEER, NULL);
-    SSL_CTX_set_verify_depth(ctx, 9);
-
     SSL *ssl = SSL_new(ctx);
     SSL_set_fd(ssl, connect_fd);
     SSL_set_connect_state(ssl);
