@@ -227,7 +227,8 @@ int main(int argc, char **argv)
     std::map<int,ssl_connection> ssl_connection_map;
     poll_vec.push_back({listen_fd, POLLIN, 0});
     
-    while (true) {
+    while (true)
+    {
         int ret = poll(&poll_vec[0], (int)poll_vec.size(), -1);
         if (ret < 0 && (errno != EAGAIN || errno != EINTR))
         {

@@ -187,7 +187,8 @@ int main(int argc, char **argv)
     ssl_connection_map.insert(std::pair<int,ssl_connection>
                                     (connect_fd, ssl_connection(connect_fd, ssl, NULL /*sbio */)));
     
-    while (true) {
+    while (true)
+    {
         int ret = poll(&poll_vec[0], (int)poll_vec.size(), -1);
         if (ret < 0 && (errno != EAGAIN || errno != EINTR))
         {
@@ -279,6 +280,5 @@ int main(int argc, char **argv)
         }
     }
 
-    
     return 0;
 }
