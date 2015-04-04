@@ -236,7 +236,9 @@ int main(int argc, char **argv)
             {
                 log_debug("connection closed");
                 SSL_free(ssl_conn.ssl);
-                // TODO - crashes on subsequent connections if we close the fd. Why?
+                // TODO - crashes on subsequent connections in SSL_do_handshake if we close the fd.
+                //        ssl_lib.c::SSL_do_handshake::s->method->ssl_renegotiate_check(s);
+                //        Why? reuse of same fd number for subsequent connection?
                 // close(ssl_conn.conn_fd);
                 auto pi = std::find_if(poll_vec.begin(), poll_vec.end(), [conn_fd] (const struct pollfd &pfd){
                     return pfd.fd == conn_fd;
