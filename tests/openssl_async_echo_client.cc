@@ -25,11 +25,10 @@
 #include <openssl/err.h>
 
 
-static int listen_port = 8443;
-static int listen_backlog = 128;
+static const char* connect_host = "127.0.0.1";
+static int connect_port = 8443;
 
-static const char* ssl_cert_file = "ssl/cert.pem";
-static const char* ssl_key_file = "ssl/key.pem";
+static const char* ssl_cacert_file = "ssl/cacert.pem";
 
 enum ssl_state
 {
@@ -55,7 +54,7 @@ struct ssl_connection
         : conn_fd(conn_fd), ssl(ssl), sbio(sbio), state(ssl_none) {}
     ssl_connection(const ssl_connection &o)
         : conn_fd(o.conn_fd), ssl(o.ssl), sbio(o.sbio), state(o.state) {}
-
+    
     int conn_fd;
     SSL *ssl;
     BIO *sbio;
@@ -98,40 +97,6 @@ void log_debug(const char* fmt, ...)
     va_end(args);
 }
 
-static EVP_PKEY *load_key(BIO *bio_err, const char *file)
-{
-    BIO *bio_key = BIO_new(BIO_s_file());
-    
-    if (bio_key == NULL) return NULL;
-    
-    if (BIO_read_filename(bio_key, file) <= 0) {
-        BIO_free(bio_key);
-        return NULL;
-    }
-    
-    EVP_PKEY *key = PEM_read_bio_PrivateKey(bio_key, NULL, NULL, NULL);
-    BIO_free(bio_key);
-    
-    return key;
-}
-
-static X509 *load_cert(BIO *bio_err, const char *file)
-{
-    BIO *bio_cert = BIO_new(BIO_s_file());
-
-    if (bio_cert == NULL) return NULL;
-    
-    if (BIO_read_filename(bio_cert, file) <= 0) {
-        BIO_free(bio_cert);
-        return NULL;
-    }
-    
-    X509 *cert = PEM_read_bio_X509_AUX(bio_cert, NULL, NULL, NULL);
-    BIO_free(bio_cert);
-    
-    return cert;
-}
-
 void update_state(struct pollfd &pfd, ssl_connection &ssl_conn, int events, ssl_state new_state)
 {
     log_debug("conn_fd=%d %s -> %s",
@@ -157,69 +122,64 @@ void update_state(struct pollfd &pfd, ssl_connection &ssl_conn, int ssl_err)
 int main(int argc, char **argv)
 {
     BIO *bio_err = BIO_new_fp(stderr, BIO_NOCLOSE);
-    SSL_CTX *ctx = SSL_CTX_new(TLSv1_server_method());
-    
-    X509 *cert = load_cert(bio_err, ssl_cert_file);
-    if (cert) {
-        log_debug("loaded cert: %s", ssl_cert_file);
-    } else {
-        BIO_print_errors(bio_err);
-        log_fatal_exit("error loading certificate: %s", ssl_cert_file);
-    }
-    if (SSL_CTX_use_certificate(ctx, cert) <= 0) {
-        BIO_print_errors(bio_err);
-        log_fatal_exit("error using certificate");
-    }
-    
-    EVP_PKEY *key = load_key(bio_err, ssl_key_file);
-    if (key) {
-        log_debug("loaded key: %s", ssl_key_file);
-    } else {
-        BIO_print_errors(bio_err);
-        log_fatal_exit("error loading private key: %s", ssl_key_file);
-    }
-    if (SSL_CTX_use_PrivateKey(ctx, key) <= 0) {
-        BIO_print_errors(bio_err);
-        log_fatal_exit("error using private key");
-    }
-    
+    SSL_CTX *ctx = SSL_CTX_new(TLSv1_client_method());
+
     sockaddr_in saddr;
     memset(&saddr, 0, sizeof(saddr));
     saddr.sin_family = AF_INET;
-    saddr.sin_port = htons(listen_port);
-    saddr.sin_addr.s_addr = INADDR_ANY;
+    saddr.sin_port = htons(connect_port);
+    
+    struct hostent *he = gethostbyname(connect_host);
+    if (he) {
+        if (he->h_addrtype == AF_INET) {
+            memcpy(&saddr.sin_addr, he->h_addr_list[0], he->h_length);
+        } else {
+            log_fatal_exit("unknown address type: %s", he->h_addrtype);
+        }
+    } else {
+        log_fatal_exit("unknown host %s", connect_host);
+        return false;
+    }
 
-    int listen_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (listen_fd < 0) {
+    int connect_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (connect_fd < 0) {
         log_fatal_exit("socket failed: %s", strerror(errno));
     }
-    int reuse = 1;
-    if (setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, (void *)&reuse, sizeof(reuse)) < 0) {
-        log_fatal_exit("setsockopt(SOL_SOCKET, SO_REUSEADDR) failed: %s", strerror(errno));
-    }
-    if (fcntl(listen_fd, F_SETFD, FD_CLOEXEC) < 0) {
+    if (fcntl(connect_fd, F_SETFD, FD_CLOEXEC) < 0) {
         log_fatal_exit("fcntl(F_SETFD, FD_CLOEXEC) failed: %s", strerror(errno));
     }
-    if (fcntl(listen_fd, F_SETFL, O_NONBLOCK) < 0) {
+    if (fcntl(connect_fd, F_SETFL, O_NONBLOCK) < 0) {
         log_fatal_exit("fcntl(F_SETFL, O_NONBLOCK) failed: %s", strerror(errno));
     }
     socklen_t addr_size = sizeof(sockaddr_in);
-    if (bind(listen_fd, (struct sockaddr *) &saddr, addr_size) < 0) {
-        log_fatal_exit("bind failed: %s", strerror(errno));
+    if (connect(connect_fd, (struct sockaddr *) &saddr, addr_size) < 0 && errno != EINPROGRESS) {
+        log_fatal_exit("connect failed: %s", strerror(errno));
     }
-    if (listen(listen_fd, (int)listen_backlog) < 0) {
-        log_fatal_exit("listen failed: %s", strerror(errno));
-    }
-
+    
     char saddr_name[32];
     inet_ntop(saddr.sin_family, (void*)&saddr.sin_addr, saddr_name, sizeof(saddr_name));
-    log_debug("listening on: %s:%d", saddr_name, ntohs(saddr.sin_port));
+    log_debug("connecting to: %s:%d", saddr_name, ntohs(saddr.sin_port));
 
-    char buf[16384];
-    int buf_len = 0;
+    char buf[16384] = "Hello World\n";
+    int buf_len = (int)strlen(buf);
     std::vector<struct pollfd> poll_vec;
     std::map<int,ssl_connection> ssl_connection_map;
-    poll_vec.push_back({listen_fd, POLLIN, 0});
+    poll_vec.push_back({connect_fd, POLLOUT, 0});
+    
+    if ((!SSL_CTX_load_verify_locations(ctx, ssl_cacert_file, NULL)) ||
+        (!SSL_CTX_set_default_verify_paths(ctx))) {
+        BIO_print_errors(bio_err);
+        log_fatal_exit("error loading CA file");
+    }
+    SSL_CTX_set_verify(ctx,SSL_VERIFY_PEER, NULL);
+    SSL_CTX_set_verify_depth(ctx, 9);
+
+    SSL *ssl = SSL_new(ctx);
+    SSL_set_fd(ssl, connect_fd);
+    SSL_set_connect_state(ssl);
+
+    ssl_connection_map.insert(std::pair<int,ssl_connection>
+                                    (connect_fd, ssl_connection(connect_fd, ssl, NULL /*sbio */)));
     
     while (true) {
         int ret = poll(&poll_vec[0], (int)poll_vec.size(), -1);
@@ -230,34 +190,6 @@ int main(int argc, char **argv)
         }
         for (size_t i = 0; i < poll_vec.size(); i++)
         {
-            if (poll_vec[i].fd == listen_fd && poll_vec[i].revents & POLLIN)
-            {
-                sockaddr_in paddr;
-                char paddr_name[32];
-                int conn_fd = accept(listen_fd, (struct sockaddr *) &paddr, &addr_size);
-                inet_ntop(paddr.sin_family, (void*)&paddr.sin_addr, paddr_name, sizeof(paddr_name));
-                
-                log_debug("accepted connection from: %s:%d fd=%d",
-                          paddr_name, ntohs(paddr.sin_port), conn_fd);
-                
-                SSL *ssl = SSL_new(ctx);
-                SSL_set_fd(ssl, conn_fd);
-                SSL_set_accept_state(ssl);
-                
-                auto si = ssl_connection_map.insert(std::pair<int,ssl_connection>
-                                                    (conn_fd, ssl_connection(conn_fd, ssl, NULL /*sbio */)));
-                ssl_connection &ssl_conn = si.first->second;
-                poll_vec.push_back({conn_fd, POLLIN, 0});
-                size_t ni = poll_vec.size() - 1;
-                
-                int ret = SSL_do_handshake(ssl_conn.ssl);
-                if (ret < 0) {
-                    int ssl_err = SSL_get_error(ssl_conn.ssl, ret);
-                    update_state(poll_vec[ni], ssl_conn, ssl_err);
-                }
-                continue;
-            }
-            
             int conn_fd = poll_vec[i].fd;
             auto si = ssl_connection_map.find(conn_fd);
             if (si == ssl_connection_map.end()) continue;
@@ -274,6 +206,14 @@ int main(int argc, char **argv)
                     poll_vec.erase(pi);
                 }
             }
+            else if (ssl_conn.state == ssl_none && poll_vec[i].revents & POLLOUT)
+            {
+                int ret = SSL_do_handshake(ssl_conn.ssl);
+                if (ret < 0) {
+                    int ssl_err = SSL_get_error(ssl_conn.ssl, ret);
+                    update_state(poll_vec[i], ssl_conn, ssl_err);
+                }
+            }
             else if (ssl_conn.state == ssl_handshake_read && poll_vec[i].revents & POLLIN)
             {
                 int ret = SSL_do_handshake(ssl_conn.ssl);
@@ -281,7 +221,7 @@ int main(int argc, char **argv)
                     int ssl_err = SSL_get_error(ssl_conn.ssl, ret);
                     update_state(poll_vec[i], ssl_conn, ssl_err);
                 } else {
-                    update_state(poll_vec[i], ssl_conn, POLLIN, ssl_app_read);
+                    update_state(poll_vec[i], ssl_conn, POLLOUT, ssl_app_write);
                 }
             }
             else if (ssl_conn.state == ssl_handshake_write && poll_vec[i].revents & POLLOUT)
@@ -291,19 +231,6 @@ int main(int argc, char **argv)
                     int ssl_err = SSL_get_error(ssl_conn.ssl, ret);
                     update_state(poll_vec[i], ssl_conn, ssl_err);
                 } else {
-                    update_state(poll_vec[i], ssl_conn, POLLIN, ssl_app_read);
-                }
-            }
-            else if (ssl_conn.state == ssl_app_read && poll_vec[i].revents & POLLIN)
-            {
-                int ret = SSL_read(ssl_conn.ssl, buf, sizeof(buf) - 1);
-                if (ret < 0) {
-                    int ssl_err = SSL_get_error(ssl_conn.ssl, ret);
-                    update_state(poll_vec[i], ssl_conn, ssl_err);
-                } else {
-                    buf_len = ret;
-                    buf[buf_len] = '\0';
-                    printf("received: %s", buf);
                     update_state(poll_vec[i], ssl_conn, POLLOUT, ssl_app_write);
                 }
             }
@@ -318,8 +245,30 @@ int main(int argc, char **argv)
                     update_state(poll_vec[i], ssl_conn, POLLIN, ssl_app_read);
                 }
             }
+            else if (ssl_conn.state == ssl_app_read && poll_vec[i].revents & POLLIN)
+            {
+                int ret = SSL_read(ssl_conn.ssl, buf, sizeof(buf) - 1);
+                if (ret < 0) {
+                    int ssl_err = SSL_get_error(ssl_conn.ssl, ret);
+                    update_state(poll_vec[i], ssl_conn, ssl_err);
+                } else {
+                    buf_len = ret;
+                    buf[buf_len] = '\0';
+                    printf("received: %s", buf);
+                    
+                    SSL_free(ssl_conn.ssl);
+                    auto pi = std::find_if(poll_vec.begin(), poll_vec.end(), [conn_fd] (const struct pollfd &pfd){
+                        return pfd.fd == conn_fd;
+                    });
+                    if (pi != poll_vec.end()) {
+                        poll_vec.erase(pi);
+                    }
+                    return 0;
+                }
+            }
         }
     }
+
     
     return 0;
 }
