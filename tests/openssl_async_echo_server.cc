@@ -3,7 +3,9 @@
 //
 //  clang++ -std=c++11 openssl_async_echo_server.cc -lcrypto -lssl -o openssl_async_echo_server
 //
-//  tested with boringssl
+//  * example of non-blocking TLS
+//  * probably leaks
+//  * tested with boringssl
 //
 
 #include <netdb.h>
@@ -226,6 +228,7 @@ int main(int argc, char **argv)
     poll_vec.push_back({listen_fd, POLLIN, 0});
     
     while (true) {
+    retry:
         int ret = poll(&poll_vec[0], (int)poll_vec.size(), -1);
         if (ret < 0 && (errno != EAGAIN || errno != EINTR))
         {
@@ -271,6 +274,7 @@ int main(int argc, char **argv)
             {
                 log_debug("connection closed");
                 SSL_free(ssl_conn.ssl);
+                close(ssl_conn.conn_fd);
                 auto pi = std::find_if(poll_vec.begin(), poll_vec.end(), [conn_fd] (const struct pollfd &pfd){
                     return pfd.fd == conn_fd;
                 });
