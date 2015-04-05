@@ -141,11 +141,12 @@ void tls_echo_server::update_state(tls_connection &conn, int ssl_err)
 void tls_echo_server::close_connection(tls_connection &conn)
 {
     log_debug("connection closed");
-    close(conn.fd);
+    int fd = conn.fd;
+    close(fd);
     auto pi = std::find_if(poll_vec.begin(), poll_vec.end(),
-                           [&] (const struct pollfd &pfd) { return (pfd.fd == conn.fd); });
+                           [fd] (const struct pollfd &pfd) { return pfd.fd == fd; });
     if (pi != poll_vec.end()) poll_vec.erase(pi);
-    tls_connection_map.erase(conn.fd);
+    tls_connection_map.erase(fd);
 }
 
 void tls_echo_server::mainloop()
@@ -283,6 +284,8 @@ void tls_echo_server::mainloop()
                 if (ret < 0) {
                     int ssl_err = SSL_get_error(conn.ssl, ret);
                     update_state(conn, ssl_err);
+                } else if (ret == 0) {
+                    close_connection(conn);
                 } else {
                     buf_len = ret;
                     buf[buf_len] = '\0';
