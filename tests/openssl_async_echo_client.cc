@@ -71,9 +71,9 @@ struct tls_echo_client
     std::vector<struct pollfd> poll_vec;
     std::map<int,tls_connection> tls_connection_map;
     
-    static void update_state(struct pollfd &pfd, tls_connection &conn, int events, ssl_state new_state);
-    static void update_state(struct pollfd &pfd, tls_connection &conn, int ssl_err);
-    
+    void update_state(tls_connection &conn, int events, ssl_state new_state);
+    void update_state(tls_connection &conn, int ssl_err);
+    void close_connection(tls_connection &conn);
     void mainloop();
 };
 
@@ -111,27 +111,40 @@ static int log_tls_errors(const char *str, size_t len, void *bio)
     return 0;
 }
 
-void tls_echo_client::update_state(struct pollfd &pfd, tls_connection &conn, int events, ssl_state new_state)
+void tls_echo_client::update_state(tls_connection &conn, int events, ssl_state new_state)
 {
     log_debug("fd=%d %s -> %s",
-              pfd.fd, state_names[conn.state], state_names[new_state]);
+              conn.fd, state_names[conn.state], state_names[new_state]);
     conn.state = new_state;
-    pfd.events = events;
+    auto pi = std::find_if(poll_vec.begin(), poll_vec.end(),
+                           [&] (const struct pollfd &pfd) { return pfd.fd == conn.fd; });
+    if (pi != poll_vec.end()) pi->events = events;
+    else log_fatal_exit("file descriptor missing from poll_vec: %d", conn.fd);
 }
 
-void tls_echo_client::update_state(struct pollfd &pfd, tls_connection &conn, int ssl_err)
+void tls_echo_client::update_state(tls_connection &conn, int ssl_err)
 {
     switch (ssl_err) {
         case SSL_ERROR_WANT_READ:
-            update_state(pfd, conn, POLLIN, ssl_handshake_read);
+            update_state(conn, POLLIN, ssl_handshake_read);
             break;
         case SSL_ERROR_WANT_WRITE:
-            update_state(pfd, conn, POLLOUT, ssl_handshake_write);
+            update_state(conn, POLLOUT, ssl_handshake_write);
             break;
         default:
             log_fatal_exit("unknown tls error: %d", ssl_err);
             break;
     }
+}
+
+void tls_echo_client::close_connection(tls_connection &conn)
+{
+    log_debug("connection closed");
+    close(conn.fd);
+    auto pi = std::find_if(poll_vec.begin(), poll_vec.end(),
+                           [&] (const struct pollfd &pfd) { return pfd.fd == conn.fd; });
+    if (pi != poll_vec.end()) poll_vec.erase(pi);
+    tls_connection_map.erase(conn.fd);
 }
 
 void tls_echo_client::mainloop()
@@ -204,68 +217,63 @@ void tls_echo_client::mainloop()
             log_fatal_exit("poll failed: %s", strerror(errno));
             exit(9);
         }
-        for (size_t i = 0; i < poll_vec.size(); i++)
+        auto poll_events = poll_vec;
+        for (auto &pfd : poll_events)
         {
-            int fd = poll_vec[i].fd;
-            auto si = tls_connection_map.find(fd);
+            auto si = tls_connection_map.find(pfd.fd);
             if (si == tls_connection_map.end()) continue;
             tls_connection &conn = si->second;
             
-            if (poll_vec[i].revents & (POLLHUP | POLLERR))
+            if (pfd.revents & (POLLHUP | POLLERR))
             {
-                log_debug("connection closed");
-                SSL_free(conn.ssl);
-                close(conn.fd);
-                auto pi = std::find_if(poll_vec.begin(), poll_vec.end(),
-                    [fd] (const struct pollfd &pfd) { return pfd.fd == fd; });
-                if (pi != poll_vec.end()) poll_vec.erase(pi);
+                close_connection(conn);
                 break;
             }
-            else if (conn.state == ssl_none && poll_vec[i].revents & POLLOUT)
+            else if (conn.state == ssl_none && pfd.revents & POLLOUT)
             {
                 int ret = SSL_do_handshake(conn.ssl);
                 if (ret < 0) {
                     int ssl_err = SSL_get_error(conn.ssl, ret);
-                    update_state(poll_vec[i], conn, ssl_err);
+                    update_state(conn, ssl_err);
                 }
             }
-            else if (conn.state == ssl_handshake_read && poll_vec[i].revents & POLLIN)
+            else if (conn.state == ssl_handshake_read && pfd.revents & POLLIN)
             {
                 int ret = SSL_do_handshake(conn.ssl);
                 if (ret < 0) {
                     int ssl_err = SSL_get_error(conn.ssl, ret);
-                    update_state(poll_vec[i], conn, ssl_err);
+                    update_state(conn, ssl_err);
                 } else {
-                    update_state(poll_vec[i], conn, POLLOUT, ssl_app_write);
+                    update_state(conn, POLLOUT, ssl_app_write);
                 }
             }
-            else if (conn.state == ssl_handshake_write && poll_vec[i].revents & POLLOUT)
+            else if (conn.state == ssl_handshake_write && pfd.revents & POLLOUT)
             {
                 int ret = SSL_do_handshake(conn.ssl);
                 if (ret < 0) {
                     int ssl_err = SSL_get_error(conn.ssl, ret);
-                    update_state(poll_vec[i], conn, ssl_err);
+                    update_state(conn, ssl_err);
                 } else {
-                    update_state(poll_vec[i], conn, POLLOUT, ssl_app_write);
+                    update_state(conn, POLLOUT, ssl_app_write);
                 }
             }
-            else if (conn.state == ssl_app_write && poll_vec[i].revents & POLLOUT)
+            else if (conn.state == ssl_app_write && pfd.revents & POLLOUT)
             {
                 int ret = SSL_write(conn.ssl, buf, buf_len);
                 if (ret < 0) {
                     int ssl_err = SSL_get_error(conn.ssl, ret);
-                    update_state(poll_vec[i], conn, ssl_err);
+                    update_state(conn, ssl_err);
                 } else {
                     printf("sent: %s", buf);
-                    update_state(poll_vec[i], conn, POLLIN, ssl_app_read);
+                    update_state(conn, POLLIN, ssl_app_read);
                 }
             }
-            else if (conn.state == ssl_app_read && poll_vec[i].revents & POLLIN)
+            else if (conn.state == ssl_app_read && pfd.revents & POLLIN)
             {
                 int ret = SSL_read(conn.ssl, buf, sizeof(buf) - 1);
                 if (ret < 0) {
                     int ssl_err = SSL_get_error(conn.ssl, ret);
-                    update_state(poll_vec[i], conn, ssl_err);
+                    update_state(conn, ssl_err);
                 } else {
                     buf_len = ret;
                     buf[buf_len] = '\0';
@@ -273,11 +281,7 @@ void tls_echo_client::mainloop()
                     
                     // TODO - we should probably shutdown gracefully
                     // SSL_shutdown(conn.ssl);
-                    SSL_free(conn.ssl);
-                    close(conn.fd);
-                    auto pi = std::find_if(poll_vec.begin(), poll_vec.end(),
-                            [fd] (const struct pollfd &pfd) { return pfd.fd == fd; });
-                    if (pi != poll_vec.end()) poll_vec.erase(pi);
+                    close_connection(conn);
                     
                     // exit
                     return;
