@@ -54,16 +54,27 @@ static const char* state_names[] =
     "ssl_app_write"
 };
 
-struct ssl_connection
+struct tls_connection
 {
-    ssl_connection(int fd, SSL *ssl)
+    tls_connection(int fd, SSL *ssl)
         : fd(fd), ssl(ssl), state(ssl_none) {}
-    ssl_connection(const ssl_connection &o)
+    tls_connection(const tls_connection &o)
         : fd(o.fd), ssl(o.ssl), state(o.state) {}
     
     int fd;
     SSL *ssl;
     ssl_state state;
+};
+
+struct tls_echo_client
+{
+    std::vector<struct pollfd> poll_vec;
+    std::map<int,tls_connection> tls_connection_map;
+    
+    static void update_state(struct pollfd &pfd, tls_connection &conn, int events, ssl_state new_state);
+    static void update_state(struct pollfd &pfd, tls_connection &conn, int ssl_err);
+    
+    void mainloop();
 };
 
 static void log_prefix(const char* prefix, const char* fmt, va_list args)
@@ -100,8 +111,7 @@ static int log_tls_errors(const char *str, size_t len, void *bio)
     return 0;
 }
 
-static void update_state(struct pollfd &pfd, ssl_connection &conn,
-                         int events, ssl_state new_state)
+void tls_echo_client::update_state(struct pollfd &pfd, tls_connection &conn, int events, ssl_state new_state)
 {
     log_debug("fd=%d %s -> %s",
               pfd.fd, state_names[conn.state], state_names[new_state]);
@@ -109,8 +119,7 @@ static void update_state(struct pollfd &pfd, ssl_connection &conn,
     pfd.events = events;
 }
 
-static void update_state(struct pollfd &pfd, ssl_connection &conn,
-                         int ssl_err)
+void tls_echo_client::update_state(struct pollfd &pfd, tls_connection &conn, int ssl_err)
 {
     switch (ssl_err) {
         case SSL_ERROR_WANT_READ:
@@ -125,9 +134,8 @@ static void update_state(struct pollfd &pfd, ssl_connection &conn,
     }
 }
 
-int main(int argc, char **argv)
+void tls_echo_client::mainloop()
 {
-    SSL_library_init();
     SSL_CTX *ctx = SSL_CTX_new(TLSv1_client_method());
 
     if ((!SSL_CTX_load_verify_locations(ctx, ssl_cacert_file, NULL)) ||
@@ -154,7 +162,6 @@ int main(int argc, char **argv)
         }
     } else {
         log_fatal_exit("unknown host %s", connect_host);
-        return false;
     }
 
     int connect_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -179,17 +186,15 @@ int main(int argc, char **argv)
 
     char buf[16384] = "Hello World\n";
     int buf_len = (int)strlen(buf);
-    std::vector<struct pollfd> poll_vec;
-    std::map<int,ssl_connection> ssl_connection_map;
     poll_vec.push_back({connect_fd, POLLOUT, 0});
     
     SSL *ssl = SSL_new(ctx);
     SSL_set_fd(ssl, connect_fd);
     SSL_set_connect_state(ssl);
 
-    ssl_connection_map.insert
-        (std::pair<int,ssl_connection>
-            (connect_fd, ssl_connection(connect_fd, ssl)));
+    tls_connection_map.insert
+        (std::pair<int,tls_connection>
+            (connect_fd, tls_connection(connect_fd, ssl)));
     
     while (true)
     {
@@ -202,9 +207,9 @@ int main(int argc, char **argv)
         for (size_t i = 0; i < poll_vec.size(); i++)
         {
             int fd = poll_vec[i].fd;
-            auto si = ssl_connection_map.find(fd);
-            if (si == ssl_connection_map.end()) continue;
-            ssl_connection &conn = si->second;
+            auto si = tls_connection_map.find(fd);
+            if (si == tls_connection_map.end()) continue;
+            tls_connection &conn = si->second;
             
             if (poll_vec[i].revents & (POLLHUP | POLLERR))
             {
@@ -214,6 +219,7 @@ int main(int argc, char **argv)
                 auto pi = std::find_if(poll_vec.begin(), poll_vec.end(),
                     [fd] (const struct pollfd &pfd) { return pfd.fd == fd; });
                 if (pi != poll_vec.end()) poll_vec.erase(pi);
+                break;
             }
             else if (conn.state == ssl_none && poll_vec[i].revents & POLLOUT)
             {
@@ -274,11 +280,16 @@ int main(int argc, char **argv)
                     if (pi != poll_vec.end()) poll_vec.erase(pi);
                     
                     // exit
-                    return 0;
+                    return;
                 }
             }
         }
     }
+}
 
-    return 0;
+int main(int argc, char **argv)
+{
+    SSL_library_init();
+    tls_echo_client client;
+    client.mainloop();
 }

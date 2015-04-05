@@ -55,16 +55,27 @@ static const char* state_names[] =
     "ssl_app_write"
 };
 
-struct ssl_connection
+struct tls_connection
 {
-    ssl_connection(int fd, SSL *ssl)
+    tls_connection(int fd, SSL *ssl)
         : fd(fd), ssl(ssl), state(ssl_none) {}
-    ssl_connection(const ssl_connection &o)
+    tls_connection(const tls_connection &o)
         : fd(o.fd), ssl(o.ssl), state(o.state) {}
 
     int fd;
     SSL *ssl;
     ssl_state state;
+};
+
+struct tls_echo_server
+{
+    std::vector<struct pollfd> poll_vec;
+    std::map<int,tls_connection> tls_connection_map;
+    
+    static void update_state(struct pollfd &pfd, tls_connection &conn, int events, ssl_state new_state);
+    static void update_state(struct pollfd &pfd, tls_connection &conn, int ssl_err);
+    
+    void mainloop();
 };
 
 static void log_prefix(const char* prefix, const char* fmt, va_list args)
@@ -101,7 +112,7 @@ static int log_tls_errors(const char *str, size_t len, void *bio)
     return 0;
 }
 
-static void update_state(struct pollfd &pfd, ssl_connection &conn, int events, ssl_state new_state)
+void tls_echo_server::update_state(struct pollfd &pfd, tls_connection &conn, int events, ssl_state new_state)
 {
     log_debug("fd=%d %s -> %s",
               pfd.fd, state_names[conn.state], state_names[new_state]);
@@ -109,7 +120,7 @@ static void update_state(struct pollfd &pfd, ssl_connection &conn, int events, s
     pfd.events = events;
 }
 
-static void update_state(struct pollfd &pfd, ssl_connection &conn, int ssl_err)
+void tls_echo_server::update_state(struct pollfd &pfd, tls_connection &conn, int ssl_err)
 {
     switch (ssl_err) {
         case SSL_ERROR_WANT_READ:
@@ -124,9 +135,8 @@ static void update_state(struct pollfd &pfd, ssl_connection &conn, int ssl_err)
     }
 }
 
-int main(int argc, char **argv)
+void tls_echo_server::mainloop()
 {
-    SSL_library_init();
     SSL_CTX *ctx = SSL_CTX_new(TLSv1_server_method());
     
     if (SSL_CTX_use_certificate_file(ctx, ssl_cert_file, SSL_FILETYPE_PEM) <= 0) {
@@ -177,8 +187,6 @@ int main(int argc, char **argv)
 
     char buf[16384];
     int buf_len = 0;
-    std::vector<struct pollfd> poll_vec;
-    std::map<int,ssl_connection> ssl_connection_map;
     poll_vec.push_back({listen_fd, POLLIN, 0});
     
     while (true)
@@ -211,11 +219,11 @@ int main(int argc, char **argv)
                 SSL_set_fd(ssl, fd);
                 SSL_set_accept_state(ssl);
                 
-                auto si = ssl_connection_map.insert
-                    (std::pair<int,ssl_connection>
-                        (fd, ssl_connection(fd, ssl)));
+                auto si = tls_connection_map.insert
+                    (std::pair<int,tls_connection>
+                        (fd, tls_connection(fd, ssl)));
                 
-                ssl_connection &conn = si.first->second;
+                tls_connection &conn = si.first->second;
                 poll_vec.push_back({fd, POLLIN, 0});
                 size_t ni = poll_vec.size() - 1;
 
@@ -228,9 +236,9 @@ int main(int argc, char **argv)
             }
             
             int fd = poll_vec[i].fd;
-            auto si = ssl_connection_map.find(fd);
-            if (si == ssl_connection_map.end()) continue;
-            ssl_connection &conn = si->second;
+            auto si = tls_connection_map.find(fd);
+            if (si == tls_connection_map.end()) continue;
+            tls_connection &conn = si->second;
             
             if (poll_vec[i].revents & (POLLHUP | POLLERR))
             {
@@ -245,6 +253,7 @@ int main(int argc, char **argv)
                 auto pi = std::find_if(poll_vec.begin(), poll_vec.end(),
                     [fd] (const struct pollfd &pfd) { return pfd.fd == fd; });
                 if (pi != poll_vec.end()) poll_vec.erase(pi);
+                break;
             }
             else if (conn.state == ssl_handshake_read && poll_vec[i].revents & POLLIN)
             {
@@ -292,6 +301,12 @@ int main(int argc, char **argv)
             }
         }
     }
-    
-    return 0;
+}
+
+
+int main(int argc, char **argv)
+{
+    SSL_library_init();
+    tls_echo_server server;
+    server.mainloop();
 }
