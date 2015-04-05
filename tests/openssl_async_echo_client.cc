@@ -132,7 +132,8 @@ void tls_echo_client::update_state(tls_connection &conn, int ssl_err)
             update_state(conn, POLLOUT, ssl_handshake_write);
             break;
         default:
-            log_fatal_exit("unknown tls error: %d", ssl_err);
+            SSL_load_error_strings();
+            log_fatal_exit("tls error: %s", ERR_reason_error_string(ERR_get_error()));
             break;
     }
 }
@@ -280,6 +281,8 @@ void tls_echo_client::mainloop()
 int main(int argc, char **argv)
 {
     SSL_library_init();
+    SSL_load_error_strings();
+    
     tls_echo_client client;
     client.mainloop();
 }
