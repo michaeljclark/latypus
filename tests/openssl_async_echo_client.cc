@@ -236,6 +236,8 @@ void tls_echo_client::mainloop()
                 if (ret < 0) {
                     int ssl_err = SSL_get_error(conn.ssl, ret);
                     update_state(conn, ssl_err);
+                } else {
+                    update_state(conn, POLLOUT, ssl_app_write);
                 }
             }
             else if (conn.state == ssl_handshake_read && pfd.revents & POLLIN)
