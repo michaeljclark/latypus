@@ -230,27 +230,10 @@ void tls_echo_client::mainloop()
                 close_connection(conn);
                 break;
             }
-            else if (conn.state == ssl_none && pfd.revents & POLLOUT)
-            {
-                int ret = SSL_do_handshake(conn.ssl);
-                if (ret < 0) {
-                    int ssl_err = SSL_get_error(conn.ssl, ret);
-                    update_state(conn, ssl_err);
-                } else {
-                    update_state(conn, POLLOUT, ssl_app_write);
-                }
-            }
-            else if (conn.state == ssl_handshake_read && pfd.revents & POLLIN)
-            {
-                int ret = SSL_do_handshake(conn.ssl);
-                if (ret < 0) {
-                    int ssl_err = SSL_get_error(conn.ssl, ret);
-                    update_state(conn, ssl_err);
-                } else {
-                    update_state(conn, POLLOUT, ssl_app_write);
-                }
-            }
-            else if (conn.state == ssl_handshake_write && pfd.revents & POLLOUT)
+            else if ((conn.state == ssl_none ||
+                      conn.state == ssl_handshake_read ||
+                      conn.state == ssl_handshake_write) &&
+                     (pfd.revents & (POLLIN | POLLOUT)))
             {
                 int ret = SSL_do_handshake(conn.ssl);
                 if (ret < 0) {
