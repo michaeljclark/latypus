@@ -110,7 +110,7 @@ bool http_server_handler_stats::handle_request()
         auto http_engine_state = static_cast<http_server_engine_state*>
             (engine->get_engine_state(http_server::get_proto()));
         ss << "  listens " << http_engine_state->listens.size() << std::endl;
-        for (auto listen : http_engine_state->listens) {
+        for (auto &listen : http_engine_state->listens) {
             ss << "    " << socket_addr::addr_to_string(listen->addr) << std::endl;
         }
         ss << "  threads " << engine->threads_all.size() << std::endl;

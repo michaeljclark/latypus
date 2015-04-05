@@ -75,15 +75,13 @@ int connection::get_sock_error()
 void connection::connect_fd(int fd)
 {
     nopush = nodelay = 0;
-    // TODO - use std::unqiue_ptr
-    sock = std::make_shared<connected_socket>(fd);
+    sock = connected_socket_ptr(new connected_socket(fd));
 }
 
 bool connection::connect_to_host(socket_addr addr)
 {
     nopush = nodelay = 0;
-    // TODO - use std::unqiue_ptr
-    sock = std::make_shared<connected_socket>();
+    sock = connected_socket_ptr();
     return sock->connect_to_host(addr);
 }
 

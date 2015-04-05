@@ -6,15 +6,15 @@
 #define socket_h
 
 struct unix_socketpair;
-typedef std::shared_ptr<unix_socketpair> unix_socketpair_ptr;
+typedef std::unique_ptr<unix_socketpair> unix_socketpair_ptr;
 typedef std::vector<unix_socketpair_ptr> unix_socketpair_list;
 
 struct listening_socket;
-typedef std::shared_ptr<listening_socket> listening_socket_ptr;
+typedef std::unique_ptr<listening_socket> listening_socket_ptr;
 typedef std::vector<listening_socket_ptr> listening_socket_list;
 
 struct connected_socket;
-typedef std::shared_ptr<connected_socket> connected_socket_ptr;
+typedef std::unique_ptr<connected_socket> connected_socket_ptr;
 typedef std::vector<connected_socket_ptr> connected_socket_list;
 
 
