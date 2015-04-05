@@ -30,8 +30,7 @@ add_library(
     src/pollset_epoll.cc
     src/pollset_kqueue.cc
     src/pollset_poll.cc
-    src/connection_ssl.cc
-    src/connection_tcp.cc
+    src/connection.cc
     src/resolver.cc
     src/netdev.cc
     src/socket.cc

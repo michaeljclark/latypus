@@ -119,8 +119,7 @@ LATYPUS_SRCS =  $(LIB_SRC_DIR)/os.cc \
                 $(LIB_SRC_DIR)/pollset_poll.cc \
                 $(LIB_SRC_DIR)/pollset_epoll.cc \
                 $(LIB_SRC_DIR)/pollset_kqueue.cc \
-                $(LIB_SRC_DIR)/connection_ssl.cc \
-                $(LIB_SRC_DIR)/connection_tcp.cc \
+                $(LIB_SRC_DIR)/connection.cc \
                 $(LIB_SRC_DIR)/resolver.cc \
                 $(LIB_SRC_DIR)/netdev.cc \
                 $(LIB_SRC_DIR)/socket.cc \

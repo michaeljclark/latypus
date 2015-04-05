@@ -19,7 +19,7 @@ typedef std::shared_ptr<http_client_request> http_client_request_ptr;
 typedef std::deque<http_client_request_ptr> http_client_request_list;
 
 template <typename TransportConnection> struct http_client_connection_tmpl;
-typedef http_client_connection_tmpl<connection_tcp> http_client_connection;
+typedef http_client_connection_tmpl<connection> http_client_connection;
 
 
 /* http_client_request */

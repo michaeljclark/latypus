@@ -36,7 +36,7 @@
 #include "pollset.h"
 #include "protocol.h"
 #include "connection.h"
-#include "connection_tcp.h"
+#include "connection.h"
 #include "protocol_thread.h"
 #include "protocol_engine.h"
 #include "protocol_connection.h"
@@ -96,19 +96,19 @@ http_client_request::http_client_request(HTTPMethod method, url_ptr url,
 /* http_client_connection */
 
 template <>
-int http_client_connection_tmpl<connection_tcp>::get_poll_fd()
+int http_client_connection_tmpl<connection>::get_poll_fd()
 {
     return conn.get_poll_fd();
 }
 
 template <>
-poll_object_type http_client_connection_tmpl<connection_tcp>::get_poll_type()
+poll_object_type http_client_connection_tmpl<connection>::get_poll_type()
 {
     return http_client::client_sock_tcp_connection.type;
 }
 
 template <>
-bool http_client_connection_tmpl<connection_tcp>::init(protocol_engine_delegate *delegate)
+bool http_client_connection_tmpl<connection>::init(protocol_engine_delegate *delegate)
 {
     buffer.reset();
     conn.reset();
@@ -134,7 +134,7 @@ bool http_client_connection_tmpl<connection_tcp>::init(protocol_engine_delegate 
 }
 
 template <>
-bool http_client_connection_tmpl<connection_tcp>::free(protocol_engine_delegate *delegate)
+bool http_client_connection_tmpl<connection>::free(protocol_engine_delegate *delegate)
 {
     state = &http_client::connection_state_free;
     handler = http_client_handler_ptr();

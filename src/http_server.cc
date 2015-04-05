@@ -39,7 +39,7 @@
 #include "pollset.h"
 #include "protocol.h"
 #include "connection.h"
-#include "connection_tcp.h"
+#include "connection.h"
 #include "protocol_thread.h"
 #include "protocol_engine.h"
 #include "protocol_connection.h"
@@ -111,19 +111,19 @@ protocol_state http_server::connection_state_lingering_close
 /* http_server_connection */
 
 template <>
-int http_server_connection_tmpl<connection_tcp>::get_poll_fd()
+int http_server_connection_tmpl<connection>::get_poll_fd()
 {
     return conn.get_poll_fd();
 }
 
 template <>
-poll_object_type http_server_connection_tmpl<connection_tcp>::get_poll_type()
+poll_object_type http_server_connection_tmpl<connection>::get_poll_type()
 {
     return http_server::server_sock_tcp_connection.type;
 }
 
 template <>
-bool http_server_connection_tmpl<connection_tcp>::init(protocol_engine_delegate *delegate)
+bool http_server_connection_tmpl<connection>::init(protocol_engine_delegate *delegate)
 {
     buffer.reset();
     conn.reset();
@@ -147,7 +147,7 @@ bool http_server_connection_tmpl<connection_tcp>::init(protocol_engine_delegate 
 }
 
 template <>
-bool http_server_connection_tmpl<connection_tcp>::free(protocol_engine_delegate *delegate)
+bool http_server_connection_tmpl<connection>::free(protocol_engine_delegate *delegate)
 {
     state = &http_server::connection_state_free;
     handler = http_server_handler_ptr();

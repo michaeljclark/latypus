@@ -36,7 +36,7 @@
 #include "pollset.h"
 #include "protocol.h"
 #include "connection.h"
-#include "connection_tcp.h"
+#include "connection.h"
 #include "protocol_thread.h"
 #include "protocol_engine.h"
 #include "protocol_connection.h"

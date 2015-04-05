@@ -5,31 +5,40 @@
 #ifndef connection_h
 #define connection_h
 
-/* connection */
-
 struct connection : io_reader, io_writer
 {
-    virtual ~connection() {}
-        
-    virtual void reset() = 0;
-    virtual int get_id() = 0;
-    virtual void set_id(int conn_id) = 0;
-    virtual int get_poll_fd() = 0;
-    virtual int get_sock_error() = 0;
-    virtual void connect_fd(int fd) = 0;
-    virtual bool connect_to_host(socket_addr addr) = 0;
-    virtual void set_nopush(int nopush) = 0;
-    virtual void set_nodelay(int nodelay) = 0;
-    virtual void start_lingering_close() = 0;
-    virtual void close() = 0;
+    int                     conn_id;
+    time_t                  last_activity;
+    socket_addr             local_addr;
+    socket_addr             peer_addr;
+    connected_socket_ptr    sock;
+    int                     nopush : 1;
+    int                     nodelay : 1;
+    
+    connection();
+    virtual ~connection();
 
-    virtual time_t get_last_activity() = 0;
-    virtual void set_last_activity(time_t current_time) = 0;
-    virtual socket_addr& get_local_addr() = 0;
-    virtual socket_addr& get_peer_addr() = 0;
+    void reset();
+    int get_id();
+    void set_id(int conn_id);
+    int get_poll_fd();
+    int get_sock_error();
+    void connect_fd(int fd);
+    bool connect_to_host(socket_addr addr);
+    void set_nopush(int nopush);
+    void set_nodelay(int nodelay);
+    void start_lingering_close();
+    void close();
+    
+    io_result read(void *buf, size_t len);
+    io_result readv(const struct iovec *iov, int iovcnt);
+    io_result write(void *buf, size_t len);
+    io_result writev(const struct iovec *iov, int iovcnt);
 
-    virtual io_result read(void *buf, size_t len) = 0;
-    virtual io_result write(void *buf, size_t len) = 0;
+    time_t get_last_activity();
+    void set_last_activity(time_t current_time);
+    socket_addr& get_local_addr();
+    socket_addr& get_peer_addr();
 };
 
 #endif

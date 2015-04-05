@@ -22,7 +22,7 @@ struct http_server_handler_info;
 typedef std::unique_ptr<http_server_handler_info> http_server_handler_info_ptr;
 
 template <typename TransportConnection> struct http_server_connection_tmpl;
-typedef http_server_connection_tmpl<connection_tcp> http_server_connection;
+typedef http_server_connection_tmpl<connection> http_server_connection;
 
 typedef std::function<std::string(http_server_connection*)> http_server_function;
 
