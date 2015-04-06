@@ -61,12 +61,7 @@ int main(int argc, const char * argv[])
 ## Submodules
   * Fetching
 ````
-git submodule update --init --recursive
-cp CMakeLists.txt.cppunit third_party/cppunit/CMakeLists.txt 
-````
-  * Updating
-````
-git submodule foreach git pull
+sh git-update-submodules.sh
 ````
 
 ## Build Dependencies
