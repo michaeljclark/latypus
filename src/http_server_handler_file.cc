@@ -304,8 +304,10 @@ io_result http_server_handler_file::write_response_body()
     // refill buffer
     if (reader && buffer.bytes_readable() == 0) {
         buffer.reset();
-        io_result res = buffer.buffer_read(*reader);
-        if (res.has_error()) return res;
+        io_result result = buffer.buffer_read(*reader);
+        if (result.has_error()) {
+            return result;
+        }
     }
     
     // write buffer to socket
