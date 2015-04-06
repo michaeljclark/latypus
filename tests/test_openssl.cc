@@ -32,9 +32,13 @@ BIO *bio_err = NULL;
 
 static void lock_dbg_cb(int mode, int type, const char *file, int line)
 {
-    static int modes[CRYPTO_NUM_LOCKS]; /* = {0, 0, ... } */
+    static int *modes = NULL;
     const char *errstr = NULL;
     int rw;
+
+    if (!modes) {
+        modes = (int*)OPENSSL_malloc(CRYPTO_num_locks() * sizeof(int));
+    }
     
     rw = mode & (CRYPTO_READ|CRYPTO_WRITE);
     if (!((rw == CRYPTO_READ) || (rw == CRYPTO_WRITE)))
@@ -43,7 +47,7 @@ static void lock_dbg_cb(int mode, int type, const char *file, int line)
         goto err;
     }
     
-    if (type < 0 || type >= CRYPTO_NUM_LOCKS)
+    if (type < 0 || type >= CRYPTO_num_locks())
     {
         errstr = "type out of bounds";
         goto err;
@@ -136,17 +140,9 @@ public:
         SSL_load_error_strings();
         OpenSSL_add_all_algorithms();
         
-        //printf("%s\n", SSLeay_version(SSLEAY_VERSION));
-        
         /* create ssl context */
         const SSL_METHOD *meth = TLSv1_2_client_method();
         SSL_CTX *ctx = SSL_CTX_new(meth);
-        
-        // https://www.openssl.org/docs/apps/ciphers.html
-        // https://community.qualys.com/blogs/securitylabs/2013/08/05/configuring-apache-nginx-and-openssl-for-forward-secrecy
-        // https://www.ssllabs.com/ssltest/analyze.html?d=git.earthbuzz.com
-        // check filter: openssl ciphers -v 'TLSv1.2:!aNULL:!eNULL'
-        // http://en.wikipedia.org/wiki/HTTP_Strict_Transport_Security
         
         if (!SSL_CTX_load_verify_locations(ctx, RSA_CLIENT_CA_CERT, NULL)) {
             BIO_print_errors_fp(stderr);
