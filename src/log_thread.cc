@@ -26,7 +26,6 @@
 /* log_thread */
 
 const bool log_thread::debug = true;
-const int log_thread::buffer_size = 1024;
 const int log_thread::flush_interval_msecs = 100;
 
 log_thread::log_thread(int fd, int num_buffers) :
@@ -60,12 +59,12 @@ void log_thread::create_buffers()
 {
     // create buffers
     for (size_t i = 0; i < num_buffers; i++) {
-        char *buffer = new char[buffer_size];
+        char *buffer = new char[LOG_BUFFER_SIZE];
         if (!buffer || !log_buffers_free.push_back(buffer)) {
             log_error("%s: error creating log buffer", __func__);
         }
     }
-    log_info("log_thread created %d buffers, %d bytes per buffer", num_buffers, buffer_size);
+    log_info("log_thread created %d buffers, %d bytes per buffer", num_buffers, LOG_BUFFER_SIZE);
 }
 
 void log_thread::delete_buffers()
@@ -112,8 +111,8 @@ retry:
         }
         goto retry;
     }
-    strncpy(buffer, message, buffer_size - 1);
-    buffer[buffer_size - 1] = '\0';
+    strncpy(buffer, message, LOG_BUFFER_SIZE - 1);
+    buffer[LOG_BUFFER_SIZE - 1] = '\0';
     if (!log_buffers_inuse.push_back(buffer)) {
         log_error("%s: error pushing log buffer", __func__);
         return;

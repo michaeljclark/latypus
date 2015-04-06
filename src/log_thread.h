@@ -10,10 +10,11 @@
 struct log_thread;
 typedef std::shared_ptr<log_thread> log_thread_ptr;
 
+#define LOG_BUFFER_SIZE 1024
+
 struct log_thread : std::thread
 {
     static const bool               debug;
-    static const int                buffer_size;
     static const int                flush_interval_msecs;
     
     FILE*                           file;

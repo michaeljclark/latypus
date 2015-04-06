@@ -722,7 +722,7 @@ void http_server::finished_request(protocol_thread_delegate *delegate, protocol_
     if (engine_state->access_log_thread)
     {
         char date_buf[32], addr_buf[32];
-        char log_buffer[1024];
+        char log_buffer[LOG_BUFFER_SIZE];
         
         // format date
         time_t current_time = delegate->get_current_time();
