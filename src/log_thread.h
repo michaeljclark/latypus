@@ -18,7 +18,7 @@ struct log_thread : std::thread
     static const int                flush_interval_msecs;
     
     FILE*                           file;
-    const int                       num_buffers;
+    const size_t                    num_buffers;
     queue_atomic<char*>             log_buffers_free;
     queue_atomic<char*>             log_buffers_inuse;
     time_t                          last_time;
@@ -29,7 +29,7 @@ struct log_thread : std::thread
     std::condition_variable         log_cond;
     std::condition_variable         writer_cond;
 
-    log_thread(int fd, int num_buffers);
+    log_thread(int fd, size_t num_buffers);
     virtual ~log_thread();
     
     void shutdown();
