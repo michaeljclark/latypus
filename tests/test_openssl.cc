@@ -141,11 +141,11 @@ public:
         OpenSSL_add_all_algorithms();
         
         /* create ssl context */
-        const SSL_METHOD *meth = TLSv1_2_client_method();
+        const SSL_METHOD *meth = TLSv1_client_method();
         SSL_CTX *ctx = SSL_CTX_new(meth);
         
         if (!SSL_CTX_load_verify_locations(ctx, RSA_CLIENT_CA_CERT, NULL)) {
-            BIO_print_errors_fp(stderr);
+            fprintf(stderr, "tls error: %s", ERR_reason_error_string(ERR_get_error()));
             exit(1);
         }
         SSL_CTX_set_verify(ctx,SSL_VERIFY_PEER, NULL);
@@ -182,7 +182,7 @@ public:
         if (ret < 0) {
             char verify_err[120];
             printf("verify result: %s\n", ERR_error_string((uint32_t)SSL_get_verify_result(ssl), verify_err));
-            BIO_print_errors_fp(stderr);
+            fprintf(stderr, "tls error: %s", ERR_reason_error_string(ERR_get_error()));
             exit(1);
         }
         
@@ -214,7 +214,7 @@ public:
         /* shutdown SSL socket */
         ret = SSL_shutdown(ssl);
         if (ret < 0) {
-            BIO_print_errors_fp(stderr);
+            fprintf(stderr, "tls error: %s", ERR_reason_error_string(ERR_get_error()));
             exit(1);
         }
         ret = close(sock);
