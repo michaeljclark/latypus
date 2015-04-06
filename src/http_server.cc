@@ -33,6 +33,9 @@
 #include "log_thread.h"
 #include "trie.h"
 #include "socket.h"
+#include "socket_unix.h"
+#include "socket_tcp.h"
+#include "socket_tls.h"
 #include "resolver.h"
 #include "config_parser.h"
 #include "config.h"
@@ -170,10 +173,14 @@ void http_server_config_factory::make_config(config_ptr cfg) const
     cfg->max_headers = MAX_HEADERS_DEFAULT;
     cfg->header_buffer_size = HEADER_BUFFER_SIZE_DEFAULT;
     cfg->io_buffer_size = IO_BUFFER_SIZE_DEFAULT;
-    cfg->proto_listeners.push_back(std::pair<protocol*,config_addr_ptr>
-                                   (http_server::get_proto(), config_addr::decode("[]:8080")));
-    cfg->proto_listeners.push_back(std::pair<protocol*,config_addr_ptr>
-                                   (http_server::get_proto(), config_addr::decode("127.0.0.1:8080")));
+    cfg->proto_listeners.push_back(std::tuple<protocol*,config_addr_ptr,socket_mode>
+                                   (http_server::get_proto(),
+                                    config_addr::decode("[]:8080"),
+                                    socket_mode_plain));
+    cfg->proto_listeners.push_back(std::tuple<protocol*,config_addr_ptr,socket_mode>
+                                   (http_server::get_proto(),
+                                    config_addr::decode("127.0.0.1:8080"),
+                                    socket_mode_plain));
     cfg->proto_threads.push_back(std::pair<std::string,size_t>("http_server/listener", 1));
     cfg->proto_threads.push_back(std::pair<std::string,size_t>("http_server/router,http_server/worker,http_server/keepalive,http_server/linger", std::thread::hardware_concurrency()));
     cfg->root = "html";
@@ -264,13 +271,6 @@ void http_server::engine_init(protocol_engine_delegate *delegate) const
     // initialize connection table
     engine_state->init(delegate, cfg->server_connections);
     
-    // create listening sockets for this protocol
-    for (auto proto_listener : cfg->proto_listeners) {
-        if (proto_listener.first != get_proto()) continue;
-        auto listener = proto_listener.second;
-        engine_state->listens.push_back(listening_socket_ptr(new listening_socket(listener->addr, cfg->listen_backlog)));
-    }
-    
     // open log file
     if (cfg->access_log.size() > 0 && cfg->access_log != "off") {
         int log_fd = open(cfg->access_log.c_str(), O_WRONLY|O_CREAT|O_APPEND, 0755);
@@ -282,16 +282,22 @@ void http_server::engine_init(protocol_engine_delegate *delegate) const
         engine_state->access_log_thread = log_thread_ptr(new log_thread(log_fd));
     }
 
-    // start listening
-    for (auto &listen : engine_state->listens) {
-        if (listen->start_listening()) {
+    // create listening sockets for this protocol
+    for (size_t i = 0; i < cfg->proto_listeners.size(); i++) {
+        auto &proto_listener = cfg->proto_listeners[i];
+        protocol *proto = std::get<0>(proto_listener);
+        if (proto != get_proto()) continue;
+        auto listener = std::get<1>(proto_listener);
+        socket_mode mode = std::get<2>(proto_listener);
+        // TODO - handle TLS
+        engine_state->listens.push_back(connected_socket_ptr(new tcp_connected_socket()));
+        auto &listen = engine_state->listens[i];
+        if (listen->start_listening(listener->addr, cfg->listen_backlog)) {
             log_info("%s listening on: %s",
-                     get_proto()->name.c_str(),
-                     listen->to_string().c_str());
+                     get_proto()->name.c_str(), listen->to_string().c_str());
         } else {
             log_fatal_exit("%s can't listen on: %s",
-                           get_proto()->name.c_str(),
-                           listen->to_string().c_str());
+                           get_proto()->name.c_str(), listen->to_string().c_str());
         }
     }
 }

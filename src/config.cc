@@ -89,7 +89,7 @@ config::config() :
     fn_map["proto_threads"] =      {3,  3,  [&] (config_line &line) {
         proto_threads.push_back(std::pair<std::string,size_t>(line[1], atoi(line[2].c_str())));
     }};
-    fn_map["proto_listener"] =     {3,  3,  [&] (config_line &line) {
+    fn_map["proto_listener"] =     {3,  4,  [&] (config_line &line) {
         auto proto = (*protocol::get_map())[line[1]];
         auto addr = config_addr::decode(line[2]);
         if (!proto) {
@@ -97,7 +97,14 @@ config::config() :
         } else if (!addr) {
             log_error("configuration error: proto_listener: invalid address: %s", line[2].c_str());
         }
-        proto_listeners.push_back(std::pair<protocol*,config_addr_ptr>(proto, addr));
+        if (line.size() == 4) {
+            if (line[3] != "tls") {
+                log_error("configuration error: proto_listener: invalid option: %s", line[3].c_str());
+            }
+            proto_listeners.push_back(std::tuple<protocol*,config_addr_ptr,socket_mode>(proto, addr, socket_mode_tls));
+        } else {
+            proto_listeners.push_back(std::tuple<protocol*,config_addr_ptr,socket_mode>(proto, addr, socket_mode_plain));
+        }
     }};
     fn_map["mime_type"] =           {3, -1,  [&] (config_line &line) {
         for (size_t s = 2; s < line.size(); s++) {
@@ -196,7 +203,10 @@ std::string config::to_string()
         ss << "server_threads      " << thread.first << " " << thread.second << ";" << std::endl;
     }
     for (auto proto_listener : proto_listeners) {
-        ss << "proto_listener      " << proto_listener.first->name << " " << proto_listener.second->to_string() << ";" << std::endl;
+        std::string proto = std::get<0>(proto_listener)->name;
+        std::string addr = std::get<1>(proto_listener)->to_string();
+        std::string mode = std::get<2>(proto_listener) == socket_mode_tls ? " tls" : "";
+        ss << "proto_listener      " << proto << " " << addr << mode << ";" << std::endl;
     }
     for (auto mime_type_ent : mime_types) {
         ss << "mime_type           " << mime_type_ent.first << " " << mime_type_ent.second << ";" << std::endl;

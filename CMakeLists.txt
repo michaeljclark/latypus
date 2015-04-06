@@ -34,6 +34,10 @@ add_library(
     src/resolver.cc
     src/netdev.cc
     src/socket.cc
+    src/socket_tcp.cc
+    src/socket_tls.cc
+    src/socket_udp.cc
+    src/socket_unix.cc
     src/url.cc
     src/cmdline_options.cc
     src/config.cc

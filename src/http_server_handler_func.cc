@@ -33,6 +33,7 @@
 #include "log_thread.h"
 #include "trie.h"
 #include "socket.h"
+#include "socket_unix.h"
 #include "resolver.h"
 #include "config_parser.h"
 #include "config.h"

@@ -27,6 +27,7 @@
 #include "url.h"
 #include "log.h"
 #include "socket.h"
+#include "socket_tcp.h"
 #include "resolver.h"
 #include "config_parser.h"
 #include "config.h"
@@ -34,7 +35,6 @@
 #include "pollset_poll.h"
 #include "pollset_kqueue.h"
 #include "protocol.h"
-#include "connection.h"
 #include "connection.h"
 
 
@@ -75,13 +75,13 @@ int connection::get_sock_error()
 void connection::connect_fd(int fd)
 {
     nopush = nodelay = 0;
-    sock = connected_socket_ptr(new connected_socket(fd));
+    sock = connected_socket_ptr(new tcp_connected_socket(fd));
 }
 
 bool connection::connect_to_host(socket_addr addr)
 {
     nopush = nodelay = 0;
-    sock = connected_socket_ptr();
+    sock = connected_socket_ptr(new tcp_connected_socket());
     return sock->connect_to_host(addr);
 }
 

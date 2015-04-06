@@ -170,6 +170,14 @@
 		65998C391AD2434600494247 /* libssl.0.9.8.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 65998C321AD2430B00494247 /* libssl.0.9.8.dylib */; };
 		65998C3A1AD2436D00494247 /* libssl.0.9.8.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 65998C321AD2430B00494247 /* libssl.0.9.8.dylib */; };
 		65998C3B1AD2437300494247 /* libcrypto.0.9.8.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 65998C351AD2432900494247 /* libcrypto.0.9.8.dylib */; };
+		65998C3E1AD2679900494247 /* socket_tls.h in Headers */ = {isa = PBXBuildFile; fileRef = 65998C3C1AD2679900494247 /* socket_tls.h */; };
+		65998C3F1AD2679900494247 /* socket_tls.cc in Sources */ = {isa = PBXBuildFile; fileRef = 65998C3D1AD2679900494247 /* socket_tls.cc */; };
+		65998C421AD3105300494247 /* socket_tcp.cc in Sources */ = {isa = PBXBuildFile; fileRef = 65998C401AD3105300494247 /* socket_tcp.cc */; };
+		65998C431AD3105300494247 /* socket_tcp.h in Headers */ = {isa = PBXBuildFile; fileRef = 65998C411AD3105300494247 /* socket_tcp.h */; };
+		65998C481AD310FD00494247 /* socket_udp.cc in Sources */ = {isa = PBXBuildFile; fileRef = 65998C441AD310FD00494247 /* socket_udp.cc */; };
+		65998C491AD310FD00494247 /* socket_udp.h in Headers */ = {isa = PBXBuildFile; fileRef = 65998C451AD310FD00494247 /* socket_udp.h */; };
+		65998C4A1AD310FD00494247 /* socket_unix.h in Headers */ = {isa = PBXBuildFile; fileRef = 65998C461AD310FD00494247 /* socket_unix.h */; };
+		65998C4B1AD310FD00494247 /* socket_unix.cc in Sources */ = {isa = PBXBuildFile; fileRef = 65998C471AD310FD00494247 /* socket_unix.cc */; };
 		65A70965181528BC00522F22 /* test_config.cc in Sources */ = {isa = PBXBuildFile; fileRef = 65A70962181528BC00522F22 /* test_config.cc */; };
 		65A70966181528BC00522F22 /* test_http_request.cc in Sources */ = {isa = PBXBuildFile; fileRef = 65A70963181528BC00522F22 /* test_http_request.cc */; };
 		65C65D961A8B2F7A00C01C2E /* liblatypus.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 657E691719020F330024A28F /* liblatypus.a */; };
@@ -769,6 +777,14 @@
 		65998C291AD2403200494247 /* libcrypto.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcrypto.dylib; path = usr/lib/libcrypto.dylib; sourceTree = SDKROOT; };
 		65998C321AD2430B00494247 /* libssl.0.9.8.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libssl.0.9.8.dylib; path = usr/lib/libssl.0.9.8.dylib; sourceTree = SDKROOT; };
 		65998C351AD2432900494247 /* libcrypto.0.9.8.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcrypto.0.9.8.dylib; path = usr/lib/libcrypto.0.9.8.dylib; sourceTree = SDKROOT; };
+		65998C3C1AD2679900494247 /* socket_tls.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = socket_tls.h; path = src/socket_tls.h; sourceTree = "<group>"; };
+		65998C3D1AD2679900494247 /* socket_tls.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = socket_tls.cc; path = src/socket_tls.cc; sourceTree = "<group>"; };
+		65998C401AD3105300494247 /* socket_tcp.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = socket_tcp.cc; path = src/socket_tcp.cc; sourceTree = "<group>"; };
+		65998C411AD3105300494247 /* socket_tcp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = socket_tcp.h; path = src/socket_tcp.h; sourceTree = "<group>"; };
+		65998C441AD310FD00494247 /* socket_udp.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = socket_udp.cc; path = src/socket_udp.cc; sourceTree = "<group>"; };
+		65998C451AD310FD00494247 /* socket_udp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = socket_udp.h; path = src/socket_udp.h; sourceTree = "<group>"; };
+		65998C461AD310FD00494247 /* socket_unix.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = socket_unix.h; path = src/socket_unix.h; sourceTree = "<group>"; };
+		65998C471AD310FD00494247 /* socket_unix.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = socket_unix.cc; path = src/socket_unix.cc; sourceTree = "<group>"; };
 		65A708D81813895F00522F22 /* httpbis.abnf */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = httpbis.abnf; path = grammar/httpbis.abnf; sourceTree = "<group>"; };
 		65A708DE1813936100522F22 /* test_http_request */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = test_http_request; sourceTree = BUILT_PRODUCTS_DIR; };
 		65A7091A1814648500522F22 /* config_parser.rl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = config_parser.rl; path = src/config_parser.rl; sourceTree = "<group>"; };
@@ -1154,6 +1170,14 @@
 				65559820185F51E70009A109 /* resolver.h */,
 				6574F661182CDA96006C0284 /* socket.cc */,
 				6574F662182CDA96006C0284 /* socket.h */,
+				65998C401AD3105300494247 /* socket_tcp.cc */,
+				65998C411AD3105300494247 /* socket_tcp.h */,
+				65998C3D1AD2679900494247 /* socket_tls.cc */,
+				65998C3C1AD2679900494247 /* socket_tls.h */,
+				65998C441AD310FD00494247 /* socket_udp.cc */,
+				65998C451AD310FD00494247 /* socket_udp.h */,
+				65998C471AD310FD00494247 /* socket_unix.cc */,
+				65998C461AD310FD00494247 /* socket_unix.h */,
 				65559808185F47BF0009A109 /* url.cc */,
 				65559809185F47BF0009A109 /* url.h */,
 			);
@@ -1333,6 +1357,7 @@
 				65949FBC192920DF004375FD /* config_cpu.h in Headers */,
 				657E6A1E1902F3410024A28F /* protocol.h in Headers */,
 				657E6A1A19022BA10024A28F /* connection.h in Headers */,
+				65998C3E1AD2679900494247 /* socket_tls.h in Headers */,
 				657E6A32190306080024A28F /* http_client_handler_file.h in Headers */,
 				659789721ACCCC00006DCA7F /* http_server_handler_stats.h in Headers */,
 				6529C6741AD237F8006142E7 /* db_sql_parser_impl.h in Headers */,
@@ -1344,6 +1369,8 @@
 				653FB5D11AC3B6080070BA70 /* random_seed.h in Headers */,
 				650CD5211AC1205B006338A9 /* bits.h in Headers */,
 				65D05D7B1A94182300953207 /* plat_poll.h in Headers */,
+				65998C491AD310FD00494247 /* socket_udp.h in Headers */,
+				65998C431AD3105300494247 /* socket_tcp.h in Headers */,
 				657E6A3A1903E06F0024A28F /* protocol_thread.h in Headers */,
 				659788FD1AC7A84C006DCA7F /* trie.h in Headers */,
 				65672AB919BC53F5003676E5 /* netdev.h in Headers */,
@@ -1354,6 +1381,7 @@
 				65293FF51948539300E3F5F7 /* pollset_epoll.h in Headers */,
 				65D05DA51A95972600953207 /* queue_atomic.h in Headers */,
 				6529C6771AD237F8006142E7 /* db_sqlite3.h in Headers */,
+				65998C4A1AD310FD00494247 /* socket_unix.h in Headers */,
 				653FB64D1AC4A4B60070BA70 /* log_thread.h in Headers */,
 				657E6A3E1903E0880024A28F /* protocol_engine.h in Headers */,
 				65D05D711A93A9F900953207 /* latypus.h in Headers */,
@@ -1920,6 +1948,7 @@
 				6529C6731AD237F8006142E7 /* db_sql_parser_impl.cc in Sources */,
 				6529C66E1AD237F8006142E7 /* db_sqlite3.cc in Sources */,
 				657E69CA1902121F0024A28F /* cmdline_options.cc in Sources */,
+				65998C481AD310FD00494247 /* socket_udp.cc in Sources */,
 				657E6A1919022BA10024A28F /* connection.cc in Sources */,
 				657E69D91902121F0024A28F /* log.cc in Sources */,
 				657E69DD1902121F0024A28F /* resolver.cc in Sources */,
@@ -1930,6 +1959,8 @@
 				657E69DE1902121F0024A28F /* socket.cc in Sources */,
 				657E69E01902121F0024A28F /* url.cc in Sources */,
 				657E6A1D1902F3410024A28F /* protocol.cc in Sources */,
+				65998C421AD3105300494247 /* socket_tcp.cc in Sources */,
+				65998C3F1AD2679900494247 /* socket_tls.cc in Sources */,
 				657E6A3D1903E0880024A28F /* protocol_engine.cc in Sources */,
 				657E6A391903E06F0024A28F /* protocol_thread.cc in Sources */,
 				659789731ACCCC00006DCA7F /* http_server_handler_stats.cc in Sources */,
@@ -1955,6 +1986,7 @@
 				657E69D61902121F0024A28F /* http_request.cc in Sources */,
 				65949FBB192920DF004375FD /* config_cpu.cc in Sources */,
 				657E69D71902121F0024A28F /* http_response.cc in Sources */,
+				65998C4B1AD310FD00494247 /* socket_unix.cc in Sources */,
 				656070421A3D93E700391264 /* io.cc in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

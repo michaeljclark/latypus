@@ -33,6 +33,7 @@
 #include "log_thread.h"
 #include "trie.h"
 #include "socket.h"
+#include "socket_unix.h"
 #include "resolver.h"
 #include "config_parser.h"
 #include "config.h"
@@ -111,7 +112,7 @@ bool http_server_handler_stats::handle_request()
             (engine->get_engine_state(http_server::get_proto()));
         ss << "  listens " << http_engine_state->listens.size() << std::endl;
         for (auto &listen : http_engine_state->listens) {
-            ss << "    " << socket_addr::addr_to_string(listen->addr) << std::endl;
+            ss << "    " << listen->to_string() << std::endl;
         }
         ss << "  threads " << engine->threads_all.size() << std::endl;
         for (auto &thread : engine->threads_all) {

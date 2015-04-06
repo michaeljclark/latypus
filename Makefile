@@ -123,6 +123,10 @@ LATYPUS_SRCS =  $(LIB_SRC_DIR)/os.cc \
                 $(LIB_SRC_DIR)/resolver.cc \
                 $(LIB_SRC_DIR)/netdev.cc \
                 $(LIB_SRC_DIR)/socket.cc \
+                $(LIB_SRC_DIR)/socket_tcp.cc \
+                $(LIB_SRC_DIR)/socket_tls.cc \
+                $(LIB_SRC_DIR)/socket_udp.cc \
+                $(LIB_SRC_DIR)/socket_unix.cc \
                 $(LIB_SRC_DIR)/url.cc \
                 $(LIB_SRC_DIR)/cmdline_options.cc \
                 $(LIB_SRC_DIR)/config.cc \
