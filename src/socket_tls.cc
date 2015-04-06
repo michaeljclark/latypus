@@ -45,16 +45,16 @@ tls_connected_socket::~tls_connected_socket()
 
 bool tls_connected_socket::start_listening(socket_addr addr, int backlog)
 {
-    set_fd(-1);
-    
-    this->addr = addr;
-    this->backlog = backlog;
-    
-    fd = socket(addr.saddr.sa_family, SOCK_STREAM, 0);
+    int fd = socket(addr.saddr.sa_family, SOCK_STREAM, 0);
     if (fd < 0) {
         log_error("socket failed: %s", strerror(errno));
         return false;
     }
+    
+    set_fd(fd);
+    this->addr = addr;
+    this->backlog = backlog;
+    
     if (addr.saddr.sa_family == AF_INET6) {
         int ipv6only = 1;
         if (setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, (void *)&ipv6only, sizeof(ipv6only)) < 0) {
@@ -119,9 +119,9 @@ void tls_connected_socket::close_connection()
     generic_socket::close_connection();
 }
 
-void tls_connected_socket::set_fd(int fd)
+void tls_connected_socket::accept(int fd)
 {
-    generic_socket::set_fd(fd);
+    set_fd(fd);
 
     if (!ssl) {
         ssl = SSL_new((SSL_CTX*)ctx);
@@ -134,13 +134,21 @@ void tls_connected_socket::set_fd(int fd)
 
 bool tls_connected_socket::connect_to_host( socket_addr addr)
 {
-    close_connection();
-    
-    fd = socket(addr.saddr.sa_family, SOCK_STREAM, 0);
+    int fd = socket(addr.saddr.sa_family, SOCK_STREAM, 0);
     if (fd < 0) {
         log_error("socket failed: %s", strerror(errno));
         return false;
     }
+    set_fd(-1);
+
+    if (!ssl) {
+        ssl = SSL_new((SSL_CTX*)ctx);
+    }
+    
+    SSL_clear(ssl);
+    SSL_set_fd(ssl, fd);
+    SSL_set_connect_state(ssl);
+
     if (addr.saddr.sa_family == AF_INET6) {
         int ipv6only = 1;
         if (setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, (void *)&ipv6only, sizeof(ipv6only)) < 0) {

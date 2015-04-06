@@ -72,10 +72,11 @@ int connection::get_sock_error()
     return sock ? sock->get_error() : EIO;
 }
 
-void connection::connect_fd(int fd)
+void connection::accept(int fd)
 {
     nopush = nodelay = 0;
-    sock = connected_socket_ptr(new tcp_connected_socket(fd));
+    sock = connected_socket_ptr(new tcp_connected_socket());
+    sock->accept(fd);
 }
 
 bool connection::connect_to_host(socket_addr addr)

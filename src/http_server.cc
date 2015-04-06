@@ -381,7 +381,7 @@ void http_server::handle_accept(protocol_thread_delegate *delegate, const protoc
 
         // assign file descriptor
         auto &conn = http_conn->conn;
-        conn.connect_fd(fd);
+        conn.accept(fd);
         if (delegate->get_debug_mask() & protocol_debug_socket) {
             log_debug("%90s:%p: %s: accepted",
                       delegate->get_thread_string().c_str(),

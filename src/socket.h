@@ -76,6 +76,7 @@ struct connected_socket : generic_socket, io_reader, io_writer
     connected_socket(int fd);
     virtual ~connected_socket();
 
+    virtual void accept(int fd) = 0;
     virtual bool start_listening(socket_addr addr, int backlog) = 0;
     virtual socket_addr get_addr() = 0;
     virtual std::string to_string() = 0;

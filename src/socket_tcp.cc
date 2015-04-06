@@ -39,19 +39,18 @@ tcp_connected_socket::~tcp_connected_socket()
 {
 }
 
-
 bool tcp_connected_socket::start_listening(socket_addr addr, int backlog)
 {
-    set_fd(-1);
-    
-    this->addr = addr;
-    this->backlog = backlog;
-    
-    fd = socket(addr.saddr.sa_family, SOCK_STREAM, 0);
+    int fd = socket(addr.saddr.sa_family, SOCK_STREAM, 0);
     if (fd < 0) {
         log_error("socket failed: %s", strerror(errno));
         return false;
     }
+
+    set_fd(fd);
+    this->addr = addr;
+    this->backlog = backlog;
+    
     if (addr.saddr.sa_family == AF_INET6) {
         int ipv6only = 1;
         if (setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, (void *)&ipv6only, sizeof(ipv6only)) < 0) {
@@ -98,15 +97,20 @@ std::string tcp_connected_socket::to_string()
     return socket_addr::addr_to_string(addr);
 }
 
+void tcp_connected_socket::accept(int fd)
+{
+    set_fd(fd);
+}
+
 bool tcp_connected_socket::connect_to_host(socket_addr addr)
 {
-    set_fd(-1);
-    
-    fd = socket(addr.saddr.sa_family, SOCK_STREAM, 0);
+    int fd = socket(addr.saddr.sa_family, SOCK_STREAM, 0);
     if (fd < 0) {
         log_error("socket failed: %s", strerror(errno));
         return false;
     }
+    set_fd(fd);
+    
     if (addr.saddr.sa_family == AF_INET6) {
         int ipv6only = 1;
         if (setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, (void *)&ipv6only, sizeof(ipv6only)) < 0) {
