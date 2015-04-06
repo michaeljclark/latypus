@@ -13,7 +13,6 @@
 #define IO_BUFFER_SIZE_DEFAULT      8192
 #define IPC_BUFFER_SIZE_DEFAULT     1048576
 #define LOG_BUFFERS_DEFAULT         1024
-#define LOG_BUFFER_SIZE_DEFAULT     1024
 #define CONNETION_TIMEOUT_DEFAULT   60
 #define KEEPALIVE_TIMEOUT_DEFAULT   5
 
@@ -59,7 +58,6 @@ struct config : config_parser
     int io_buffer_size;
     int ipc_buffer_size;
     int log_buffers;
-    int log_buffer_size;
     int keepalive_timeout;
     int connection_timeout;
 

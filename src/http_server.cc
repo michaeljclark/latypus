@@ -175,7 +175,6 @@ void http_server_config_factory::make_config(config_ptr cfg) const
     cfg->io_buffer_size = IO_BUFFER_SIZE_DEFAULT;
     cfg->ipc_buffer_size = IPC_BUFFER_SIZE_DEFAULT;
     cfg->log_buffers = LOG_BUFFERS_DEFAULT;
-    cfg->log_buffer_size = LOG_BUFFER_SIZE_DEFAULT;
     cfg->proto_listeners.push_back(std::tuple<protocol*,config_addr_ptr,socket_mode>
                                    (http_server::get_proto(),
                                     config_addr::decode("[]:8080"),
@@ -282,7 +281,7 @@ void http_server::engine_init(protocol_engine_delegate *delegate) const
                            cfg->access_log.c_str(), strerror(errno));
         }
         engine_state->access_log_file.set_fd(log_fd);
-        engine_state->access_log_thread = log_thread_ptr(new log_thread(log_fd, cfg->log_buffers, cfg->log_buffer_size));
+        engine_state->access_log_thread = log_thread_ptr(new log_thread(log_fd, cfg->log_buffers));
     }
 
     // create listening sockets for this protocol

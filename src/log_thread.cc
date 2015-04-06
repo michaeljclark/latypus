@@ -26,12 +26,12 @@
 /* log_thread */
 
 const bool log_thread::debug = true;
+const int log_thread::buffer_size = 1024;
 const int log_thread::flush_interval_msecs = 100;
 
-log_thread::log_thread(int fd, int num_buffers, int buffer_size) :
+log_thread::log_thread(int fd, int num_buffers) :
     file(fdopen(fd, "w")),
     num_buffers(num_buffers),
-    buffer_size(buffer_size),
     log_buffers_free(num_buffers),
     log_buffers_inuse(num_buffers),
     running(true),
