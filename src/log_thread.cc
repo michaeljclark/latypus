@@ -26,12 +26,12 @@
 /* log_thread */
 
 const bool log_thread::debug = true;
-const int log_thread::num_buffers = 65536;
-const int log_thread::buffer_size = 1024;
 const int log_thread::flush_interval_msecs = 100;
 
-log_thread::log_thread(int fd) :
+log_thread::log_thread(int fd, int num_buffers, int buffer_size) :
     file(fdopen(fd, "w")),
+    num_buffers(num_buffers),
+    buffer_size(buffer_size),
     log_buffers_free(num_buffers),
     log_buffers_inuse(num_buffers),
     running(true),
@@ -65,6 +65,7 @@ void log_thread::create_buffers()
             log_error("%s: error creating log buffer", __func__);
         }
     }
+    log_info("log_thread created %d buffers, %d bytes per buffer", num_buffers, buffer_size);
 }
 
 void log_thread::delete_buffers()

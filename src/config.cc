@@ -59,6 +59,8 @@ config::config() :
     header_buffer_size(HEADER_BUFFER_SIZE_DEFAULT),
     io_buffer_size(IO_BUFFER_SIZE_DEFAULT),
     ipc_buffer_size(IPC_BUFFER_SIZE_DEFAULT),
+    log_buffers(LOG_BUFFERS_DEFAULT),
+    log_buffer_size(LOG_BUFFER_SIZE_DEFAULT),
     keepalive_timeout(KEEPALIVE_TIMEOUT_DEFAULT),
     connection_timeout(CONNETION_TIMEOUT_DEFAULT)
 {
@@ -75,6 +77,8 @@ config::config() :
     fn_map["header_buffer_size"] =  {2,  2,  [&] (config_line &line) { header_buffer_size = atoi(line[1].c_str()); }};
     fn_map["io_buffer_size"] =      {2,  2,  [&] (config_line &line) { io_buffer_size = atoi(line[1].c_str()); }};
     fn_map["ipc_buffer_size"] =     {2,  2,  [&] (config_line &line) { ipc_buffer_size = atoi(line[1].c_str()); }};
+    fn_map["log_buffers"] =         {2,  2,  [&] (config_line &line) { log_buffers = atoi(line[1].c_str()); }};
+    fn_map["log_buffer_size"] =     {2,  2,  [&] (config_line &line) { log_buffer_size = atoi(line[1].c_str()); }};
     fn_map["keepalive_timeout"] =   {2,  2,  [&] (config_line &line) { keepalive_timeout = atoi(line[1].c_str()); }};
     fn_map["connection_timeout"] =  {2,  2,  [&] (config_line &line) { connection_timeout = atoi(line[1].c_str()); }};
     fn_map["http_route"] =          {3,  3,  [&] (config_line &line) {
@@ -187,6 +191,8 @@ std::string config::to_string()
     ss << "header_buffer_size  " << header_buffer_size << ";" << std::endl;
     ss << "io_buffer_size      " << io_buffer_size << ";" << std::endl;
     ss << "ipc_buffer_size     " << ipc_buffer_size << ";" << std::endl;
+    ss << "log_buffers         " << log_buffers << ";" << std::endl;
+    ss << "log_buffer_size     " << log_buffer_size << ";" << std::endl;
     ss << "keepalive_timeout   " << keepalive_timeout << ";" << std::endl;
     ss << "connection_timeout  " << connection_timeout << ";" << std::endl;
     ss << "error_log           " << error_log << ";" << std::endl;

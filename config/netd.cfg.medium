@@ -8,6 +8,8 @@ max_headers         64;
 header_buffer_size  8192;
 io_buffer_size      32768;
 ipc_buffer_size     1048576;
+log_buffers         65536;
+log_buffer_size     1024;
 keepalive_timeout   5;
 connection_timeout  60;
 

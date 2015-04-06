@@ -13,11 +13,11 @@ typedef std::shared_ptr<log_thread> log_thread_ptr;
 struct log_thread : std::thread
 {
     static const bool               debug;
-    static const int                num_buffers;
-    static const int                buffer_size;
     static const int                flush_interval_msecs;
     
     FILE*                           file;
+    const int                       num_buffers;
+    const int                       buffer_size;
     queue_atomic<char*>             log_buffers_free;
     queue_atomic<char*>             log_buffers_inuse;
     time_t                          last_time;
@@ -28,7 +28,7 @@ struct log_thread : std::thread
     std::condition_variable         log_cond;
     std::condition_variable         writer_cond;
 
-    log_thread(int fd);
+    log_thread(int fd, int num_buffers, int buffer_size);
     virtual ~log_thread();
     
     void shutdown();

@@ -173,6 +173,9 @@ void http_server_config_factory::make_config(config_ptr cfg) const
     cfg->max_headers = MAX_HEADERS_DEFAULT;
     cfg->header_buffer_size = HEADER_BUFFER_SIZE_DEFAULT;
     cfg->io_buffer_size = IO_BUFFER_SIZE_DEFAULT;
+    cfg->ipc_buffer_size = IPC_BUFFER_SIZE_DEFAULT;
+    cfg->log_buffers = LOG_BUFFERS_DEFAULT;
+    cfg->log_buffer_size = LOG_BUFFER_SIZE_DEFAULT;
     cfg->proto_listeners.push_back(std::tuple<protocol*,config_addr_ptr,socket_mode>
                                    (http_server::get_proto(),
                                     config_addr::decode("[]:8080"),
@@ -279,7 +282,7 @@ void http_server::engine_init(protocol_engine_delegate *delegate) const
                            cfg->access_log.c_str(), strerror(errno));
         }
         engine_state->access_log_file.set_fd(log_fd);
-        engine_state->access_log_thread = log_thread_ptr(new log_thread(log_fd));
+        engine_state->access_log_thread = log_thread_ptr(new log_thread(log_fd, cfg->log_buffers, cfg->log_buffer_size));
     }
 
     // create listening sockets for this protocol
@@ -720,7 +723,7 @@ void http_server::finished_request(protocol_thread_delegate *delegate, protocol_
     if (engine_state->access_log_thread)
     {
         char date_buf[32], addr_buf[32];
-        char log_buffer[log_thread::buffer_size];
+        char log_buffer[1024];
         
         // format date
         time_t current_time = delegate->get_current_time();
@@ -748,7 +751,7 @@ void http_server::finished_request(protocol_thread_delegate *delegate, protocol_
         snprintf(log_buffer, sizeof(log_buffer) - 1, "%s - %s %s \"%s %s %s\" %d %lu\n",
                  addr_buf, user.c_str(), date_buf, request_method.c_str(), request_path.c_str(),
                  http_version.c_str(), status_code, bytes_transferred);
-        log_buffer[log_thread::buffer_size - 1] = '\0';
+        log_buffer[sizeof(log_buffer) - 1] = '\0';
         engine_state->access_log_thread->log(current_time, log_buffer);
     }
 }
