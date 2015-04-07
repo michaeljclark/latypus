@@ -53,8 +53,6 @@ struct generic_socket
     generic_socket(int fd);
     virtual ~generic_socket();
     
-    virtual void set_context(void *context);
-    virtual socket_mode get_mode();
     virtual void close_connection();
     virtual void set_fd(int fd);
     virtual int get_fd();
@@ -76,6 +74,9 @@ struct connected_socket : generic_socket, io_reader, io_writer
     connected_socket(int fd);
     virtual ~connected_socket();
 
+    virtual void set_context(void *context) = 0;
+    virtual socket_mode get_mode() = 0;
+    virtual int do_handshake() = 0;
     virtual void accept(int fd) = 0;
     virtual bool start_listening(socket_addr addr, int backlog) = 0;
     virtual socket_addr get_addr() = 0;

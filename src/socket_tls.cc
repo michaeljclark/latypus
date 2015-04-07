@@ -43,6 +43,21 @@ tls_connected_socket::~tls_connected_socket()
     }
 }
 
+void tls_connected_socket::set_context(void *context)
+{
+    ctx = (SSL_CTX*)context;
+}
+
+socket_mode tls_connected_socket::get_mode()
+{
+    return socket_mode_tls;
+}
+
+int tls_connected_socket::do_handshake()
+{
+    return SSL_do_handshake(ssl);
+}
+
 bool tls_connected_socket::start_listening(socket_addr addr, int backlog)
 {
     int fd = socket(addr.saddr.sa_family, SOCK_STREAM, 0);
@@ -99,16 +114,6 @@ socket_addr tls_connected_socket::get_addr()
 std::string tls_connected_socket::to_string()
 {
     return socket_addr::addr_to_string(addr);
-}
-
-void tls_connected_socket::set_context(void *context)
-{
-    ctx = (SSL_CTX*)context;
-}
-
-socket_mode tls_connected_socket::get_mode()
-{
-    return socket_mode_tls;
 }
 
 void tls_connected_socket::close_connection()

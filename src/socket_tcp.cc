@@ -39,6 +39,21 @@ tcp_connected_socket::~tcp_connected_socket()
 {
 }
 
+void tcp_connected_socket::set_context(void *context)
+{
+    // no op - used to set tls context
+}
+
+socket_mode tcp_connected_socket::get_mode()
+{
+    return socket_mode_plain;
+}
+
+int tcp_connected_socket::do_handshake()
+{
+    return 0;
+}
+
 bool tcp_connected_socket::start_listening(socket_addr addr, int backlog)
 {
     int fd = socket(addr.saddr.sa_family, SOCK_STREAM, 0);

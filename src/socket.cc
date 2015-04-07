@@ -120,16 +120,6 @@ generic_socket::~generic_socket()
     close_connection();
 }
 
-void generic_socket::set_context(void *context)
-{
-    // no op - used to set tls context
-}
-
-socket_mode generic_socket::get_mode()
-{
-    return socket_mode_plain;
-}
-
 void generic_socket::close_connection()
 {
     if (fd >= 0) {

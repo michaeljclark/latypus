@@ -33,6 +33,7 @@ struct tls_connected_socket : connected_socket
 
     void set_context(void *context);
     socket_mode get_mode();
+    int do_handshake();
     void close_connection();
     void accept(int fd);
     bool connect_to_host(socket_addr addr);
