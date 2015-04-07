@@ -37,7 +37,7 @@ DEBUG_FLAGS =   -g
 WARN_FLAGS =    -Wall -Wpedantic -Wsign-compare
 CPPFLAGS =
 CXXFLAGS =      -std=c++11 $(OPT_FLAGS) $(DEBUG_FLAGS) $(WARN_FLAGS) $(INCLUDES)
-LDFLAGS =       -lpthread
+LDFLAGS =       -lpthread -lcrypto -lssl
 
 # check if we can use libc++
 ifeq ($(call check_opt,$(CXX),cc,$(LIBCPP_FLAGS)), 0)
