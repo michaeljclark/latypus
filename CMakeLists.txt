@@ -63,16 +63,16 @@ add_library(
 )
 
 add_executable(neta app/neta.cc)
-target_link_libraries(neta latypus pthread)
+target_link_libraries(neta latypus pthread ssl crypto)
 
 add_executable(netb app/netb.cc)
-target_link_libraries(netb latypus pthread)
+target_link_libraries(netb latypus pthread ssl crypto)
 
 add_executable(netc app/netc.cc)
-target_link_libraries(netc latypus pthread)
+target_link_libraries(netc latypus pthread ssl crypto)
 
 add_executable(netd app/netd.cc)
-target_link_libraries(netd latypus pthread)
+target_link_libraries(netd latypus pthread ssl crypto)
 
 add_executable(openssl_async_echo_client tests/openssl_async_echo_client.cc)
 target_link_libraries(openssl_async_echo_client ssl crypto)
@@ -81,7 +81,7 @@ add_executable(openssl_async_echo_server tests/openssl_async_echo_server.cc)
 target_link_libraries(openssl_async_echo_server ssl crypto)
 
 add_executable(test_config tests/test_config.cc)
-target_link_libraries(test_config latypus pthread cppunit)
+target_link_libraries(test_config latypus pthread cppunit ssl crypto)
 
 add_executable(test_cpu tests/test_cpu.cc)
 target_link_libraries(test_cpu latypus pthread cppunit)
