@@ -86,7 +86,7 @@ public:
         int fd = mkstemp(tmp_fname);
 
         /* start logger thread */
-        log_thread logger(fd);
+        log_thread logger(fd, 65536);
         
         /* start log producer thread */
         test_log_thread log_test(logger, 32768);
