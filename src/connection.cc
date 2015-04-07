@@ -81,7 +81,7 @@ void connection::accept_tls(int fd, void *ctx)
     sock->accept(fd);
 }
 
-bool connection::connect_to_host(socket_addr addr, void *ctx)
+bool connection::connect_to_host_tls(socket_addr addr, void *ctx)
 {
     nopush = nodelay = 0;
     sock = connected_socket_ptr(new tls_connected_socket());

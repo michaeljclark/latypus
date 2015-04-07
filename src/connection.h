@@ -24,7 +24,7 @@ struct connection : io_reader, io_writer
     int get_poll_fd();
     int get_sock_error();
     void accept_tls(int fd, void *ctx);
-    bool connect_to_host(socket_addr addr, void *ctx);
+    bool connect_to_host_tls(socket_addr addr, void *ctx);
     void accept(int fd);
     bool connect_to_host(socket_addr addr);
     void set_nopush(int nopush);
