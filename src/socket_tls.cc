@@ -142,7 +142,7 @@ void tls_connected_socket::accept(int fd)
     SSL_set_accept_state(ssl);
 }
 
-bool tls_connected_socket::connect_to_host( socket_addr addr)
+bool tls_connected_socket::connect_to_host(socket_addr addr)
 {
     int fd = socket(addr.saddr.sa_family, SOCK_STREAM, 0);
     if (fd < 0) {
