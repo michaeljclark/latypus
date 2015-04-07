@@ -59,6 +59,8 @@ protocol_sock http_client::client_sock_tcp_tls_connection
 // actions
 protocol_action http_client::action_connect_host
     (get_proto(), "connect_host", &connect_host);
+protocol_action http_client::action_process_tls_handshake
+    (get_proto(), "process_tls_handshake", &process_tls_handshake);
 protocol_action http_client::action_process_next_request
     (get_proto(), "process_next_request", &process_next_request);
 protocol_action http_client::action_keepalive_wait_connection
@@ -75,6 +77,8 @@ protocol_mask http_client::thread_mask_keepalive
 // states
 protocol_state http_client::connection_state_free
     (get_proto(), "free");
+protocol_state http_client::connection_state_tls_handshake
+    (get_proto(), "tls_handshake", &handle_state_tls_handshake);
 protocol_state http_client::connection_state_client_request
     (get_proto(), "client_request", &handle_state_client_request);
 protocol_state http_client::connection_state_client_body
@@ -193,13 +197,40 @@ protocol_thread_state* http_client::create_thread_state() const
     return new http_client_thread_state();
 }
 
+static int log_tls_errors(const char *str, size_t len, void *bio)
+{
+    fprintf(stderr, "%s", str);
+    return 0;
+}
+
 void http_client::engine_init(protocol_engine_delegate *delegate) const
 {
     // get config
     auto cfg = delegate->get_config();
+    auto engine_state = get_engine_state(delegate);
     
     // initialize connection table
     get_engine_state(delegate)->init(delegate, cfg->client_connections);
+
+    if (cfg->ssl_ca_file.length() > 0)
+    {
+        SSL_library_init();
+        SSL_load_error_strings();
+        
+        engine_state->ssl_ctx = SSL_CTX_new(TLSv1_client_method());
+        
+        if ((!SSL_CTX_load_verify_locations(engine_state->ssl_ctx, cfg->ssl_ca_file.c_str(), NULL)) ||
+            (!SSL_CTX_set_default_verify_paths(engine_state->ssl_ctx))) {
+            ERR_print_errors_cb(log_tls_errors, NULL);
+            log_fatal_exit("%s failed to load cacert: %s",
+                           get_proto()->name.c_str(), cfg->ssl_ca_file.c_str());
+        } else {
+            log_debug("%s loaded cacert: %s",
+                      get_proto()->name.c_str(), cfg->ssl_ca_file.c_str());
+        }
+        SSL_CTX_set_verify(engine_state->ssl_ctx, SSL_VERIFY_PEER, NULL);
+        SSL_CTX_set_verify_depth(engine_state->ssl_ctx, 9);
+    }
 }
 
 void http_client::engine_shutdown(protocol_engine_delegate *delegate) const
@@ -332,6 +363,37 @@ void http_client::timeout_connection(protocol_thread_delegate *delegate, protoco
 
 
 /* http_client state handlers */
+
+void http_client::handle_state_tls_handshake(protocol_thread_delegate *delegate, protocol_object *obj)
+{
+    auto http_conn = static_cast<http_client_connection*>(obj);
+    auto &conn = http_conn->conn;
+    
+    log_debug("%s", __func__);
+    int ret = conn.sock->do_handshake();
+    log_debug("%s ret=%d", __func__, ret);
+    
+    switch (ret) {
+        case socket_error_none:
+            delegate->remove_events(http_conn);
+            process_next_request(delegate, obj);
+            break;
+        case socket_error_want_write:
+            delegate->add_events(http_conn, poll_event_out);
+            break;
+        case socket_error_want_read:
+            delegate->add_events(http_conn, poll_event_in);
+            break;
+        default:
+            log_debug("%90s:%p: %s: unknown tls handshake error %d: closing connection",
+                      delegate->get_thread_string().c_str(),
+                      delegate->get_thread_id(),
+                      obj->to_string().c_str(), ret);
+            delegate->remove_events(http_conn);
+            close_connection(delegate, http_conn);
+            break;
+    }
+}
 
 void http_client::handle_state_client_request(protocol_thread_delegate *delegate, protocol_object *obj)
 {
@@ -559,6 +621,15 @@ void http_client::handle_state_waiting(protocol_thread_delegate *delegate, proto
 
 /* http_client messages */
 
+void http_client::process_tls_handshake(protocol_thread_delegate *delegate, protocol_object *obj)
+{
+    log_debug("%s", __func__);
+    auto http_conn = static_cast<http_client_connection*>(obj);
+    delegate->add_events(http_conn, poll_event_out);
+    http_conn->state = &connection_state_tls_handshake;
+}
+
+
 void http_client::connect_host(protocol_thread_delegate *delegate, protocol_object *obj)
 {
     auto http_conn = static_cast<http_client_connection*>(obj);
@@ -569,10 +640,22 @@ void http_client::connect_host(protocol_thread_delegate *delegate, protocol_obje
     auto current_request = http_conn->url_requests.front();
     http_conn->connection_mutex.unlock();
     if (delegate->get_resolver()->lookup(conn.get_peer_addr(), current_request->url->host, current_request->url->port)) {
-        if (conn.connect_to_host(conn.get_peer_addr())) {
-            process_connection(delegate, http_conn);
-        } else {
-            abort_connection(delegate, http_conn);
+        if (current_request->url->scheme == "https") {
+            auto engine_state = get_engine_state(delegate);
+            if (!engine_state->ssl_ctx) {
+                log_fatal_exit("%s no SSL context", get_proto()->name.c_str());
+            }
+            if (conn.connect_to_host_tls(conn.get_peer_addr(), engine_state->ssl_ctx)) {
+                process_connection_tls(delegate, http_conn);
+            } else {
+                abort_connection(delegate, http_conn);
+            }
+        } else if (current_request->url->scheme == "http") {
+            if (conn.connect_to_host(conn.get_peer_addr())) {
+                process_connection(delegate, http_conn);
+            } else {
+                abort_connection(delegate, http_conn);
+            }
         }
     } else {
         abort_connection(delegate, http_conn);
@@ -716,6 +799,11 @@ void http_client::process_connection(protocol_thread_delegate *delegate, protoco
     forward_connection(delegate, obj, thread_mask_processor, action_process_next_request);
 }
 
+void http_client::process_connection_tls(protocol_thread_delegate *delegate, protocol_object *obj)
+{
+    forward_connection(delegate, obj, thread_mask_processor, action_process_tls_handshake);
+}
+
 void http_client::keepalive_connection(protocol_thread_delegate *delegate, protocol_object *obj)
 {
     forward_connection(delegate, obj, thread_mask_keepalive, action_keepalive_wait_connection);
@@ -821,6 +909,13 @@ bool http_client::submit_request(protocol_engine_delegate *delegate,
 {
     http_client_connection *http_conn = nullptr;
     
+    if (url_req->url->scheme != "http" && url_req->url->scheme != "https") {
+        log_error("%s: submit_request: unknown scheme \"%s\": %s",
+                  get_proto()->name.c_str(), url_req->url->scheme.c_str(),
+                  url_req->url->to_string().c_str());
+        return false;
+    }
+    
     if (max_requests_per_connection > 0) {
         http_conn = get_existing_connection_for_url(delegate, url_req->url, max_requests_per_connection);
     }
@@ -846,7 +941,8 @@ bool http_client::submit_request(protocol_engine_delegate *delegate,
         forward_connection(thread_delegate, http_conn, thread_mask_connect, action_connect_host);
         return true;
     } else {
-        log_error("submit_request: no available connections");
+        log_error("%s: submit_request: no available connections: %s",
+                  get_proto()->name.c_str(), url_req->url->to_string().c_str());
         return false;
     }
 }

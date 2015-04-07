@@ -5,6 +5,10 @@
 #ifndef http_cient_h
 #define http_cient_h
 
+#include <openssl/crypto.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+
 #define USE_RINGBUFFER 1
 
 struct http_client;
@@ -113,6 +117,7 @@ struct http_client : protocol
     
     /* actions */
     static protocol_action action_connect_host;
+    static protocol_action action_process_tls_handshake;
     static protocol_action action_process_next_request;
     static protocol_action action_keepalive_wait_connection;
     
@@ -123,6 +128,7 @@ struct http_client : protocol
     
     /* states */
     static protocol_state connection_state_free;
+    static protocol_state connection_state_tls_handshake;
     static protocol_state connection_state_client_request;
     static protocol_state connection_state_client_body;
     static protocol_state connection_state_server_response;
@@ -167,11 +173,13 @@ struct http_client : protocol
     /* http_client messages */
 
     static void connect_host(protocol_thread_delegate *, protocol_object *);
+    static void process_tls_handshake(protocol_thread_delegate *, protocol_object *);
     static void process_next_request(protocol_thread_delegate *, protocol_object *);
     static void keepalive_wait_connection(protocol_thread_delegate *, protocol_object *);
 
     /* http_server state handlers */
 
+    static void handle_state_tls_handshake(protocol_thread_delegate *, protocol_object *);
     static void handle_state_client_request(protocol_thread_delegate *, protocol_object *);
     static void handle_state_client_body(protocol_thread_delegate *, protocol_object *);
     static void handle_state_server_response(protocol_thread_delegate *, protocol_object *);
@@ -184,6 +192,7 @@ struct http_client : protocol
     static void process_response_headers(protocol_thread_delegate *, protocol_object *);
     static void connect_connection(protocol_thread_delegate *, protocol_object *);
     static void process_connection(protocol_thread_delegate *, protocol_object *);
+    static void process_connection_tls(protocol_thread_delegate *, protocol_object *);
     static void keepalive_connection(protocol_thread_delegate *, protocol_object *);
     static void forward_connection(protocol_thread_delegate*, protocol_object *, const protocol_mask &proto_mask, const protocol_action &proto_action);
     static http_client_connection* get_connection(protocol_thread_delegate *, int conn_id);
@@ -205,6 +214,8 @@ struct http_client : protocol
 
 struct http_client_engine_state : protocol_engine_state, protocol_connection_state<http_client_connection>
 {
+    SSL_CTX*                                    ssl_ctx;
+    
     protocol* get_proto() const { return http_client::get_proto(); }
 
     void bind_function(std::string path, typename http_client::function_type)
