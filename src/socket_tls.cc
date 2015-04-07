@@ -17,6 +17,10 @@
 #include "socket.h"
 #include "socket_tls.h"
 
+#if defined(TCP_CORK) && !defined(TCP_NOPUSH)
+#define TCP_NOPUSH TCP_CORK
+#endif
+
 
 /* tls_connected_socket */
 

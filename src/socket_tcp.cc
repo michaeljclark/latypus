@@ -17,6 +17,10 @@
 #include "socket.h"
 #include "socket_tcp.h"
 
+#if defined(TCP_CORK) && !defined(TCP_NOPUSH)
+#define TCP_NOPUSH TCP_CORK
+#endif
+
 
 /* tcp_connected_socket */
 

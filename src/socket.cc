@@ -17,9 +17,7 @@
 #include "socket.h"
 
 
-#if defined(TCP_CORK) && !defined(TCP_NOPUSH)
-#define TCP_NOPUSH TCP_CORK
-#endif
+/* socket_addr */
 
 socklen_t socket_addr::len(const socket_addr &addr)
 {
@@ -32,9 +30,6 @@ socklen_t socket_addr::len(const socket_addr &addr)
     }
     return sa_len;
 }
-
-
-/* socket_addr */
 
 std::string socket_addr::addr_to_string(const socket_addr &addr)
 {
