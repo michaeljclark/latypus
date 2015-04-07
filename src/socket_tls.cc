@@ -145,7 +145,7 @@ bool tls_connected_socket::connect_to_host( socket_addr addr)
         log_error("socket failed: %s", strerror(errno));
         return false;
     }
-    set_fd(-1);
+    set_fd(fd);
 
     if (!ssl) {
         ssl = SSL_new((SSL_CTX*)ctx);
