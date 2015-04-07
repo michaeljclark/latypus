@@ -19,6 +19,13 @@ enum socket_mode
     socket_mode_tls
 };
 
+enum socket_error
+{
+    socket_error_none = 0,
+    socket_error_want_read = 2,
+    socket_error_want_write = 3,
+};
+
 /* socket addr
  */
 
