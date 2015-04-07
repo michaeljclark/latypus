@@ -154,7 +154,7 @@ bool tls_connected_socket::connect_to_host(socket_addr addr)
     if (!ssl) {
         ssl = SSL_new((SSL_CTX*)ctx);
     }
-    
+
     SSL_clear(ssl);
     SSL_set_fd(ssl, fd);
     SSL_set_connect_state(ssl);
@@ -181,12 +181,6 @@ bool tls_connected_socket::connect_to_host(socket_addr addr)
         return false;
     }
     
-    assert(ssl != nullptr);
-    
-    SSL_clear(ssl);
-    SSL_set_fd(ssl, fd);
-    SSL_set_connect_state(ssl);
-
     return true;
 }
 
