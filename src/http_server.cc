@@ -73,6 +73,8 @@ protocol_sock http_server::server_sock_tcp_tls_connection
     (get_proto(), "tcp_tls_connection", protocol_sock_tcp_connection | protocol_sock_tcp_tls);
 
 // actions
+protocol_action http_server::action_router_tls_handshake
+    (get_proto(), "router_tls_handshake", &router_tls_handshake);
 protocol_action http_server::action_router_process_headers
     (get_proto(), "router_process_headers", &router_process_headers);
 protocol_action http_server::action_worker_process_request
@@ -97,6 +99,8 @@ protocol_mask http_server::thread_mask_linger
 // states
 protocol_state http_server::connection_state_free
     (get_proto(), "free");
+protocol_state http_server::connection_state_tls_handshake
+    (get_proto(), "client_request", &handle_state_tls_handshake);
 protocol_state http_server::connection_state_client_request
     (get_proto(), "client_request", &handle_state_client_request);
 protocol_state http_server::connection_state_client_body
@@ -250,6 +254,12 @@ protocol_thread_state* http_server::create_thread_state() const
     return new http_server_thread_state();
 }
 
+static int log_tls_errors(const char *str, size_t len, void *bio)
+{
+    fprintf(stderr, "%s", str);
+    return 0;
+}
+
 void http_server::engine_init(protocol_engine_delegate *delegate) const
 {
     // get config
@@ -283,6 +293,36 @@ void http_server::engine_init(protocol_engine_delegate *delegate) const
         engine_state->access_log_file.set_fd(log_fd);
         engine_state->access_log_thread = log_thread_ptr(new log_thread(log_fd, cfg->log_buffers));
     }
+    
+    if (cfg->ssl_cert_file.length() > 0 && cfg->ssl_key_file.length() > 0)
+    {
+        SSL_library_init();
+        SSL_load_error_strings();
+        
+        engine_state->ssl_ctx = SSL_CTX_new(TLSv1_server_method());
+        
+        if (SSL_CTX_use_certificate_file(engine_state->ssl_ctx,
+                                         cfg->ssl_cert_file.c_str(), SSL_FILETYPE_PEM) <= 0)
+        {
+            ERR_print_errors_cb(log_tls_errors, NULL);
+            log_fatal_exit("%s failed to load certificate: %s",
+                           get_proto()->name.c_str(), cfg->ssl_cert_file.c_str());
+        } else {
+            log_info("%s loaded cert: %s",
+                     get_proto()->name.c_str(), cfg->ssl_cert_file.c_str());
+        }
+        
+        if (SSL_CTX_use_PrivateKey_file(engine_state->ssl_ctx,
+                                        cfg->ssl_key_file.c_str(), SSL_FILETYPE_PEM) <= 0)
+        {
+            ERR_print_errors_cb(log_tls_errors, NULL);
+            log_fatal_exit("%s failed to load private key: %s",
+                           get_proto()->name.c_str(), cfg->ssl_key_file.c_str());
+        } else {
+            log_info("%s loaded key: %s",
+                     get_proto()->name.c_str(), cfg->ssl_key_file.c_str());
+        }
+    }
 
     // create listening sockets for this protocol
     for (size_t i = 0; i < cfg->proto_listeners.size(); i++) {
@@ -291,8 +331,11 @@ void http_server::engine_init(protocol_engine_delegate *delegate) const
         if (proto != get_proto()) continue;
         auto listener = std::get<1>(proto_listener);
         socket_mode mode = std::get<2>(proto_listener);
-        // TODO - handle TLS
-        engine_state->listens.push_back(connected_socket_ptr(new tcp_connected_socket()));
+        if (mode == socket_mode_tls) {
+            engine_state->listens.push_back(connected_socket_ptr(new tls_connected_socket()));
+        } else {
+            engine_state->listens.push_back(connected_socket_ptr(new tcp_connected_socket()));
+        }
         auto &listen = engine_state->listens[i];
         if (listen->start_listening(listener->addr, cfg->listen_backlog)) {
             log_info("%s listening on: %s",
@@ -352,6 +395,8 @@ void http_server::handle_message(protocol_thread_delegate *delegate, protocol_me
 
 void http_server::handle_accept(protocol_thread_delegate *delegate, const protocol_sock *proto_sock, int listen_fd) const
 {
+    auto engine_state = get_engine_state(delegate);
+    
     // accept new connections
     while (true) {
         int fd;
@@ -377,16 +422,30 @@ void http_server::handle_accept(protocol_thread_delegate *delegate, const protoc
             close(fd);
             continue;
         }
-        
+
+        // find listen socket
+        auto it = std::find_if(engine_state->listens.begin(), engine_state->listens.end(),
+                               [listen_fd](const connected_socket_ptr& listen)
+                               { return listen->get_fd() == listen_fd; });
+        auto &listen = *it;
 
         // assign file descriptor
         auto &conn = http_conn->conn;
-        conn.accept(fd);
+        // send connection to a router
+        switch (listen->get_mode()) {
+            case socket_mode_plain:
+                conn.accept(fd);
+                break;
+            case socket_mode_tls:
+                conn.accept_tls(fd, engine_state->ssl_ctx);
+                break;
+        }
         if (delegate->get_debug_mask() & protocol_debug_socket) {
-            log_debug("%90s:%p: %s: accepted",
+            log_debug("%90s:%p: %s: accepted%s",
                       delegate->get_thread_string().c_str(),
                       delegate->get_thread_id(),
-                      http_conn->to_string().c_str());
+                      http_conn->to_string().c_str(),
+                      listen->get_mode() == socket_mode_tls ? " tls" : "");
         }
         
         // copy local address into connection and get peer address
@@ -402,7 +461,14 @@ void http_server::handle_accept(protocol_thread_delegate *delegate, const protoc
         get_engine_state(delegate)->stats.connections_accepted++;
         
         // send connection to a router
-        dispatch_connection(delegate, http_conn);
+        switch (listen->get_mode()) {
+            case socket_mode_plain:
+                dispatch_connection(delegate, http_conn);
+                break;
+            case socket_mode_tls:
+                dispatch_connection_tls(delegate, http_conn);
+                break;
+        }
     }
 }
 
@@ -514,6 +580,33 @@ void http_server::timeout_connection(protocol_thread_delegate *delegate, protoco
 
 
 /* http_server state handlers */
+
+void http_server::handle_state_tls_handshake(protocol_thread_delegate *delegate, protocol_object *obj)
+{
+    auto http_conn = static_cast<http_server_connection*>(obj);
+    auto &conn = http_conn->conn;
+     
+    int ret = conn.sock->do_handshake();
+    switch (ret) {
+        case socket_error_none:
+            dispatch_connection(delegate, http_conn);
+            break;
+        case socket_error_want_write:
+            delegate->add_events(http_conn, poll_event_out);
+            break;
+        case socket_error_want_read:
+            delegate->add_events(http_conn, poll_event_in);
+            break;
+        default:
+            log_debug("%90s:%p: %s: unknown tls handshake error %d: closing connection",
+                      delegate->get_thread_string().c_str(),
+                      delegate->get_thread_id(),
+                      obj->to_string().c_str(), ret);
+            delegate->remove_events(http_conn);
+            close_connection(delegate, http_conn);
+            break;
+    }
+}
 
 void http_server::handle_state_client_request(protocol_thread_delegate *delegate, protocol_object *obj)
 {
@@ -778,6 +871,14 @@ void http_server::handle_state_lingering_close(protocol_thread_delegate *delegat
 
 /* http_server messages */
 
+void http_server::router_tls_handshake(protocol_thread_delegate *delegate, protocol_object *obj)
+{
+    auto http_conn = static_cast<http_server_connection*>(obj);
+    
+    http_conn->state = &connection_state_tls_handshake;
+    delegate->add_events(obj, poll_event_in);
+}
+
 void http_server::router_process_headers(protocol_thread_delegate *delegate, protocol_object *obj)
 {
     auto http_conn = static_cast<http_server_connection*>(obj);
@@ -914,6 +1015,11 @@ ssize_t http_server::populate_response_headers(protocol_thread_delegate *delegat
 void http_server::dispatch_connection(protocol_thread_delegate *delegate, protocol_object *obj)
 {
     forward_connection(delegate, obj, thread_mask_router, action_router_process_headers);
+}
+
+void http_server::dispatch_connection_tls(protocol_thread_delegate *delegate, protocol_object *obj)
+{
+    forward_connection(delegate, obj, thread_mask_router, action_router_tls_handshake);
 }
 
 void http_server::work_connection(protocol_thread_delegate *delegate, protocol_object *obj)

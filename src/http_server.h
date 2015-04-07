@@ -5,6 +5,10 @@
 #ifndef http_server_h
 #define http_server_h
 
+#include <openssl/crypto.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+
 #define USE_RINGBUFFER 1
 
 struct http_server;
@@ -135,6 +139,7 @@ struct http_server : protocol
     static protocol_sock server_sock_tcp_tls_connection;
     
     /* actions */
+    static protocol_action action_router_tls_handshake;
     static protocol_action action_router_process_headers;
     static protocol_action action_worker_process_request;
     static protocol_action action_keepalive_wait_connection;
@@ -149,6 +154,7 @@ struct http_server : protocol
     
     /* states */
     static protocol_state connection_state_free;
+    static protocol_state connection_state_tls_handshake;
     static protocol_state connection_state_client_request;
     static protocol_state connection_state_client_body;
     static protocol_state connection_state_server_response;
@@ -205,6 +211,7 @@ struct http_server : protocol
 
     /* http_server messages */
     
+    static void router_tls_handshake(protocol_thread_delegate *, protocol_object *);
     static void router_process_headers(protocol_thread_delegate *, protocol_object *);
     static void keepalive_wait_connection(protocol_thread_delegate *, protocol_object *);
     static void worker_process_request(protocol_thread_delegate *, protocol_object *);
@@ -212,6 +219,7 @@ struct http_server : protocol
 
     /* http_server state handlers */
 
+    static void handle_state_tls_handshake(protocol_thread_delegate *, protocol_object *);
     static void handle_state_client_request(protocol_thread_delegate *, protocol_object *);
     static void handle_state_client_body(protocol_thread_delegate *, protocol_object *);
     static void handle_state_server_response(protocol_thread_delegate *, protocol_object *);
@@ -225,6 +233,7 @@ struct http_server : protocol
     static ssize_t populate_response_headers(protocol_thread_delegate *, protocol_object *);
     static void finished_request(protocol_thread_delegate *, protocol_object *);
     static void dispatch_connection(protocol_thread_delegate *, protocol_object *);
+    static void dispatch_connection_tls(protocol_thread_delegate *, protocol_object *);
     static void work_connection(protocol_thread_delegate *, protocol_object *);
     static void keepalive_connection(protocol_thread_delegate *, protocol_object *);
     static void linger_connection(protocol_thread_delegate *, protocol_object *);
@@ -257,6 +266,7 @@ struct http_server_engine_state : protocol_engine_state, protocol_connection_sta
     std::vector<http_server_handler_info_ptr>   handler_list;
     io_file                                     access_log_file;
     log_thread_ptr                              access_log_thread;
+    SSL_CTX*                                    ssl_ctx;
     
     protocol* get_proto() const { return http_server::get_proto(); }
     

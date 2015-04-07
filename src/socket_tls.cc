@@ -55,7 +55,8 @@ socket_mode tls_connected_socket::get_mode()
 
 int tls_connected_socket::do_handshake()
 {
-    return SSL_do_handshake(ssl);
+    int ret = SSL_do_handshake(ssl);
+    return ret < 0 ? SSL_get_error(ssl, ret) : 0;
 }
 
 bool tls_connected_socket::start_listening(socket_addr addr, int backlog)

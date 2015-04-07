@@ -61,6 +61,9 @@ struct config : config_parser
     int keepalive_timeout;
     int connection_timeout;
 
+    std::string ssl_key_file;
+    std::string ssl_cert_file;
+
     std::string error_log;
     std::string access_log;
     std::string pid_file;

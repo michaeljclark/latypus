@@ -28,6 +28,7 @@
 #include "log.h"
 #include "socket.h"
 #include "socket_tcp.h"
+#include "socket_tls.h"
 #include "resolver.h"
 #include "config_parser.h"
 #include "config.h"
@@ -70,6 +71,22 @@ int connection::get_poll_fd()
 int connection::get_sock_error()
 {
     return sock ? sock->get_error() : EIO;
+}
+
+void connection::accept_tls(int fd, void *ctx)
+{
+    nopush = nodelay = 0;
+    sock = connected_socket_ptr(new tls_connected_socket());
+    sock->set_context(ctx);
+    sock->accept(fd);
+}
+
+bool connection::connect_to_host(socket_addr addr, void *ctx)
+{
+    nopush = nodelay = 0;
+    sock = connected_socket_ptr(new tls_connected_socket());
+    sock->set_context(ctx);
+    return sock->connect_to_host(addr);
 }
 
 void connection::accept(int fd)
