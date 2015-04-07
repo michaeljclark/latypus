@@ -68,6 +68,7 @@ config::config() :
     fn_map["error_log"] =           {2,  2,  [&] (config_line &line) { error_log = line[1]; }};
     fn_map["access_log"] =          {2,  2,  [&] (config_line &line) { access_log = line[1]; }};
     fn_map["pid_file"] =            {2,  2,  [&] (config_line &line) { pid_file = line[1]; }};
+    fn_map["ssl_ca_file"] =         {2,  2,  [&] (config_line &line) { ssl_ca_file = line[1]; }};
     fn_map["ssl_key_file"] =        {2,  2,  [&] (config_line &line) { ssl_key_file = line[1]; }};
     fn_map["ssl_cert_file"] =       {2,  2,  [&] (config_line &line) { ssl_cert_file = line[1]; }};
     fn_map["root"] =                {2,  2,  [&] (config_line &line) { root = line[1]; }};
@@ -197,6 +198,7 @@ std::string config::to_string()
     ss << "error_log           " << error_log << ";" << std::endl;
     ss << "access_log          " << access_log << ";" << std::endl;
     ss << "pid_file            " << pid_file << ";" << std::endl;
+    ss << "ssl_ca_file         " << ssl_ca_file << ";" << std::endl;
     ss << "ssl_key_file        " << ssl_key_file << ";" << std::endl;
     ss << "ssl_cert_file       " << ssl_cert_file << ";" << std::endl;
     ss << "root                " << root << ";" << std::endl;
