@@ -369,10 +369,7 @@ void http_client::handle_state_tls_handshake(protocol_thread_delegate *delegate,
     auto http_conn = static_cast<http_client_connection*>(obj);
     auto &conn = http_conn->conn;
     
-    log_debug("%s", __func__);
     int ret = conn.sock->do_handshake();
-    log_debug("%s ret=%d", __func__, ret);
-    
     switch (ret) {
         case socket_error_none:
             delegate->remove_events(http_conn);
