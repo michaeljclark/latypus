@@ -268,6 +268,8 @@ struct http_server_engine_state : protocol_engine_state, protocol_connection_sta
     log_thread_ptr                              access_log_thread;
     SSL_CTX*                                    ssl_ctx;
     
+    http_server_engine_state() : ssl_ctx(nullptr) {}
+    
     protocol* get_proto() const { return http_server::get_proto(); }
     
     http_server_handler_ptr lookup_handler(http_server_connection *http_conn);

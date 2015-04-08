@@ -214,8 +214,10 @@ struct http_client : protocol
 
 struct http_client_engine_state : protocol_engine_state, protocol_connection_state<http_client_connection>
 {
-    SSL_CTX*                                    ssl_ctx;
+    SSL_CTX*    ssl_ctx;
     
+    http_client_engine_state() : ssl_ctx(nullptr) {}
+
     protocol* get_proto() const { return http_client::get_proto(); }
 
     void bind_function(std::string path, typename http_client::function_type)
