@@ -294,6 +294,7 @@ void http_server::engine_init(protocol_engine_delegate *delegate) const
         engine_state->access_log_thread = log_thread_ptr(new log_thread(log_fd, cfg->log_buffers));
     }
     
+    // initialize TLS
     if (cfg->tls_cert_file.length() > 0 && cfg->tls_key_file.length() > 0)
     {
         SSL_library_init();

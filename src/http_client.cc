@@ -214,6 +214,7 @@ void http_client::engine_init(protocol_engine_delegate *delegate) const
     // initialize connection table
     get_engine_state(delegate)->init(delegate, cfg->client_connections);
 
+    // initialize TLS
     if (cfg->tls_ca_file.length() > 0)
     {
         SSL_library_init();
