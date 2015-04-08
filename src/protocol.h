@@ -64,6 +64,7 @@ enum protocol_debug {
     protocol_debug_timeout = 0x00000020,
     protocol_debug_engine  = 0x00000040,
     protocol_debug_thread  = 0x00000080,
+    protocol_debug_tls     = 0x00000100,
 };
 
 

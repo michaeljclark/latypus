@@ -31,6 +31,8 @@
 #include "log.h"
 #include "socket.h"
 #include "socket_unix.h"
+#include "socket_tcp.h"
+#include "socket_tls.h"
 #include "resolver.h"
 #include "config_parser.h"
 #include "config.h"
@@ -217,7 +219,10 @@ void http_client::engine_init(protocol_engine_delegate *delegate) const
         SSL_library_init();
         SSL_load_error_strings();
         
-        engine_state->ssl_ctx = SSL_CTX_new(TLSv1_client_method());
+        engine_state->ssl_ctx = SSL_CTX_new(SSLv23_client_method());
+        SSL_CTX_set_options(engine_state->ssl_ctx, SSL_OP_NO_SSLv2);
+        SSL_CTX_set_options(engine_state->ssl_ctx, SSL_OP_NO_SSLv3);
+        SSL_CTX_set_options(engine_state->ssl_ctx, SSL_OP_NO_COMPRESSION);
         
         if ((!SSL_CTX_load_verify_locations(engine_state->ssl_ctx, cfg->tls_ca_file.c_str(), NULL)) ||
             (!SSL_CTX_set_default_verify_paths(engine_state->ssl_ctx))) {
@@ -372,6 +377,24 @@ void http_client::handle_state_tls_handshake(protocol_thread_delegate *delegate,
     int ret = conn.sock->do_handshake();
     switch (ret) {
         case socket_error_none:
+            if (delegate->get_debug_mask() & protocol_debug_tls)
+            {
+                int cipher_bits;
+                const char *cipher_name, *cipher_version;
+                SSL *ssl = static_cast<tls_connected_socket*>(conn.sock.get())->ssl;
+                const SSL_CIPHER  *cipher = SSL_get_current_cipher(ssl);
+                if (cipher) {
+                    cipher_bits = SSL_CIPHER_get_bits(cipher, nullptr);
+                    cipher_name = SSL_CIPHER_get_name(cipher);
+                    cipher_version = SSL_CIPHER_get_version(cipher);
+                    log_debug("%90s:%p: %s: tls cipher name=%s version=%s bits=%d",
+                              delegate->get_thread_string().c_str(),
+                              delegate->get_thread_id(),
+                              obj->to_string().c_str(),
+                              cipher_name, cipher_version, cipher_bits);
+                }
+            }
+            
             delegate->remove_events(http_conn);
             process_next_request(delegate, obj);
             break;
