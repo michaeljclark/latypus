@@ -25,7 +25,7 @@
 
 /* log_thread */
 
-const bool log_thread::debug = true;
+const bool log_thread::debug = false;
 const int log_thread::flush_interval_msecs = 100;
 
 log_thread::log_thread(int fd, size_t num_buffers) :
@@ -100,6 +100,7 @@ void log_thread::log(time_t current_time, const char* message)
 retry:
     char *buffer = log_buffers_free.pop_front();
     if (!buffer) {
+        // TODO add statistics on log_thread stalls
         if (debug) {
             log_debug("%s: no log buffers, waiting", __func__);
         }
