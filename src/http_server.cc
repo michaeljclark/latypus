@@ -598,15 +598,23 @@ void http_server::handle_state_tls_handshake(protocol_thread_delegate *delegate,
                 const char *cipher_name, *cipher_version;
                 SSL *ssl = static_cast<tls_connected_socket*>(conn.sock.get())->ssl;
                 const SSL_CIPHER  *cipher = SSL_get_current_cipher(ssl);
+                const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
                 if (cipher) {
                     cipher_bits = SSL_CIPHER_get_bits(cipher, nullptr);
                     cipher_name = SSL_CIPHER_get_name(cipher);
                     cipher_version = SSL_CIPHER_get_version(cipher);
-                    log_debug("%90s:%p: %s: tls cipher name=%s version=%s bits=%d",
+                    log_debug("%90s:%p: %s: tls cipher_name=%s cipher_version=%s cipher_bits=%d",
                               delegate->get_thread_string().c_str(),
                               delegate->get_thread_id(),
                               obj->to_string().c_str(),
                               cipher_name, cipher_version, cipher_bits);
+                }
+                if (servername) {
+                    log_debug("%90s:%p: %s: tls servername=%s",
+                              delegate->get_thread_string().c_str(),
+                              delegate->get_thread_id(),
+                              obj->to_string().c_str(),
+                              servername);
                 }
             }
             
