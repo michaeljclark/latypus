@@ -34,6 +34,7 @@ struct netc
     bool                remote_name;
     bool                help_or_error;
     int                 debug_level;
+    std::string         ssl_ca_file;
     std::string         bench_url;
     
     netc();
@@ -113,6 +114,9 @@ bool netc::process_cmdline(int argc, const char *argv[])
         { "-O", "--remote-name", cmdline_arg_type_none,
             "Output File",
             [&](std::string s) { return (remote_name = true); } },
+        { "-X", "--cacert", cmdline_arg_type_string,
+            "CA certificate file",
+            [&](std::string s) { ssl_ca_file = s.c_str(); return true; } },
         { nullptr, nullptr, cmdline_arg_type_none, nullptr, nullptr }
     };
     
@@ -141,6 +145,7 @@ void netc::run()
     engine.cfg->keepalive_timeout = keepalive_timeout;
     engine.cfg->header_buffer_size = header_buffer_size;
     engine.cfg->io_buffer_size = io_buffer_size;
+    engine.cfg->ssl_ca_file = ssl_ca_file;
     engine.cfg->proto_threads.push_back(std::pair<std::string,size_t>("http_client/connect", 1));
     engine.cfg->proto_threads.push_back(std::pair<std::string,size_t>("http_client/processor,http_client/keepalive", num_threads));
     
