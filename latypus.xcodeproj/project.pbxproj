@@ -203,6 +203,8 @@
 		65D05DA51A95972600953207 /* queue_atomic.h in Headers */ = {isa = PBXBuildFile; fileRef = 65D05DA41A95972600953207 /* queue_atomic.h */; };
 		65D05DB11A9597F600953207 /* liblatypus.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 657E691719020F330024A28F /* liblatypus.a */; };
 		65D05DB71A95982500953207 /* test_queue.cc in Sources */ = {isa = PBXBuildFile; fileRef = 65D05DA61A9597EA00953207 /* test_queue.cc */; };
+		65D601E41AD5D4C900EF5923 /* http_tls_shared.cc in Sources */ = {isa = PBXBuildFile; fileRef = 65D601E21AD5D4C900EF5923 /* http_tls_shared.cc */; };
+		65D601E51AD5D4C900EF5923 /* http_tls_shared.h in Headers */ = {isa = PBXBuildFile; fileRef = 65D601E31AD5D4C900EF5923 /* http_tls_shared.h */; };
 		65D7A87118F965E800981DB3 /* test_openssl.cc in Sources */ = {isa = PBXBuildFile; fileRef = 65D7A86F18F965E800981DB3 /* test_openssl.cc */; };
 /* End PBXBuildFile section */
 
@@ -830,6 +832,8 @@
 		65D05DA41A95972600953207 /* queue_atomic.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = queue_atomic.h; path = src/queue_atomic.h; sourceTree = "<group>"; };
 		65D05DA61A9597EA00953207 /* test_queue.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test_queue.cc; sourceTree = "<group>"; };
 		65D05DB61A9597F600953207 /* test_queue */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = test_queue; sourceTree = BUILT_PRODUCTS_DIR; };
+		65D601E21AD5D4C900EF5923 /* http_tls_shared.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = http_tls_shared.cc; path = src/http_tls_shared.cc; sourceTree = "<group>"; };
+		65D601E31AD5D4C900EF5923 /* http_tls_shared.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = http_tls_shared.h; path = src/http_tls_shared.h; sourceTree = "<group>"; };
 		65D7A86618F965C200981DB3 /* test_openssl */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = test_openssl; sourceTree = BUILT_PRODUCTS_DIR; };
 		65D7A86F18F965E800981DB3 /* test_openssl.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test_openssl.cc; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -1098,6 +1102,8 @@
 				659789701ACCCC00006DCA7F /* http_server_handler_stats.h */,
 				657E6A1F1902F5390024A28F /* http_server.cc */,
 				657E6A201902F5390024A28F /* http_server.h */,
+				65D601E21AD5D4C900EF5923 /* http_tls_shared.cc */,
+				65D601E31AD5D4C900EF5923 /* http_tls_shared.h */,
 			);
 			name = http_protocol;
 			sourceTree = "<group>";
@@ -1398,6 +1404,7 @@
 				659788F81AC78D96006DCA7F /* http_server_handler_func.h in Headers */,
 				6597897B1ACE03BC006DCA7F /* base64.h in Headers */,
 				65D05D781A9417CE00953207 /* plat_net.h in Headers */,
+				65D601E51AD5D4C900EF5923 /* http_tls_shared.h in Headers */,
 				65293FF51948539300E3F5F7 /* pollset_epoll.h in Headers */,
 				65D05DA51A95972600953207 /* queue_atomic.h in Headers */,
 				6529C6771AD237F8006142E7 /* db_sqlite3.h in Headers */,
@@ -1970,6 +1977,7 @@
 				657E69CA1902121F0024A28F /* cmdline_options.cc in Sources */,
 				65998C481AD310FD00494247 /* socket_udp.cc in Sources */,
 				657E6A1919022BA10024A28F /* connection.cc in Sources */,
+				65D601E41AD5D4C900EF5923 /* http_tls_shared.cc in Sources */,
 				657E69D91902121F0024A28F /* log.cc in Sources */,
 				657E69DD1902121F0024A28F /* resolver.cc in Sources */,
 				659788F91AC78D96006DCA7F /* http_server_handler_func.cc in Sources */,

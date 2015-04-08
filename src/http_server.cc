@@ -54,6 +54,7 @@
 #include "http_response.h"
 #include "http_date.h"
 #include "http_server.h"
+#include "http_tls_shared.h"
 #include "http_server_handler_file.h"
 #include "http_server_handler_func.h"
 #include "http_server_handler_stats.h"
@@ -254,12 +255,6 @@ protocol_thread_state* http_server::create_thread_state() const
     return new http_server_thread_state();
 }
 
-static int log_tls_errors(const char *str, size_t len, void *bio)
-{
-    fprintf(stderr, "%s", str);
-    return 0;
-}
-
 void http_server::engine_init(protocol_engine_delegate *delegate) const
 {
     // get config
@@ -297,41 +292,7 @@ void http_server::engine_init(protocol_engine_delegate *delegate) const
     // initialize TLS
     if (cfg->tls_cert_file.length() > 0 && cfg->tls_key_file.length() > 0)
     {
-        SSL_library_init();
-        SSL_load_error_strings();
-        
-        engine_state->ssl_ctx = SSL_CTX_new(SSLv23_server_method());
-#ifdef SSL_OP_NO_SSLv2
-        SSL_CTX_set_options(engine_state->ssl_ctx, SSL_OP_NO_SSLv2);
-#endif
-#ifdef SSL_OP_NO_SSLv3
-        SSL_CTX_set_options(engine_state->ssl_ctx, SSL_OP_NO_SSLv3);
-#endif
-#ifdef SSL_OP_NO_COMPRESSION
-        SSL_CTX_set_options(engine_state->ssl_ctx, SSL_OP_NO_COMPRESSION);
-#endif
-        
-        if (SSL_CTX_use_certificate_file(engine_state->ssl_ctx,
-                                         cfg->tls_cert_file.c_str(), SSL_FILETYPE_PEM) <= 0)
-        {
-            ERR_print_errors_cb(log_tls_errors, NULL);
-            log_fatal_exit("%s failed to load certificate: %s",
-                           get_proto()->name.c_str(), cfg->tls_cert_file.c_str());
-        } else {
-            log_info("%s loaded cert: %s",
-                     get_proto()->name.c_str(), cfg->tls_cert_file.c_str());
-        }
-        
-        if (SSL_CTX_use_PrivateKey_file(engine_state->ssl_ctx,
-                                        cfg->tls_key_file.c_str(), SSL_FILETYPE_PEM) <= 0)
-        {
-            ERR_print_errors_cb(log_tls_errors, NULL);
-            log_fatal_exit("%s failed to load private key: %s",
-                           get_proto()->name.c_str(), cfg->tls_key_file.c_str());
-        } else {
-            log_info("%s loaded key: %s",
-                     get_proto()->name.c_str(), cfg->tls_key_file.c_str());
-        }
+        engine_state->ssl_ctx = http_tls_shared::init_server(get_proto(), cfg);
     }
 
     // create listening sockets for this protocol
