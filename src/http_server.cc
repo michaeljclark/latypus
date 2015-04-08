@@ -589,6 +589,13 @@ void http_server::handle_state_tls_handshake(protocol_thread_delegate *delegate,
     auto http_conn = static_cast<http_server_connection*>(obj);
     auto &conn = http_conn->conn;
     
+    // TODO - implement SNI, retrieve servername in callback function
+    // using SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name)
+    // and then call SSL_set_SSL_CTX to change to another SSL_CTX
+    // Call the following in startup code to set up the callback function
+    // SSL_CTX_set_tlsext_servername_callback(ctx, tls_servername_callback);
+    // SSL_CTX_set_tlsext_servername_arg(ctx, &tls_servername_callback_arg);
+    
     int ret = conn.sock->do_handshake();
     switch (ret) {
         case socket_error_none:
