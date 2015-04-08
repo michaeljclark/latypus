@@ -59,6 +59,7 @@ socket_mode tls_connected_socket::get_mode()
 
 int tls_connected_socket::do_handshake()
 {
+    assert(ssl != nullptr);
     int ret = SSL_do_handshake(ssl);
     return ret < 0 ? SSL_get_error(ssl, ret) : 0;
 }
