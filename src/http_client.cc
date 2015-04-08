@@ -221,9 +221,15 @@ void http_client::engine_init(protocol_engine_delegate *delegate) const
         SSL_load_error_strings();
         
         engine_state->ssl_ctx = SSL_CTX_new(SSLv23_client_method());
+#ifdef SSL_OP_NO_SSLv2
         SSL_CTX_set_options(engine_state->ssl_ctx, SSL_OP_NO_SSLv2);
+#endif
+#ifdef SSL_OP_NO_SSLv3
         SSL_CTX_set_options(engine_state->ssl_ctx, SSL_OP_NO_SSLv3);
+#endif
+#ifdef SSL_OP_NO_COMPRESSION
         SSL_CTX_set_options(engine_state->ssl_ctx, SSL_OP_NO_COMPRESSION);
+#endif
         
         if ((!SSL_CTX_load_verify_locations(engine_state->ssl_ctx, cfg->tls_ca_file.c_str(), NULL)) ||
             (!SSL_CTX_set_default_verify_paths(engine_state->ssl_ctx))) {

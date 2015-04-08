@@ -301,9 +301,15 @@ void http_server::engine_init(protocol_engine_delegate *delegate) const
         SSL_load_error_strings();
         
         engine_state->ssl_ctx = SSL_CTX_new(SSLv23_server_method());
+#ifdef SSL_OP_NO_SSLv2
         SSL_CTX_set_options(engine_state->ssl_ctx, SSL_OP_NO_SSLv2);
+#endif
+#ifdef SSL_OP_NO_SSLv3
         SSL_CTX_set_options(engine_state->ssl_ctx, SSL_OP_NO_SSLv3);
+#endif
+#ifdef SSL_OP_NO_COMPRESSION
         SSL_CTX_set_options(engine_state->ssl_ctx, SSL_OP_NO_COMPRESSION);
+#endif
         
         if (SSL_CTX_use_certificate_file(engine_state->ssl_ctx,
                                          cfg->tls_cert_file.c_str(), SSL_FILETYPE_PEM) <= 0)
