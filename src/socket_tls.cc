@@ -1,5 +1,5 @@
 //
-//  tls_socket.cc
+//  socket_tls.cc
 //
 
 #include "plat_os.h"
@@ -25,10 +25,10 @@
 /* tls_connected_socket */
 
 tls_connected_socket::tls_connected_socket()
-    : connected_socket(-1), ssl(nullptr),lingering_close(0), nopush(0), nodelay(0) {}
+    : connected_socket(-1), addr(), backlog(0), ctx(nullptr), ssl(nullptr),lingering_close(0), nopush(0), nodelay(0) {}
 
 tls_connected_socket::tls_connected_socket(int fd)
-    : connected_socket(fd), ssl(nullptr), lingering_close(0), nopush(0), nodelay(0)
+    : connected_socket(fd), addr(), backlog(0), ctx(nullptr), ssl(nullptr), lingering_close(0), nopush(0), nodelay(0)
 {
     if (fd < 0) return;
     if (fcntl(fd, F_SETFD, FD_CLOEXEC) < 0) {
@@ -129,32 +129,53 @@ void tls_connected_socket::close_connection()
     generic_socket::close_connection();
 }
 
-void tls_connected_socket::accept(int fd)
+bool tls_connected_socket::accept(int fd)
 {
-    set_fd(fd);
-
+    if (!ctx) {
+        log_error("couldn't create ssl socket: missing context");
+        return false;
+    }
+    
     if (!ssl) {
         ssl = SSL_new((SSL_CTX*)ctx);
+        if (!ssl) {
+            log_error("couldn't create ssl socket: allocation failed");
+            return false;
+        }
     }
+
+    set_fd(fd);
     
     SSL_clear(ssl);
     SSL_set_fd(ssl, fd);
     SSL_set_accept_state(ssl);
+    
+    return true;
 }
 
 bool tls_connected_socket::connect_to_host(socket_addr addr)
 {
+    if (!ctx) {
+        log_error("couldn't create ssl socket: missing context");
+        return false;
+    }
+    
+    if (!ssl) {
+        ssl = SSL_new((SSL_CTX*)ctx);
+        if (!ssl) {
+            log_error("couldn't create ssl socket");
+            return false;
+        }
+    }
+    
     int fd = socket(addr.saddr.sa_family, SOCK_STREAM, 0);
     if (fd < 0) {
         log_error("socket failed: %s", strerror(errno));
         return false;
     }
+    
     set_fd(fd);
-
-    if (!ssl) {
-        ssl = SSL_new((SSL_CTX*)ctx);
-    }
-
+    
     SSL_clear(ssl);
     SSL_set_fd(ssl, fd);
     SSL_set_connect_state(ssl);

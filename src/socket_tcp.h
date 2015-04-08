@@ -24,7 +24,7 @@ struct tcp_connected_socket : connected_socket
     void set_context(void *context);
     socket_mode get_mode();
     int do_handshake();
-    void accept(int fd);
+    bool accept(int fd);
     bool start_listening(socket_addr addr, int backlog);
     socket_addr get_addr();
     std::string to_string();

@@ -1,5 +1,5 @@
 //
-//  socket.cc
+//  socket_tcp.cc
 //
 
 #include "plat_os.h"
@@ -25,10 +25,10 @@
 /* tcp_connected_socket */
 
 tcp_connected_socket::tcp_connected_socket()
-    : connected_socket(-1), lingering_close(0), nopush(0), nodelay(0) {}
+    : connected_socket(-1), addr(), backlog(0), lingering_close(0), nopush(0), nodelay(0) {}
 
 tcp_connected_socket::tcp_connected_socket(int fd)
-    : connected_socket(fd), lingering_close(0), nopush(0), nodelay(0)
+    : connected_socket(fd), addr(), backlog(0), lingering_close(0), nopush(0), nodelay(0)
 {
     if (fd < 0) return;
     if (fcntl(fd, F_SETFD, FD_CLOEXEC) < 0) {
@@ -116,9 +116,10 @@ std::string tcp_connected_socket::to_string()
     return socket_addr::addr_to_string(addr);
 }
 
-void tcp_connected_socket::accept(int fd)
+bool tcp_connected_socket::accept(int fd)
 {
     set_fd(fd);
+    return true;
 }
 
 bool tcp_connected_socket::connect_to_host(socket_addr addr)

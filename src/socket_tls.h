@@ -35,7 +35,7 @@ struct tls_connected_socket : connected_socket
     socket_mode get_mode();
     int do_handshake();
     void close_connection();
-    void accept(int fd);
+    bool accept(int fd);
     bool connect_to_host(socket_addr addr);
     bool set_nopush(bool nopush);
     bool set_nodelay(bool nodelay);
