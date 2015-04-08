@@ -155,12 +155,7 @@ void netc::run()
                              protocol_debug_thread);
     }
     if (debug_level >= 2) {
-        engine.debug_mask = (protocol_debug_event |
-                             protocol_debug_socket |
-                             protocol_debug_headers |
-                             protocol_debug_message |
-                             protocol_debug_handler |
-                             protocol_debug_timeout);
+        engine.debug_mask = protocol_debug_all;
     }
     
     // parse benchmark url
