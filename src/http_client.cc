@@ -620,7 +620,6 @@ void http_client::handle_state_waiting(protocol_thread_delegate *delegate, proto
 
 void http_client::process_tls_handshake(protocol_thread_delegate *delegate, protocol_object *obj)
 {
-    log_debug("%s", __func__);
     auto http_conn = static_cast<http_client_connection*>(obj);
     delegate->add_events(http_conn, poll_event_out);
     http_conn->state = &connection_state_tls_handshake;
