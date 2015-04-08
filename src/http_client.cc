@@ -212,21 +212,21 @@ void http_client::engine_init(protocol_engine_delegate *delegate) const
     // initialize connection table
     get_engine_state(delegate)->init(delegate, cfg->client_connections);
 
-    if (cfg->ssl_ca_file.length() > 0)
+    if (cfg->tls_ca_file.length() > 0)
     {
         SSL_library_init();
         SSL_load_error_strings();
         
         engine_state->ssl_ctx = SSL_CTX_new(TLSv1_client_method());
         
-        if ((!SSL_CTX_load_verify_locations(engine_state->ssl_ctx, cfg->ssl_ca_file.c_str(), NULL)) ||
+        if ((!SSL_CTX_load_verify_locations(engine_state->ssl_ctx, cfg->tls_ca_file.c_str(), NULL)) ||
             (!SSL_CTX_set_default_verify_paths(engine_state->ssl_ctx))) {
             ERR_print_errors_cb(log_tls_errors, NULL);
             log_fatal_exit("%s failed to load cacert: %s",
-                           get_proto()->name.c_str(), cfg->ssl_ca_file.c_str());
+                           get_proto()->name.c_str(), cfg->tls_ca_file.c_str());
         } else {
             log_debug("%s loaded cacert: %s",
-                      get_proto()->name.c_str(), cfg->ssl_ca_file.c_str());
+                      get_proto()->name.c_str(), cfg->tls_ca_file.c_str());
         }
         SSL_CTX_set_verify(engine_state->ssl_ctx, SSL_VERIFY_PEER, NULL);
         SSL_CTX_set_verify_depth(engine_state->ssl_ctx, 9);

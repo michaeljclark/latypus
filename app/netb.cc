@@ -33,7 +33,7 @@ struct netb
     bool                per_request_stats;
     bool                help_or_error;
     int                 debug_level;
-    std::string         ssl_ca_file;
+    std::string         tls_ca_file;
     std::string         bench_url;
 
     netb();
@@ -133,7 +133,7 @@ bool netb::process_cmdline(int argc, const char *argv[])
             [&](std::string s) { return (per_request_stats = true); } },
         { "-X", "--cacert", cmdline_arg_type_string,
             "CA certificate file",
-            [&](std::string s) { ssl_ca_file = s.c_str(); return true; } },
+            [&](std::string s) { tls_ca_file = s.c_str(); return true; } },
         { nullptr, nullptr, cmdline_arg_type_none, nullptr, nullptr }
     };
     
@@ -162,7 +162,7 @@ void netb::run()
     engine.cfg->keepalive_timeout = keepalive_timeout;
     engine.cfg->header_buffer_size = header_buffer_size;
     engine.cfg->io_buffer_size = io_buffer_size;
-    engine.cfg->ssl_ca_file = ssl_ca_file;
+    engine.cfg->tls_ca_file = tls_ca_file;
     engine.cfg->proto_threads.push_back(std::pair<std::string,size_t>("http_client/connect", 1));
     engine.cfg->proto_threads.push_back(std::pair<std::string,size_t>("http_client/processor,http_client/keepalive", num_threads));
     

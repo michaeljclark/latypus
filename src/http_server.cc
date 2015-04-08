@@ -294,7 +294,7 @@ void http_server::engine_init(protocol_engine_delegate *delegate) const
         engine_state->access_log_thread = log_thread_ptr(new log_thread(log_fd, cfg->log_buffers));
     }
     
-    if (cfg->ssl_cert_file.length() > 0 && cfg->ssl_key_file.length() > 0)
+    if (cfg->tls_cert_file.length() > 0 && cfg->tls_key_file.length() > 0)
     {
         SSL_library_init();
         SSL_load_error_strings();
@@ -302,25 +302,25 @@ void http_server::engine_init(protocol_engine_delegate *delegate) const
         engine_state->ssl_ctx = SSL_CTX_new(TLSv1_server_method());
         
         if (SSL_CTX_use_certificate_file(engine_state->ssl_ctx,
-                                         cfg->ssl_cert_file.c_str(), SSL_FILETYPE_PEM) <= 0)
+                                         cfg->tls_cert_file.c_str(), SSL_FILETYPE_PEM) <= 0)
         {
             ERR_print_errors_cb(log_tls_errors, NULL);
             log_fatal_exit("%s failed to load certificate: %s",
-                           get_proto()->name.c_str(), cfg->ssl_cert_file.c_str());
+                           get_proto()->name.c_str(), cfg->tls_cert_file.c_str());
         } else {
             log_info("%s loaded cert: %s",
-                     get_proto()->name.c_str(), cfg->ssl_cert_file.c_str());
+                     get_proto()->name.c_str(), cfg->tls_cert_file.c_str());
         }
         
         if (SSL_CTX_use_PrivateKey_file(engine_state->ssl_ctx,
-                                        cfg->ssl_key_file.c_str(), SSL_FILETYPE_PEM) <= 0)
+                                        cfg->tls_key_file.c_str(), SSL_FILETYPE_PEM) <= 0)
         {
             ERR_print_errors_cb(log_tls_errors, NULL);
             log_fatal_exit("%s failed to load private key: %s",
-                           get_proto()->name.c_str(), cfg->ssl_key_file.c_str());
+                           get_proto()->name.c_str(), cfg->tls_key_file.c_str());
         } else {
             log_info("%s loaded key: %s",
-                     get_proto()->name.c_str(), cfg->ssl_key_file.c_str());
+                     get_proto()->name.c_str(), cfg->tls_key_file.c_str());
         }
     }
 
