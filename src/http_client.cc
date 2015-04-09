@@ -642,6 +642,11 @@ void http_client::connect_host(protocol_thread_delegate *delegate, protocol_obje
             if (!engine_state->ssl_ctx) {
                 log_fatal_exit("%s no SSL context", get_proto()->name.c_str());
             }
+            
+            // if (!SSL_set_tlsext_host_name(ssl, servername)) {
+            //   ERR_print_errors_cb(http_tls_shared::tls_log_errors, NULL);
+            // }
+
             if (conn.connect_to_host_tls(conn.get_peer_addr(), engine_state->ssl_ctx)) {
                 process_connection_tls(delegate, http_conn);
             } else {
