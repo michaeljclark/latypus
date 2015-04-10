@@ -24,43 +24,83 @@ endif()
 
 add_library(
     latypus STATIC
-    src/os.cc
-    src/io.cc
-    src/pollset.cc
-    src/pollset_epoll.cc
-    src/pollset_kqueue.cc
-    src/pollset_poll.cc
-    src/connection.cc
-    src/resolver.cc
-    src/netdev.cc
-    src/socket.cc
-    src/socket_tcp.cc
-    src/socket_tls.cc
-    src/socket_udp.cc
-    src/socket_unix.cc
-    src/url.cc
+    src/cmdline_options.h
     src/cmdline_options.cc
+    src/config.h
     src/config.cc
-    src/config_parser.cc
+    src/config_cpu.h
     src/config_cpu.cc
-    src/log.cc
-    src/log_thread.cc
-    src/http_common.cc
-    src/http_constants.cc
-    src/http_date.cc
-    src/http_parser.cc
-    src/http_request.cc
-    src/http_response.cc
+    src/config_parser.h
+    src/config_parser.cc
+    src/connection.h
+    src/connection.cc
+    src/http_client.h
     src/http_client.cc
+    src/http_client_handler_file.h
     src/http_client_handler_file.cc
+    src/http_common.h
+    src/http_common.cc
+    src/http_constants.h
+    src/http_constants.cc
+    src/http_date.h
+    src/http_date.cc
+    src/http_parser.h
+    src/http_parser.cc
+    src/http_request.h
+    src/http_request.cc
+    src/http_response.h
+    src/http_response.cc
+    src/http_server.h
     src/http_server.cc
+    src/http_server_handler_file.h
     src/http_server_handler_file.cc
+    src/http_server_handler_func.h
     src/http_server_handler_func.cc
+    src/http_server_handler_stats.h
     src/http_server_handler_stats.cc
+    src/http_tls_shared.h
     src/http_tls_shared.cc
+    src/io.h
+    src/io.cc
+    src/log.h
+    src/log.cc
+    src/log_thread.h
+    src/log_thread.cc
+    src/netdev.h
+    src/netdev.cc
+    src/pollset.h
+    src/pollset.cc
+    src/pollset_epoll.h
+    src/pollset_epoll.cc
+    src/pollset_kqueue.h
+    src/pollset_kqueue.cc
+    src/pollset_poll.h
+    src/pollset_poll.cc
+    src/protocol.h
     src/protocol.cc
+    src/protocol_connection.h
+    src/protocol_engine.h
     src/protocol_engine.cc
+    src/protocol_thread.h
     src/protocol_thread.cc
+    src/queue_atomic.h
+    src/resolver.h
+    src/resolver.cc
+    src/socket.h
+    src/socket.cc
+    src/socket_tcp.h
+    src/socket_tcp.cc
+    src/socket_tls.h
+    src/socket_tls.cc
+    src/socket_udp.h
+    src/socket_udp.cc
+    src/socket_unix.h
+    src/socket_unix.cc
+    src/url.h
+    src/url.cc
+    src/trie.h
+    src/os.h
+    src/os.cc
 )
 
 add_executable(neta app/neta.cc)
