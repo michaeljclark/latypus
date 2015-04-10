@@ -105,24 +105,28 @@ add_library(
 
 find_program(RAGEL NAMES ragel PATHS /usr/bin /usr/local/bin)
 
-add_custom_command(TARGET latypus
-    PRE_BUILD
-    COMMAND ${RAGEL} -o ${PROJECT_SOURCE_DIR}/src/config_parser.cc ${PROJECT_SOURCE_DIR}/src/config_parser.rl
+add_custom_command(
+DEPENDS ${PROJECT_SOURCE_DIR}/src/http_date.rl
+OUTPUT ${PROJECT_SOURCE_DIR}/src/http_date.cc
+COMMAND ${RAGEL} -o ${PROJECT_SOURCE_DIR}/src/http_date.cc ${PROJECT_SOURCE_DIR}/src/http_date.rl
 )
 
-add_custom_command(TARGET latypus
-    PRE_BUILD
-    COMMAND ${RAGEL} -o ${PROJECT_SOURCE_DIR}/src/db_sql_parser.cc ${PROJECT_SOURCE_DIR}/src/db_sql_parser.rl
+add_custom_command(
+DEPENDS ${PROJECT_SOURCE_DIR}/src/config_parser.rl
+OUTPUT ${PROJECT_SOURCE_DIR}/src/config_parser.cc
+COMMAND ${RAGEL} -o ${PROJECT_SOURCE_DIR}/src/config_parser.cc ${PROJECT_SOURCE_DIR}/src/config_parser.rl
 )
 
-add_custom_command(TARGET latypus
-    PRE_BUILD
-    COMMAND ${RAGEL} -o ${PROJECT_SOURCE_DIR}/src/http_date.cc ${PROJECT_SOURCE_DIR}/src/http_date.rl
+add_custom_command(
+DEPENDS ${PROJECT_SOURCE_DIR}/src/http_parser.rl
+OUTPUT ${PROJECT_SOURCE_DIR}/src/http_parser.cc
+COMMAND ${RAGEL} -o ${PROJECT_SOURCE_DIR}/src/http_parser.cc ${PROJECT_SOURCE_DIR}/src/http_parser.rl
 )
 
-add_custom_command(TARGET latypus
-    PRE_BUILD
-    COMMAND ${RAGEL} -o ${PROJECT_SOURCE_DIR}/src/http_parser.cc ${PROJECT_SOURCE_DIR}/src/http_parser.rl
+add_custom_command(
+DEPENDS ${PROJECT_SOURCE_DIR}/src/db_sql_parser.rl
+OUTPUT ${PROJECT_SOURCE_DIR}/src/db_sql_parser.cc
+COMMAND ${RAGEL} -o ${PROJECT_SOURCE_DIR}/src/db_sql_parser.cc ${PROJECT_SOURCE_DIR}/src/db_sql_parser.rl
 )
 
 add_executable(neta app/neta.cc)
