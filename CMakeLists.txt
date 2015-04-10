@@ -103,6 +103,28 @@ add_library(
     src/os.cc
 )
 
+find_program(RAGEL NAMES ragel PATHS /usr/bin /usr/local/bin)
+
+add_custom_command(TARGET latypus
+    PRE_BUILD
+    COMMAND ${RAGEL} -o ${PROJECT_SOURCE_DIR}/src/config_parser.cc ${PROJECT_SOURCE_DIR}/src/config_parser.rl
+)
+
+add_custom_command(TARGET latypus
+    PRE_BUILD
+    COMMAND ${RAGEL} -o ${PROJECT_SOURCE_DIR}/src/db_sql_parser.cc ${PROJECT_SOURCE_DIR}/src/db_sql_parser.rl
+)
+
+add_custom_command(TARGET latypus
+    PRE_BUILD
+    COMMAND ${RAGEL} -o ${PROJECT_SOURCE_DIR}/src/http_date.cc ${PROJECT_SOURCE_DIR}/src/http_date.rl
+)
+
+add_custom_command(TARGET latypus
+    PRE_BUILD
+    COMMAND ${RAGEL} -o ${PROJECT_SOURCE_DIR}/src/http_parser.cc ${PROJECT_SOURCE_DIR}/src/http_parser.rl
+)
+
 add_executable(neta app/neta.cc)
 target_link_libraries(neta latypus pthread ssl crypto)
 
