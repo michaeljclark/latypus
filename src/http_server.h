@@ -249,6 +249,14 @@ struct http_server : protocol
 
 struct http_server_engine_stats
 {
+    http_server_engine_stats() :
+        connections_accepted(0),
+        connections_aborted(0),
+        connections_closed(0),
+        connections_keepalive(0),
+        connections_linger(0),
+        requests_processed(0) {}
+    
     std::atomic<unsigned long> connections_accepted;
     std::atomic<unsigned long> connections_aborted;
     std::atomic<unsigned long> connections_closed;
