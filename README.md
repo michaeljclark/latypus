@@ -21,12 +21,6 @@ a modern, portable and scalable high performance C++1y m:n threaded HTTP client 
 ## Third Party Dependencies
   * [cppunit](http://www.freedesktop.org/wiki/Software/cppunit/)
   * [boringssl](https://boringssl.googlesource.com/boringssl/)
-  * [libssh](https://www.libssh.org/) (soon)
-  * [CRaft](https://github.com/willemt/raft) (soon)
-  * [jsoncpp](https://github.com/open-source-parsers/jsoncpp) (soon)
-  * [lmdb](https://github.com/clibs/lmdb) (soon)
-  * [sqlite](https://github.com/mackyle/sqlite) (soon)
-  * [mariadb-connector-c](https://github.com/MariaDB/mariadb-connector-c) (soon)
 
 ## Example
 Example http echo server
