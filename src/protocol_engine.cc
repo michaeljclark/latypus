@@ -116,9 +116,21 @@ void protocol_engine::signal_handler(int signum, siginfo_t *info, void *)
     }
 }
 
+void protocol_engine::protocol_config_init(config_ptr cfg)
+{
+    // initialize protocol specific config
+    for (auto proto : *protocol::get_table()) {
+        protocol_config_ptr proto_conf = proto->make_protocol_config();
+        if (proto_conf) {
+            cfg->proto_conf_map.insert(std::pair<const protocol*,protocol_config_ptr>(proto, proto_conf));
+        }
+    }
+}
+
 void protocol_engine::default_config(protocol* proto)
 {
     cfg = config_ptr(new config());
+    protocol_config_init(cfg);
     auto cfi = config_factory_map.find(proto);
     if (cfi != config_factory_map.end()) {
         cfi->second->make_config(cfg);
@@ -128,6 +140,7 @@ void protocol_engine::default_config(protocol* proto)
 void protocol_engine::read_config(std::string config_file)
 {
     cfg = config_ptr(new config());
+    protocol_config_init(cfg);
     cfg->read(config_file);
 }
 

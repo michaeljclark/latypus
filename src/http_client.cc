@@ -150,6 +150,29 @@ bool http_client_connection_tmpl<connection>::free(protocol_engine_delegate *del
 }
 
 
+/* http_client_config */
+
+http_client_config::http_client_config()
+{
+    
+}
+
+bool http_client_config::lookup_config(std::string key, config_record &record)
+{
+    auto it = fn_map.find(key);
+    if (it != fn_map.end()) {
+        record = it->second;
+        return true;
+    }
+    return false;
+}
+
+std::string http_client_config::to_string()
+{
+    return "";
+}
+
+
 /* http_client_config_factory */
 
 void http_client_config_factory::make_config(config_ptr cfg) const
@@ -180,6 +203,11 @@ void http_client::proto_init()
         protocol_engine::config_factory_map.insert
             (protocol_config_factory_entry(get_proto(), std::make_shared<http_client_config_factory>()));
     });
+}
+
+protocol_config_ptr http_client::make_protocol_config() const
+{
+    return protocol_config_ptr(new http_client_config());
 }
 
 http_client_engine_state* http_client::get_engine_state(protocol_thread_delegate *delegate) {

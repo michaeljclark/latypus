@@ -36,6 +36,7 @@ struct protocol_engine : protocol_engine_delegate
     template <typename T> void default_config() { return default_config(T::get_proto()); }
     void default_config(protocol* proto);
     
+    void protocol_config_init(config_ptr cfg);
     void read_config(std::string config_file);
     void run();
     void stop();

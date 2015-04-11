@@ -43,6 +43,9 @@ typedef std::unique_ptr<protocol_thread_state> protocol_thread_state_ptr;
 typedef std::vector<protocol_thread_state_ptr> protocol_thread_state_list;
 struct protocol_engine_delegate;
 struct protocol_thread_delegate;
+struct protocol_config;
+typedef std::shared_ptr<protocol_config> protocol_config_ptr;
+typedef std::map<const protocol*,protocol_config_ptr> protocol_config_map;
 struct protocol_config_factory;
 typedef std::shared_ptr<protocol_config_factory> protocol_config_factory_ptr;
 typedef std::map<protocol*,protocol_config_factory_ptr> protocol_config_factory_map;
@@ -193,6 +196,15 @@ struct protocol_thread_state
 };
 
 
+/* protocol_config */
+
+struct protocol_config
+{
+    virtual bool lookup_config(std::string key, config_record &record) { return false; }
+    virtual std::string to_string() { return ""; };
+};
+
+
 /* protocol_config_factory */
 
 struct protocol_config_factory
@@ -281,6 +293,8 @@ struct protocol
     static void init();
     
     virtual void proto_init() {}
+    virtual protocol_config_ptr make_protocol_config() const { return protocol_config_ptr(); }
+    
     virtual protocol_engine_state* create_engine_state() const { return nullptr; }
     virtual protocol_thread_state* create_thread_state() const { return nullptr; }
     

@@ -25,6 +25,9 @@ typedef std::vector<std::string> config_line;
 typedef std::function<void(config_line&)>config_function;
 typedef std::map<std::string,config_record> config_function_map;
 struct protocol;
+struct protocol_config;
+typedef std::shared_ptr<protocol_config> protocol_config_ptr;
+typedef std::map<const protocol*,protocol_config_ptr> protocol_config_map;
 
 struct config_record
 {
@@ -45,10 +48,21 @@ struct config_addr
 struct config : config_parser
 {
     config_function_map fn_map;
+    protocol_config_map proto_conf_map;
  
     config();
 
     std::vector<std::string> line;
+    
+    template <typename T>
+    typename T::config_type* get_config()
+    {
+        auto pci = proto_conf_map.find(T::get_proto());
+        if (pci != proto_conf_map.end()) {
+            return static_cast<typename T::config_type*>(pci->second.get());
+        }
+        return nullptr;
+    }
     
     int client_connections;
     int server_connections;
@@ -76,7 +90,6 @@ struct config : config_parser
     std::vector<std::tuple<protocol*,config_addr_ptr,socket_mode>> proto_listeners;
     std::map<std::string,std::string> mime_types;
     std::vector<std::string> index_files;
-    std::vector<std::pair<std::string,std::string>> http_routes;
     
     void read(std::string cfg_file);
     void symbol(const char *value, size_t length);
@@ -85,7 +98,8 @@ struct config : config_parser
     void end_block();
     void config_done();
     std::string to_string();
-
+    
+    bool lookup_config(std::string key, config_record &record);
     std::pair<std::string,std::string> lookup_mime_type(std::string path);
 };
 

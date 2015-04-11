@@ -115,6 +115,21 @@ struct http_server_connection_tmpl : protocol_object
 };
 
 
+/* http_server_config */
+
+struct http_server_config : protocol_config
+{
+    config_function_map fn_map;
+    
+    std::vector<std::pair<std::string,std::string>> routes;
+    
+    http_server_config();
+    
+    bool lookup_config(std::string key, config_record &record);
+    std::string to_string();
+};
+
+
 /* http_server_config_factory */
 
 struct http_server_config_factory : protocol_config_factory
@@ -130,6 +145,7 @@ struct http_server : protocol
     typedef http_server_engine_state engine_state_type;
     typedef http_server_thread_state thread_state_type;
     typedef http_server_connection connection_type;
+    typedef http_server_config config_type;
     typedef std::function<std::string(http_server_connection*)> function_type;
     
     /* sock */
@@ -194,7 +210,9 @@ struct http_server : protocol
     /* protocol */
 
     static protocol* get_proto();
+    
     void proto_init();
+    protocol_config_ptr make_protocol_config() const;
 
     protocol_engine_state* create_engine_state() const;
     protocol_thread_state* create_thread_state() const;

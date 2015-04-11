@@ -163,6 +163,35 @@ bool http_server_connection_tmpl<connection>::free(protocol_engine_delegate *del
 }
 
 
+/* http_server_config */
+
+http_server_config::http_server_config()
+{
+    fn_map["http_route"] =          {3,  3,  [&] (config_line &line) {
+        routes.push_back(std::pair<std::string,std::string>(line[1], line[2]));
+    }};
+}
+
+bool http_server_config::lookup_config(std::string key, config_record &record)
+{
+    auto it = fn_map.find(key);
+    if (it != fn_map.end()) {
+        record = it->second;
+        return true;
+    }
+    return false;
+}
+
+std::string http_server_config::to_string()
+{
+    std::stringstream ss;
+    for (auto http_route : routes) {
+        ss << "http_route          " << http_route.first << " " << http_route.second << ";" << std::endl;
+    }
+    return ss.str();
+}
+
+
 /* http_server_config_factory */
 
 void http_server_config_factory::make_config(config_ptr cfg) const
@@ -191,8 +220,8 @@ void http_server_config_factory::make_config(config_ptr cfg) const
     cfg->proto_threads.push_back(std::pair<std::string,size_t>("http_server/listener", 1));
     cfg->proto_threads.push_back(std::pair<std::string,size_t>("http_server/router,http_server/worker,http_server/keepalive,http_server/linger", std::thread::hardware_concurrency()));
     cfg->root = "html";
-    cfg->http_routes.push_back(std::pair<std::string,std::string>("/", "http_server_handler_file"));
-    cfg->http_routes.push_back(std::pair<std::string,std::string>("/stats/", "http_server_handler_stats"));
+    cfg->get_config<http_server>()->routes.push_back(std::pair<std::string,std::string>("/", "http_server_handler_file"));
+    cfg->get_config<http_server>()->routes.push_back(std::pair<std::string,std::string>("/stats/", "http_server_handler_stats"));
     cfg->mime_types["html"] = "text/html";
     cfg->mime_types["htm"] = "text/html";
     cfg->mime_types["txt"] = "text/plain";
@@ -237,6 +266,11 @@ void http_server::proto_init()
     });
 }
 
+protocol_config_ptr http_server::make_protocol_config() const
+{
+    return protocol_config_ptr(new http_server_config());
+}
+
 http_server_engine_state* http_server::get_engine_state(protocol_thread_delegate *delegate) {
     return static_cast<http_server_engine_state*>(delegate->get_engine_delegate()->get_engine_state(get_proto()));
 }
@@ -262,7 +296,7 @@ void http_server::engine_init(protocol_engine_delegate *delegate) const
     auto engine_state = get_engine_state(delegate);
     
     // initialize routes
-    for (auto &route : cfg->http_routes) {
+    for (auto &route : cfg->get_config<http_server>()->routes) {
         auto &path = route.first;
         auto &handler = route.second;
         auto fi = handler_factory_map.find(handler);

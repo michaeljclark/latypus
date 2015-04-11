@@ -78,9 +78,6 @@ config::config() :
     fn_map["log_buffers"] =         {2,  2,  [&] (config_line &line) { log_buffers = atoi(line[1].c_str()); }};
     fn_map["keepalive_timeout"] =   {2,  2,  [&] (config_line &line) { keepalive_timeout = atoi(line[1].c_str()); }};
     fn_map["connection_timeout"] =  {2,  2,  [&] (config_line &line) { connection_timeout = atoi(line[1].c_str()); }};
-    fn_map["http_route"] =          {3,  3,  [&] (config_line &line) {
-        http_routes.push_back(std::pair<std::string,std::string>(line[1], line[2]));
-    }};
     fn_map["client_threads"] =      {3,  3,  [&] (config_line &line) {
         client_threads.push_back(std::pair<std::string,size_t>(line[1], atoi(line[2].c_str())));
     }};
@@ -165,10 +162,27 @@ void config::end_block()
 
 void config::end_statement()
 {
-    if (line.size() > 0) {
-        config_function_map::iterator fi = fn_map.find(line[0]);
-        if (fi != fn_map.end()) {
-            config_record rec = (*fi).second;
+    if (line.size() > 0)
+    {
+        config_record rec;
+        bool found = false;
+        
+        // look up protocol specific config record
+        for (auto ent : proto_conf_map) {
+            protocol_config_ptr proto_conf = ent.second;
+            if (proto_conf->lookup_config(line[0], rec)) {
+                found = true;
+                break;
+            }
+        }
+        
+        // if not found lookup general config record
+        if (!found) {
+            found = lookup_config(line[0], rec);
+        }
+        
+        // if found call config function
+        if (found) {
             if (rec.minargs == rec.maxargs && (int)line.size() != rec.minargs) {
                 log_fatal_exit("%s requires %d arguments", line[0].c_str(), rec.minargs);
             } else if (rec.minargs > 0 && (int)line.size() < rec.minargs) {
@@ -208,9 +222,6 @@ std::string config::to_string()
     ss << "tls_key_file        " << tls_key_file << ";" << std::endl;
     ss << "tls_cert_file       " << tls_cert_file << ";" << std::endl;
     ss << "root                " << root << ";" << std::endl;
-    for (auto http_route : http_routes) {
-        ss << "http_route          " << http_route.first << " " << http_route.second << ";" << std::endl;
-    }
     for (auto thread : client_threads) {
         ss << "client_threads      " << thread.first << " " << thread.second << ";" << std::endl;
     }
@@ -230,7 +241,23 @@ std::string config::to_string()
         ss << "index_file          " << index_file << ";" << std::endl;
     }
 
+    // output protocol specific config
+    for (auto ent : proto_conf_map) {
+        protocol_config_ptr proto_conf = ent.second;
+        ss << proto_conf->to_string();
+    }
+
     return ss.str();
+}
+
+bool config::lookup_config(std::string key, config_record &record)
+{
+    auto it = fn_map.find(key);
+    if (it != fn_map.end()) {
+        record = it->second;
+        return true;
+    }
+    return false;
 }
 
 std::pair<std::string,std::string> config::lookup_mime_type(std::string path)

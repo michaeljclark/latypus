@@ -94,6 +94,19 @@ struct http_client_connection_tmpl : protocol_object
 };
 
 
+/* http_client_config */
+
+struct http_client_config : protocol_config
+{
+    config_function_map fn_map;
+    
+    http_client_config();
+    
+    bool lookup_config(std::string key, config_record &record);
+    std::string to_string();
+};
+
+
 /* http_client_config_factory */
 
 struct http_client_config_factory : protocol_config_factory
@@ -109,6 +122,7 @@ struct http_client : protocol
     typedef http_client_engine_state engine_state_type;
     typedef http_client_thread_state thread_state_type;
     typedef http_client_connection connection_type;
+    typedef http_client_config config_type;
     typedef std::function<std::string(http_client_connection*)> function_type;
     
     /* sock */
@@ -156,7 +170,9 @@ struct http_client : protocol
     /* protocol */
 
     static protocol* get_proto();
+    
     void proto_init();
+    protocol_config_ptr make_protocol_config() const;
 
     protocol_engine_state* create_engine_state() const;
     protocol_thread_state* create_thread_state() const;
