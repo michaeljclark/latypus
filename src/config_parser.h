@@ -16,6 +16,8 @@ struct config_parser
     bool parse(const char *buffer, size_t len);
     
     virtual void symbol(const char *value, size_t length) = 0;
+    virtual void start_block() = 0;
+    virtual void end_block() = 0;
     virtual void end_statement() = 0;
     virtual void config_done() = 0;
 };

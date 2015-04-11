@@ -15,22 +15,27 @@
     machine config_parser;
 
     action mark             { mark = fpc; }
-    action write_symbol     { symbol(mark, fpc - mark); }
-    action end_statement    { end_statement(); }
+    action w_start_block    { start_block(); }
+    action w_end_block      { end_block(); }
+    action w_symbol         { symbol(mark, fpc - mark); }
+    action w_end_statement  { end_statement(); }
 
     action done { 
         config_done();
         fbreak;
     }
 
-    Eol = ';' %end_statement;
-    WhiteSpace = (' ' | '\t' | '\r' | '\n' )+;
-    Comment = ( '/*' any* :>> '*/' );
-    Symbol = ( ( any - WhiteSpace - ';' )+ - ('/*') ) >mark %write_symbol;
-    Statement = ( Symbol ( WhiteSpace Symbol)* ) WhiteSpace* Eol;
-    Config = ( Comment | Statement | WhiteSpace)* %done;
+    Eol = ';' %w_end_statement;
+    newline = ('\r' | '\n' ) | '\n';
+    ws = (' ' | '\t' | '\r' | '\n' )+;
+    comment = '/*' ( any* - ( any* '*/' any* ) ) '*/';
+    symbol = ( ( any - ';' - ws - '{' - '}' )+ - ('/*') ) >mark %w_symbol;
+    statement = ( symbol ( ws symbol)* ) ws* Eol;
+    end_block = symbol ws+ '{' %w_start_block;
+    start_block = '}' ws* ';' %w_end_block;
+    config = ( comment | start_block | end_block | statement | ws )* %done;
 
-    main := Config;
+    main := config;
 
 }%%
 

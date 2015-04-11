@@ -81,6 +81,8 @@ struct config : config_parser
     void read(std::string cfg_file);
     void symbol(const char *value, size_t length);
     void end_statement();
+    void start_block();
+    void end_block();
     void config_done();
     std::string to_string();
 

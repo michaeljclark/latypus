@@ -157,6 +157,16 @@ void config::symbol(const char *value, size_t vlen)
     line.push_back(std::string(value, vlen));
 }
 
+void config::start_block()
+{
+
+}
+
+void config::end_block()
+{
+
+}
+
 void config::end_statement()
 {
     if (line.size() > 0) {
