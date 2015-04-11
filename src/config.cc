@@ -49,8 +49,6 @@ config_addr_ptr config_addr::decode(std::string addr_spec)
 
 /* config */
 
-config_function_map config::fn_map;
-
 config::config() :
     client_connections(CLIENT_CONNECTIONS_DEFAULT),
     server_connections(SERVER_CONNECTIONS_DEFAULT),
@@ -62,9 +60,7 @@ config::config() :
     log_buffers(LOG_BUFFERS_DEFAULT),
     keepalive_timeout(KEEPALIVE_TIMEOUT_DEFAULT),
     connection_timeout(CONNETION_TIMEOUT_DEFAULT)
-{
-    if (fn_map.size()) return;
-    
+{    
     fn_map["error_log"] =           {2,  2,  [&] (config_line &line) { error_log = line[1]; }};
     fn_map["access_log"] =          {2,  2,  [&] (config_line &line) { access_log = line[1]; }};
     fn_map["pid_file"] =            {2,  2,  [&] (config_line &line) { pid_file = line[1]; }};

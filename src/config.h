@@ -44,7 +44,7 @@ struct config_addr
 
 struct config : config_parser
 {
-    static config_function_map fn_map;
+    config_function_map fn_map;
  
     config();
 
