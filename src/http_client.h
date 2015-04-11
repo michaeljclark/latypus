@@ -107,14 +107,6 @@ struct http_client_config : protocol_config
 };
 
 
-/* http_client_config_factory */
-
-struct http_client_config_factory : protocol_config_factory
-{
-    void make_config(config_ptr cfg) const;
-};
-
-
 /* http_client */
 
 struct http_client : protocol
@@ -172,6 +164,7 @@ struct http_client : protocol
     static protocol* get_proto();
     
     void proto_init();
+    void make_default_config(config_ptr cfg) const;
     protocol_config_ptr make_protocol_config() const;
 
     protocol_engine_state* create_engine_state() const;

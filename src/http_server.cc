@@ -192,9 +192,33 @@ std::string http_server_config::to_string()
 }
 
 
-/* http_server_config_factory */
+/* http_server */
 
-void http_server_config_factory::make_config(config_ptr cfg) const
+const char* http_server::ServerName = "latypus";
+const char* http_server::ServerVersion = "0.0.0";
+
+std::once_flag http_server::protocol_init;
+std::map<std::string,http_server_handler_factory_ptr> http_server::handler_factory_map;
+
+http_server::http_server(std::string name) : protocol(name) {}
+http_server::~http_server() {}
+
+protocol* http_server::get_proto()
+{
+    static http_server proto("http_server");
+    return &proto;
+}
+
+void http_server::proto_init()
+{
+    std::call_once(protocol_init, [](){
+        http_constants::init();
+        http_server_handler_file::init_handler();
+        http_server_handler_stats::init_handler();
+    });
+}
+
+void http_server::make_default_config(config_ptr cfg) const
 {
     log_info("%s using default config", http_server::get_proto()->name.c_str());
     cfg->pid_file = "/tmp/latypus.pid";
@@ -235,35 +259,6 @@ void http_server_config_factory::make_config(config_ptr cfg) const
     cfg->mime_types["default"] = "application/octet-stream";
     cfg->index_files.push_back("index.html");
     cfg->index_files.push_back("index.htm");
-}
-
-
-/* http_server */
-
-const char* http_server::ServerName = "latypus";
-const char* http_server::ServerVersion = "0.0.0";
-
-std::once_flag http_server::protocol_init;
-std::map<std::string,http_server_handler_factory_ptr> http_server::handler_factory_map;
-
-http_server::http_server(std::string name) : protocol(name) {}
-http_server::~http_server() {}
-
-protocol* http_server::get_proto()
-{
-    static http_server proto("http_server");
-    return &proto;
-}
-
-void http_server::proto_init()
-{
-    std::call_once(protocol_init, [](){
-        http_constants::init();
-        protocol_engine::config_factory_map.insert
-            (protocol_config_factory_entry(get_proto(), std::make_shared<http_server_config_factory>()));
-        http_server_handler_file::init_handler();
-        http_server_handler_stats::init_handler();
-    });
 }
 
 protocol_config_ptr http_server::make_protocol_config() const

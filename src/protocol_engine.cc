@@ -131,10 +131,7 @@ void protocol_engine::default_config(protocol* proto)
 {
     cfg = config_ptr(new config());
     protocol_config_init(cfg);
-    auto cfi = config_factory_map.find(proto);
-    if (cfi != config_factory_map.end()) {
-        cfi->second->make_config(cfg);
-    }
+    proto->make_default_config(cfg);
 }
 
 void protocol_engine::read_config(std::string config_file)

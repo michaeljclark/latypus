@@ -205,14 +205,6 @@ struct protocol_config
 };
 
 
-/* protocol_config_factory */
-
-struct protocol_config_factory
-{
-    virtual void make_config(config_ptr cfg) const = 0;
-};
-
-
 /* protocol_engine_delegate */
 
 struct protocol_engine_delegate
@@ -293,6 +285,7 @@ struct protocol
     static void init();
     
     virtual void proto_init() {}
+    virtual void make_default_config(config_ptr cfg) const {};
     virtual protocol_config_ptr make_protocol_config() const { return protocol_config_ptr(); }
     
     virtual protocol_engine_state* create_engine_state() const { return nullptr; }

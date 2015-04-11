@@ -173,13 +173,6 @@ std::string http_client_config::to_string()
 }
 
 
-/* http_client_config_factory */
-
-void http_client_config_factory::make_config(config_ptr cfg) const
-{
-}
-
-
 /* http_client */
 
 const char* http_client::ClientName = "latypus";
@@ -200,9 +193,11 @@ void http_client::proto_init()
 {
     std::call_once(protocol_init, [](){
         http_constants::init();
-        protocol_engine::config_factory_map.insert
-            (protocol_config_factory_entry(get_proto(), std::make_shared<http_client_config_factory>()));
     });
+}
+
+void http_client::make_default_config(config_ptr cfg) const
+{
 }
 
 protocol_config_ptr http_client::make_protocol_config() const
