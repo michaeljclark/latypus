@@ -180,7 +180,7 @@ void http_tls_shared::init_dh(SSL_CTX *ctx)
 
 void http_tls_shared::init_ecdh(SSL_CTX *ctx, int curve)
 {
-    EC_KEY  *ecdh = EC_KEY_new_by_curve_name(curve);
+    EC_KEY *ecdh = EC_KEY_new_by_curve_name(curve);
     if (ecdh == NULL) {
         log_fatal_exit("%s: can't create curve: %d", __func__, curve);
     }
@@ -219,6 +219,7 @@ SSL_CTX* http_tls_shared::init_client(protocol *proto, config_ptr cfg)
 {
     SSL_library_init();
     SSL_load_error_strings();
+    OpenSSL_add_all_algorithms();
     
     CRYPTO_set_locking_callback(http_tls_shared::tls_locking_function);
     CRYPTO_THREADID_set_callback(http_tls_shared::tls_threadid_function);
@@ -262,6 +263,7 @@ SSL_CTX* http_tls_shared::init_server(protocol *proto, config_ptr cfg)
 {
     SSL_library_init();
     SSL_load_error_strings();
+    OpenSSL_add_all_algorithms();
     
     CRYPTO_set_locking_callback(http_tls_shared::tls_locking_function);
     CRYPTO_THREADID_set_callback(http_tls_shared::tls_threadid_function);
