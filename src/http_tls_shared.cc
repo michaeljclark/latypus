@@ -78,7 +78,6 @@ int http_tls_shared::tls_new_session_cb(struct ssl_st *ssl, SSL_SESSION *sess)
     const unsigned char *sess_id = SSL_SESSION_get_id(sess, &sess_id_len);
     std::string sess_key = hex::encode(sess_id, sess_id_len);
     session_mutex.lock();
-
     size_t sess_der_len = i2d_SSL_SESSION(sess, NULL);
     unsigned char *sess_der = new unsigned char[sess_der_len];
     if (sess_der) {
@@ -191,6 +190,7 @@ SSL_CTX* http_tls_shared::init_server(protocol *proto, config_ptr cfg)
     
 #if 0
     SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_NO_INTERNAL |
+                                        SSL_SESS_CACHE_NO_AUTO_CLEAR |
                                         SSL_SESS_CACHE_SERVER);
     SSL_CTX_sess_set_new_cb(ctx, http_tls_shared::tls_new_session_cb);
     SSL_CTX_sess_set_remove_cb(ctx, http_tls_shared::tls_remove_session_cb);
