@@ -38,9 +38,11 @@
 
 /* http_tls_shared */
 
-bool http_tls_shared::tls_session_debug = true;
+bool http_tls_shared::tls_session_debug = false;
+const int http_tls_shared::max_session_count = 32768;
 std::mutex http_tls_shared::session_mutex;
 http_tls_session_map http_tls_shared::session_map;
+http_tls_session_dequeue http_tls_shared::session_deque;
 std::once_flag http_tls_shared::lock_init_flag;
 std::vector<std::shared_ptr<std::mutex>> http_tls_shared::locks;
 
@@ -72,6 +74,28 @@ int http_tls_shared::tls_log_errors(const char *str, size_t len, void *bio)
     return 0;
 }
 
+void http_tls_shared::tls_expire_sessions(SSL_CTX *ctx)
+{
+    time_t current_time = time(nullptr);
+    long timeout_secs = SSL_CTX_get_timeout(ctx);
+    for (auto si = session_deque.begin(); si != session_deque.end(); ) {
+        auto &tls_sess = *si;
+        // expire sessions that are older than the timeout value
+        // or if the number of sessions is larger than max_session_count
+        if (tls_sess->sess_time < current_time - timeout_secs ||
+            session_deque.size() > max_session_count)
+        {
+            if (tls_session_debug) {
+                log_debug("%s: expiring session: id=%s", __func__, tls_sess->sess_key.c_str());
+            }
+            session_map.erase(tls_sess->sess_key);
+            si = session_deque.erase(si);
+        } else {
+            break;
+        }
+    }
+}
+
 int http_tls_shared::tls_new_session_cb(struct ssl_st *ssl, SSL_SESSION *sess)
 {
     unsigned int sess_id_len;
@@ -80,11 +104,14 @@ int http_tls_shared::tls_new_session_cb(struct ssl_st *ssl, SSL_SESSION *sess)
     session_mutex.lock();
     size_t sess_der_len = i2d_SSL_SESSION(sess, NULL);
     unsigned char *sess_der = new unsigned char[sess_der_len];
+    time_t current_time = time(nullptr);
     if (sess_der) {
         unsigned char *p = sess_der;
         i2d_SSL_SESSION(sess, &p);
-        auto si = session_map.insert(http_tls_session_entry(sess_key, std::make_shared<http_tls_session>(sess_der, sess_der_len)));
+        auto si = session_map.insert(http_tls_session_entry
+            (sess_key, std::make_shared<http_tls_session>(sess_key, current_time, sess_der, sess_der_len)));
         auto &tls_sess = *si.first->second;
+        session_deque.push_back(si.first->second);
         session_mutex.unlock();
         if (tls_session_debug) {
             log_debug("%s: added session: id=%s len=%lu", __func__, sess_key.c_str(), tls_sess.sess_der_len);
@@ -117,11 +144,11 @@ SSL_SESSION * http_tls_shared::tls_get_session_cb(struct ssl_st *ssl, unsigned c
     *copy = 0;
     std::string sess_key = hex::encode(sess_id, sess_id_len);
     session_mutex.lock();
+    tls_expire_sessions(ssl->ctx);
     auto si = session_map.find(sess_key);
     if (si != session_map.end()) {
         auto &tls_sess = *si->second;
         session_mutex.unlock();
-        // TODO - implement session timeout
         if (tls_session_debug) {
             log_debug("%s: lookup session: cache hit: id=%s len=%lu", __func__, sess_key.c_str(), tls_sess.sess_der_len);
         }
