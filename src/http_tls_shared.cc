@@ -188,14 +188,13 @@ SSL_CTX* http_tls_shared::init_server(protocol *proto, config_ptr cfg)
     SSL_CTX_set_options(ctx, SSL_OP_NO_COMPRESSION);
 #endif
     
-#if 0
+    SSL_CTX_set_options(ctx, SSL_OP_NO_TICKET);
     SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_NO_INTERNAL |
                                         SSL_SESS_CACHE_NO_AUTO_CLEAR |
                                         SSL_SESS_CACHE_SERVER);
     SSL_CTX_sess_set_new_cb(ctx, http_tls_shared::tls_new_session_cb);
     SSL_CTX_sess_set_remove_cb(ctx, http_tls_shared::tls_remove_session_cb);
     SSL_CTX_sess_set_get_cb(ctx, http_tls_shared::tls_get_session_cb);
-#endif
 
     if (SSL_CTX_use_certificate_file(ctx,
                                      cfg->tls_cert_file.c_str(), SSL_FILETYPE_PEM) <= 0)
