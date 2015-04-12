@@ -36,6 +36,22 @@
 #include "http_tls_shared.h"
 
 
+static unsigned char dh1024_p[] = {
+    0xA5,0x31,0xCC,0x27,0x5D,0xB7,0x97,0xAF,0x06,0x6A,0x65,0x1E,
+    0xF5,0xA6,0xAB,0x59,0x6A,0x42,0x50,0x59,0x1F,0x9B,0xD0,0xF8,
+    0x52,0x35,0x3D,0xA5,0xB9,0x32,0xEC,0xBF,0xBE,0x5F,0x5A,0xCF,
+    0xFD,0x04,0x2A,0x1A,0x28,0x32,0xA3,0xED,0x93,0xBC,0xE5,0x8C,
+    0xED,0xF0,0x9D,0x08,0xAC,0xC8,0x11,0xF8,0x86,0xCE,0x10,0x89,
+    0x99,0x0C,0x45,0xBB,0xFA,0xC1,0x8C,0x31,0x06,0x01,0x32,0xED,
+    0x08,0xF1,0x2E,0x33,0x95,0x90,0x55,0x35,0x11,0xF3,0xB6,0x41,
+    0x92,0xEF,0x7C,0xC1,0x2C,0x1B,0xD2,0x56,0xD1,0xDE,0x47,0xA8,
+    0x5F,0xD0,0x7B,0x96,0xC2,0x8C,0xC5,0xDB,0x6B,0xBA,0xE5,0x3B,
+    0x22,0xD1,0x3E,0x9E,0xED,0x9A,0x6B,0xAA,0x26,0x32,0x97,0xC9,
+    0x2F,0x8D,0x83,0x30,0x2A,0x69,0x96,0x63,
+};
+
+static unsigned char dh1024_g[] = { 0x02 };
+
 /* http_tls_shared */
 
 bool http_tls_shared::tls_session_debug = false;
@@ -139,6 +155,43 @@ void http_tls_shared::tls_remove_session_cb(struct ssl_ctx_st *ctx, SSL_SESSION 
     }
 }
 
+void http_tls_shared::init_dh(SSL_CTX *ctx)
+{
+    DH *dh = DH_new();
+    
+    if (dh == NULL) {
+        log_fatal_exit("%s: DH_new failed", __func__);
+    }
+    
+    dh->p = BN_bin2bn(dh1024_p, sizeof(dh1024_p), NULL);
+    dh->g = BN_bin2bn(dh1024_g, sizeof(dh1024_g), NULL);
+
+    if (dh->p == NULL || dh->g == NULL) {
+        DH_free(dh);
+        log_fatal_exit("%s: BN_bin2bn failed", __func__);
+    }
+    
+    SSL_CTX_set_options(ctx, SSL_OP_SINGLE_DH_USE);
+    
+    SSL_CTX_set_tmp_dh(ctx, dh);
+    
+    DH_free(dh);
+}
+
+void http_tls_shared::init_ecdh(SSL_CTX *ctx, int curve)
+{
+    EC_KEY  *ecdh = EC_KEY_new_by_curve_name(curve);
+    if (ecdh == NULL) {
+        log_fatal_exit("%s: can't create curve: %d", __func__, curve);
+    }
+    
+    SSL_CTX_set_options(ctx, SSL_OP_SINGLE_ECDH_USE);
+    
+    SSL_CTX_set_tmp_ecdh(ctx, ecdh);
+    
+    EC_KEY_free(ecdh);
+}
+
 SSL_SESSION * http_tls_shared::tls_get_session_cb(struct ssl_st *ssl, unsigned char *sess_id, int sess_id_len, int *copy)
 {
     *copy = 0;
@@ -183,6 +236,9 @@ SSL_CTX* http_tls_shared::init_client(protocol *proto, config_ptr cfg)
     SSL_CTX_set_options(ctx, SSL_OP_NO_COMPRESSION);
 #endif
     
+    init_dh(ctx);
+    //init_ecdh(ctx, NID_secp256k1);
+    
     if (cfg->tls_cipher_list.length() > 0) {
         SSL_CTX_set_cipher_list(ctx, cfg->tls_cipher_list.c_str());
     }
@@ -212,7 +268,7 @@ SSL_CTX* http_tls_shared::init_server(protocol *proto, config_ptr cfg)
     
     SSL_CTX *ctx = SSL_CTX_new(SSLv23_server_method());
     SSL_CTX_set_ex_data(ctx, 0, cfg.get());
-
+    
 #ifdef SSL_OP_NO_SSLv2
     SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2);
 #endif
@@ -222,7 +278,10 @@ SSL_CTX* http_tls_shared::init_server(protocol *proto, config_ptr cfg)
 #ifdef SSL_OP_NO_COMPRESSION
     SSL_CTX_set_options(ctx, SSL_OP_NO_COMPRESSION);
 #endif
-
+    
+    init_dh(ctx);
+    //init_ecdh(ctx, NID_secp256k1);
+    
     if (cfg->tls_cipher_list.length() > 0) {
         SSL_CTX_set_cipher_list(ctx, cfg->tls_cipher_list.c_str());
     }

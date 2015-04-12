@@ -58,6 +58,8 @@ struct http_tls_shared
     static void tls_remove_session_cb(struct ssl_ctx_st *ctx, SSL_SESSION *sess);
     static SSL_SESSION * tls_get_session_cb(struct ssl_st *ssl, unsigned char *data, int len, int *copy);
     
+    static void init_dh(SSL_CTX *ctx);
+    static void init_ecdh(SSL_CTX *ctx, int curve);
     static SSL_CTX* init_client(protocol *proto, config_ptr cfg);
     static SSL_CTX* init_server(protocol *proto, config_ptr cfg);
     
