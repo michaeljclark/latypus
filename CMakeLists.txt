@@ -60,6 +60,10 @@ add_library(
     src/http_server_handler_stats.cc
     src/http_tls_shared.h
     src/http_tls_shared.cc
+    src/base64.h
+    src/base64.cc
+    src/hex.h
+    src/hex.cc
     src/io.h
     src/io.cc
     src/log.h

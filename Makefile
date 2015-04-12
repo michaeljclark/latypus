@@ -128,10 +128,12 @@ LATYPUS_SRCS =  $(LIB_SRC_DIR)/os.cc \
                 $(LIB_SRC_DIR)/socket_udp.cc \
                 $(LIB_SRC_DIR)/socket_unix.cc \
                 $(LIB_SRC_DIR)/url.cc \
+                $(LIB_SRC_DIR)/base64.cc \
                 $(LIB_SRC_DIR)/cmdline_options.cc \
                 $(LIB_SRC_DIR)/config.cc \
                 $(LIB_SRC_DIR)/config_parser.cc \
                 $(LIB_SRC_DIR)/config_cpu.cc \
+                $(LIB_SRC_DIR)/hex.cc \
                 $(LIB_SRC_DIR)/log.cc \
                 $(LIB_SRC_DIR)/log_thread.cc \
                 $(LIB_SRC_DIR)/http_common.cc \
