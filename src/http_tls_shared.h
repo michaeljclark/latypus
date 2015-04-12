@@ -32,6 +32,7 @@ struct http_tls_session
 
 struct http_tls_shared
 {
+    static bool tls_session_debug;
     static std::mutex session_mutex;
     static http_tls_session_map session_map;
     static std::once_flag lock_init_flag;
