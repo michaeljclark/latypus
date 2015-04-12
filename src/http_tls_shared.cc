@@ -83,13 +83,11 @@ int http_tls_shared::tls_new_session_cb(struct ssl_st *ssl, SSL_SESSION *sess)
     if (sess_der) {
         unsigned char *p = sess_der;
         i2d_SSL_SESSION(sess, &p);
-        auto si = session_map.insert(http_tls_session_entry(sess_key, std::make_shared<http_tls_session>()));
+        auto si = session_map.insert(http_tls_session_entry(sess_key, std::make_shared<http_tls_session>(sess_der, sess_der_len)));
         auto &tls_sess = *si.first->second;
-        tls_sess.sess_der_len = sess_der_len;
-        tls_sess.sess_der = sess_der;
         session_mutex.unlock();
         if (tls_session_debug) {
-            log_debug("%s: added session: id=%s", __func__, sess_key.c_str());
+            log_debug("%s: added session: id=%s len=%lu", __func__, sess_key.c_str(), tls_sess.sess_der_len);
         }
         return 0;
     } else {
@@ -125,7 +123,7 @@ SSL_SESSION * http_tls_shared::tls_get_session_cb(struct ssl_st *ssl, unsigned c
         session_mutex.unlock();
         // TODO - implement session timeout
         if (tls_session_debug) {
-            log_debug("%s: lookup session: cache hit: id=%s", __func__, sess_key.c_str());
+            log_debug("%s: lookup session: cache hit: id=%s len=%lu", __func__, sess_key.c_str(), tls_sess.sess_der_len);
         }
         unsigned const char *p = tls_sess.sess_der;
         return d2i_SSL_SESSION(NULL, &p, tls_sess.sess_der_len);

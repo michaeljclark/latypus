@@ -16,6 +16,7 @@ struct http_tls_session
     size_t sess_der_len;
     
     http_tls_session() : sess_der(nullptr), sess_der_len(0) {}
+    http_tls_session(unsigned char *sess_der, size_t sess_der_len) : sess_der(sess_der), sess_der_len(sess_der_len) {}
     http_tls_session(const http_tls_session &o) : sess_der(nullptr), sess_der_len(o.sess_der_len)
     {
         if (o.sess_der && o.sess_der_len) {
