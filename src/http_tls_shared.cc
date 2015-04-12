@@ -99,7 +99,7 @@ void http_tls_shared::tls_expire_sessions(SSL_CTX *ctx)
         // expire sessions that are older than the timeout value
         // or if the number of sessions is larger than max_session_count
         if (tls_sess->sess_time < current_time - cfg->tls_session_timeout ||
-            session_deque.size() > cfg->tls_session_count)
+            session_deque.size() > (size_t)cfg->tls_session_count)
         {
             if (tls_session_debug) {
                 log_debug("%s: expiring session: id=%s", __func__, tls_sess->sess_key.c_str());
