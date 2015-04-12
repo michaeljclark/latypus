@@ -233,6 +233,8 @@ void http_server::make_default_config(config_ptr cfg) const
     cfg->io_buffer_size = IO_BUFFER_SIZE_DEFAULT;
     cfg->ipc_buffer_size = IPC_BUFFER_SIZE_DEFAULT;
     cfg->log_buffers = LOG_BUFFERS_DEFAULT;
+    cfg->tls_session_timeout = TLS_SESSION_TIMEOUT_DEFAULT;
+    cfg->tls_session_count = TLS_SESSION_COUNT_DEFAULT;
     cfg->proto_listeners.push_back(std::tuple<protocol*,config_addr_ptr,socket_mode>
                                    (http_server::get_proto(),
                                     config_addr::decode("[]:8080"),

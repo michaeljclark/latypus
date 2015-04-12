@@ -59,7 +59,9 @@ config::config() :
     ipc_buffer_size(IPC_BUFFER_SIZE_DEFAULT),
     log_buffers(LOG_BUFFERS_DEFAULT),
     keepalive_timeout(KEEPALIVE_TIMEOUT_DEFAULT),
-    connection_timeout(CONNETION_TIMEOUT_DEFAULT)
+    connection_timeout(CONNETION_TIMEOUT_DEFAULT),
+    tls_session_timeout(TLS_SESSION_TIMEOUT_DEFAULT),
+    tls_session_count(TLS_SESSION_COUNT_DEFAULT)
 {    
     fn_map["error_log"] =           {2,  2,  [&] (config_line &line) { error_log = line[1]; }};
     fn_map["access_log"] =          {2,  2,  [&] (config_line &line) { access_log = line[1]; }};
@@ -67,6 +69,8 @@ config::config() :
     fn_map["tls_ca_file"] =         {2,  2,  [&] (config_line &line) { tls_ca_file = line[1]; }};
     fn_map["tls_key_file"] =        {2,  2,  [&] (config_line &line) { tls_key_file = line[1]; }};
     fn_map["tls_cert_file"] =       {2,  2,  [&] (config_line &line) { tls_cert_file = line[1]; }};
+    fn_map["tls_session_timeout"] = {2,  2,  [&] (config_line &line) { tls_session_timeout = atoi(line[1].c_str()); }};
+    fn_map["tls_session_count"] =   {2,  2,  [&] (config_line &line) { tls_session_count = atoi(line[1].c_str()); }};
     fn_map["root"] =                {2,  2,  [&] (config_line &line) { root = line[1]; }};
     fn_map["client_connections"] =  {2,  2,  [&] (config_line &line) { client_connections = atoi(line[1].c_str()); }};
     fn_map["server_connections"] =  {2,  2,  [&] (config_line &line) { server_connections = atoi(line[1].c_str()); }};
@@ -221,6 +225,8 @@ std::string config::to_string()
     ss << "tls_ca_file         " << tls_ca_file << ";" << std::endl;
     ss << "tls_key_file        " << tls_key_file << ";" << std::endl;
     ss << "tls_cert_file       " << tls_cert_file << ";" << std::endl;
+    ss << "tls_session_timeout " << tls_session_timeout << ";" << std::endl;
+    ss << "tls_session_count   " << tls_session_count << ";" << std::endl;
     ss << "root                " << root << ";" << std::endl;
     for (auto thread : client_threads) {
         ss << "client_threads      " << thread.first << " " << thread.second << ";" << std::endl;

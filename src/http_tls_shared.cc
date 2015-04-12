@@ -76,14 +76,14 @@ int http_tls_shared::tls_log_errors(const char *str, size_t len, void *bio)
 
 void http_tls_shared::tls_expire_sessions(SSL_CTX *ctx)
 {
+    config *cfg = static_cast<config*>(SSL_CTX_get_ex_data(ctx, 0));
     time_t current_time = time(nullptr);
-    long timeout_secs = SSL_CTX_get_timeout(ctx);
     for (auto si = session_deque.begin(); si != session_deque.end(); ) {
         auto &tls_sess = *si;
         // expire sessions that are older than the timeout value
         // or if the number of sessions is larger than max_session_count
-        if (tls_sess->sess_time < current_time - timeout_secs ||
-            session_deque.size() > max_session_count)
+        if (tls_sess->sess_time < current_time - cfg->tls_session_timeout ||
+            session_deque.size() > cfg->tls_session_count)
         {
             if (tls_session_debug) {
                 log_debug("%s: expiring session: id=%s", __func__, tls_sess->sess_key.c_str());
@@ -171,6 +171,8 @@ SSL_CTX* http_tls_shared::init_client(protocol *proto, config_ptr cfg)
     CRYPTO_THREADID_set_callback(http_tls_shared::tls_threadid_function);
     
     SSL_CTX *ctx = SSL_CTX_new(SSLv23_client_method());
+    SSL_CTX_set_ex_data(ctx, 0, cfg.get());
+    
 #ifdef SSL_OP_NO_SSLv2
     SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2);
 #endif
@@ -205,6 +207,8 @@ SSL_CTX* http_tls_shared::init_server(protocol *proto, config_ptr cfg)
     CRYPTO_THREADID_set_callback(http_tls_shared::tls_threadid_function);
     
     SSL_CTX *ctx = SSL_CTX_new(SSLv23_server_method());
+    SSL_CTX_set_ex_data(ctx, 0, cfg.get());
+
 #ifdef SSL_OP_NO_SSLv2
     SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2);
 #endif

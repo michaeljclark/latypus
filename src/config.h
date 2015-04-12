@@ -15,6 +15,8 @@
 #define LOG_BUFFERS_DEFAULT         1024
 #define CONNETION_TIMEOUT_DEFAULT   60
 #define KEEPALIVE_TIMEOUT_DEFAULT   5
+#define TLS_SESSION_TIMEOUT_DEFAULT 7200
+#define TLS_SESSION_COUNT_DEFAULT   32768
 
 struct config;
 struct config_record;
@@ -78,6 +80,8 @@ struct config : config_parser
     std::string tls_ca_file;
     std::string tls_key_file;
     std::string tls_cert_file;
+    int tls_session_timeout;
+    int tls_session_count;
 
     std::string error_log;
     std::string access_log;
