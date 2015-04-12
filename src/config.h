@@ -80,6 +80,7 @@ struct config : config_parser
     std::string tls_ca_file;
     std::string tls_key_file;
     std::string tls_cert_file;
+    std::string tls_cert_chain_file;
     std::string tls_cipher_list;
     int tls_session_timeout;
     int tls_session_count;
