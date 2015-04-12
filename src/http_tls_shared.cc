@@ -183,6 +183,10 @@ SSL_CTX* http_tls_shared::init_client(protocol *proto, config_ptr cfg)
     SSL_CTX_set_options(ctx, SSL_OP_NO_COMPRESSION);
 #endif
     
+    if (cfg->tls_cipher_list.length() > 0) {
+        SSL_CTX_set_cipher_list(ctx, cfg->tls_cipher_list.c_str());
+    }
+    
     if ((!SSL_CTX_load_verify_locations(ctx, cfg->tls_ca_file.c_str(), NULL)) ||
         (!SSL_CTX_set_default_verify_paths(ctx))) {
         ERR_print_errors_cb(http_tls_shared::tls_log_errors, NULL);
@@ -218,7 +222,11 @@ SSL_CTX* http_tls_shared::init_server(protocol *proto, config_ptr cfg)
 #ifdef SSL_OP_NO_COMPRESSION
     SSL_CTX_set_options(ctx, SSL_OP_NO_COMPRESSION);
 #endif
-    
+
+    if (cfg->tls_cipher_list.length() > 0) {
+        SSL_CTX_set_cipher_list(ctx, cfg->tls_cipher_list.c_str());
+    }
+
     SSL_CTX_set_options(ctx, SSL_OP_NO_TICKET);
     SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_NO_INTERNAL |
                                         SSL_SESS_CACHE_NO_AUTO_CLEAR |
