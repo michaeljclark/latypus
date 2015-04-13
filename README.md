@@ -63,6 +63,7 @@ sh git-update-submodules.sh
 ````
 tls_key_file          /path_to_key/key.pem;
 tls_cert_file         /path_to_cert/cert.pem;
+tls_cert_chain_file   /path_to_chain/chain.pem;
 
 proto_listener        http_server 8443 tls;           /* ipv4 ip addr any TLS */
 ````
