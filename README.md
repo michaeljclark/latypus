@@ -58,6 +58,16 @@ int main(int argc, const char * argv[])
 sh git-update-submodules.sh
 ````
 
+## Configuration
+### TLS
+  * To enable experimental TLS support, add the following to netd.cfg
+````
+tls_key_file          /path_to_key/key.pem;
+tls_cert_file         /path_to_cert/cert.pem;
+
+proto_listener        http_server 8443 tls;           /* ipv4 ip addr any TLS */
+````
+
 ## Build Dependencies
 ### Debian
   * Tested with Debian 8, Clang 3.5, Ragel 6.8
