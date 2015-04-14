@@ -182,7 +182,8 @@ void http_tls_shared::init_ecdh(SSL_CTX *ctx, int curve)
 {
     EC_KEY *ecdh = EC_KEY_new_by_curve_name(curve);
     if (ecdh == NULL) {
-        log_fatal_exit("%s: can't create curve: %d", __func__, curve);
+        log_error("%s: can't create curve: %d", __func__, curve);
+        return;
     }
     
     SSL_CTX_set_options(ctx, SSL_OP_SINGLE_ECDH_USE);
@@ -227,18 +228,12 @@ SSL_CTX* http_tls_shared::init_client(protocol *proto, config_ptr cfg)
     SSL_CTX *ctx = SSL_CTX_new(SSLv23_client_method());
     SSL_CTX_set_ex_data(ctx, 0, cfg.get());
     
-#ifdef SSL_OP_NO_SSLv2
     SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2);
-#endif
-#ifdef SSL_OP_NO_SSLv3
     SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv3);
-#endif
-#ifdef SSL_OP_NO_COMPRESSION
     SSL_CTX_set_options(ctx, SSL_OP_NO_COMPRESSION);
-#endif
     
     init_dh(ctx);
-    //init_ecdh(ctx, NID_secp256k1);
+    init_ecdh(ctx, NID_secp256k1);
     
     if (cfg->tls_cipher_list.length() > 0) {
         SSL_CTX_set_cipher_list(ctx, cfg->tls_cipher_list.c_str());
@@ -271,18 +266,12 @@ SSL_CTX* http_tls_shared::init_server(protocol *proto, config_ptr cfg)
     SSL_CTX *ctx = SSL_CTX_new(SSLv23_server_method());
     SSL_CTX_set_ex_data(ctx, 0, cfg.get());
     
-#ifdef SSL_OP_NO_SSLv2
     SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2);
-#endif
-#ifdef SSL_OP_NO_SSLv3
     SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv3);
-#endif
-#ifdef SSL_OP_NO_COMPRESSION
     SSL_CTX_set_options(ctx, SSL_OP_NO_COMPRESSION);
-#endif
     
     init_dh(ctx);
-    //init_ecdh(ctx, NID_secp256k1);
+    init_ecdh(ctx, NID_secp256k1);
     
     if (cfg->tls_cipher_list.length() > 0) {
         SSL_CTX_set_cipher_list(ctx, cfg->tls_cipher_list.c_str());
