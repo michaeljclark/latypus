@@ -61,6 +61,7 @@ sh git-update-submodules.sh
 ## Configuration
 ### TLS
   * To enable experimental TLS support, add the following to netd.cfg
+  * NOTE: tls_cert_file can point to either a server certificate or to a chain file which contains the PEM format server certificate first followed by any intermediate certificates in PEM format.
 ````
 tls_key_file          /path_to_key/key.pem;
 tls_cert_file         /path_to_cert/cert.pem;

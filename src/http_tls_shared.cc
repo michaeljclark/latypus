@@ -296,8 +296,8 @@ SSL_CTX* http_tls_shared::init_server(protocol *proto, config_ptr cfg)
     SSL_CTX_sess_set_remove_cb(ctx, http_tls_shared::tls_remove_session_cb);
     SSL_CTX_sess_set_get_cb(ctx, http_tls_shared::tls_get_session_cb);
 
-    if (SSL_CTX_use_certificate_file(ctx,
-                                     cfg->tls_cert_file.c_str(), SSL_FILETYPE_PEM) <= 0)
+    if (SSL_CTX_use_certificate_chain_file(ctx,
+                                     cfg->tls_cert_file.c_str()) <= 0)
     {
         ERR_print_errors_cb(http_tls_shared::tls_log_errors, NULL);
         log_fatal_exit("%s failed to load certificate: %s",
