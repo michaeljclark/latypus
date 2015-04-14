@@ -92,6 +92,15 @@ int http_tls_shared::tls_log_errors(const char *str, size_t len, void *bio)
 
 void http_tls_shared::tls_expire_sessions(SSL_CTX *ctx)
 {
+    // Notes on expiring sessions
+    //
+    // 1. To be called with session_mutex held
+    // 2. Called when fetching a new session
+    // 3. Dequeue is in FIFO order, oldest session first
+    // 4. tls_remove_session_cb does not remove items from
+    //    the dequeue as this would require a linear scan,
+    //    so not all sessions exist in the id to session map.
+    
     config *cfg = static_cast<config*>(SSL_CTX_get_ex_data(ctx, 0));
     time_t current_time = time(nullptr);
     for (auto si = session_deque.begin(); si != session_deque.end(); ) {
@@ -104,6 +113,7 @@ void http_tls_shared::tls_expire_sessions(SSL_CTX *ctx)
             if (tls_session_debug) {
                 log_debug("%s: expiring session: id=%s", __func__, tls_sess->sess_key.c_str());
             }
+            
             session_map.erase(tls_sess->sess_key);
             si = session_deque.erase(si);
         } else {
@@ -117,6 +127,7 @@ int http_tls_shared::tls_new_session_cb(struct ssl_st *ssl, SSL_SESSION *sess)
     unsigned int sess_id_len;
     const unsigned char *sess_id = SSL_SESSION_get_id(sess, &sess_id_len);
     std::string sess_key = hex::encode(sess_id, sess_id_len);
+    
     session_mutex.lock();
     size_t sess_der_len = i2d_SSL_SESSION(sess, NULL);
     unsigned char *sess_der = new unsigned char[sess_der_len];
@@ -129,15 +140,19 @@ int http_tls_shared::tls_new_session_cb(struct ssl_st *ssl, SSL_SESSION *sess)
         auto &tls_sess = *si.first->second;
         session_deque.push_back(si.first->second);
         session_mutex.unlock();
+        
         if (tls_session_debug) {
             log_debug("%s: added session: id=%s len=%lu", __func__, sess_key.c_str(), tls_sess.sess_der_len);
         }
+        
         return 0;
     } else {
+        session_mutex.unlock();
+        
         if (tls_session_debug) {
             log_debug("%s: failed to add session: id=%s", __func__, sess_key.c_str());
         }
-        session_mutex.unlock();
+        
         return -1;
     }
 }
@@ -147,9 +162,11 @@ void http_tls_shared::tls_remove_session_cb(struct ssl_ctx_st *ctx, SSL_SESSION 
     unsigned int sess_id_len;
     const unsigned char *sess_id = SSL_SESSION_get_id(sess, &sess_id_len);
     std::string sess_key = hex::encode(sess_id, sess_id_len);
+    
     session_mutex.lock();
     session_map.erase(sess_key);
     session_mutex.unlock();
+    
     if (tls_session_debug) {
         log_debug("%s: removed session: id=%s", __func__, sess_key.c_str());
     }
@@ -197,22 +214,27 @@ SSL_SESSION * http_tls_shared::tls_get_session_cb(struct ssl_st *ssl, unsigned c
 {
     *copy = 0;
     std::string sess_key = hex::encode(sess_id, sess_id_len);
+    
     session_mutex.lock();
     tls_expire_sessions(ssl->ctx);
     auto si = session_map.find(sess_key);
     if (si != session_map.end()) {
         auto &tls_sess = *si->second;
         session_mutex.unlock();
+        
         if (tls_session_debug) {
             log_debug("%s: lookup session: cache hit: id=%s len=%lu", __func__, sess_key.c_str(), tls_sess.sess_der_len);
         }
+        
         unsigned const char *p = tls_sess.sess_der;
         return d2i_SSL_SESSION(NULL, &p, tls_sess.sess_der_len);
     }
     session_mutex.unlock();
+    
     if (tls_session_debug) {
         log_debug("%s: lookup session: cache miss: id=%s", __func__, sess_key.c_str());
     }
+    
     return nullptr;
 }
 
