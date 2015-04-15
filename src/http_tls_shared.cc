@@ -172,6 +172,43 @@ void http_tls_shared::tls_remove_session_cb(struct ssl_ctx_st *ctx, SSL_SESSION 
     }
 }
 
+SSL_SESSION * http_tls_shared::tls_get_session_cb(struct ssl_st *ssl, unsigned char *sess_id, int sess_id_len, int *copy)
+{
+    *copy = 0;
+    std::string sess_key = hex::encode(sess_id, sess_id_len);
+    
+    session_mutex.lock();
+    tls_expire_sessions(ssl->ctx);
+    auto si = session_map.find(sess_key);
+    if (si != session_map.end()) {
+        auto &tls_sess = *si->second;
+        session_mutex.unlock();
+        
+        if (tls_session_debug) {
+            log_debug("%s: lookup session: cache hit: id=%s len=%lu", __func__, sess_key.c_str(), tls_sess.sess_der_len);
+        }
+        
+        unsigned const char *p = tls_sess.sess_der;
+        return d2i_SSL_SESSION(NULL, &p, tls_sess.sess_der_len);
+    }
+    session_mutex.unlock();
+    
+    if (tls_session_debug) {
+        log_debug("%s: lookup session: cache miss: id=%s", __func__, sess_key.c_str());
+    }
+    
+    return nullptr;
+}
+
+int http_tls_shared::tls_servername_cb(SSL *ssl, int *ad, void *arg)
+{
+    const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
+    
+    log_debug("%s: servername=%s", __func__, servername);
+    
+    return SSL_TLSEXT_ERR_OK;
+}
+
 void http_tls_shared::init_dh(SSL_CTX *ctx)
 {
     DH *dh = DH_new();
@@ -208,34 +245,6 @@ void http_tls_shared::init_ecdh(SSL_CTX *ctx, int curve)
     SSL_CTX_set_tmp_ecdh(ctx, ecdh);
     
     EC_KEY_free(ecdh);
-}
-
-SSL_SESSION * http_tls_shared::tls_get_session_cb(struct ssl_st *ssl, unsigned char *sess_id, int sess_id_len, int *copy)
-{
-    *copy = 0;
-    std::string sess_key = hex::encode(sess_id, sess_id_len);
-    
-    session_mutex.lock();
-    tls_expire_sessions(ssl->ctx);
-    auto si = session_map.find(sess_key);
-    if (si != session_map.end()) {
-        auto &tls_sess = *si->second;
-        session_mutex.unlock();
-        
-        if (tls_session_debug) {
-            log_debug("%s: lookup session: cache hit: id=%s len=%lu", __func__, sess_key.c_str(), tls_sess.sess_der_len);
-        }
-        
-        unsigned const char *p = tls_sess.sess_der;
-        return d2i_SSL_SESSION(NULL, &p, tls_sess.sess_der_len);
-    }
-    session_mutex.unlock();
-    
-    if (tls_session_debug) {
-        log_debug("%s: lookup session: cache miss: id=%s", __func__, sess_key.c_str());
-    }
-    
-    return nullptr;
 }
 
 SSL_CTX* http_tls_shared::init_client(protocol *proto, config_ptr cfg)
@@ -306,6 +315,15 @@ SSL_CTX* http_tls_shared::init_server(protocol *proto, config_ptr cfg)
     SSL_CTX_sess_set_new_cb(ctx, http_tls_shared::tls_new_session_cb);
     SSL_CTX_sess_set_remove_cb(ctx, http_tls_shared::tls_remove_session_cb);
     SSL_CTX_sess_set_get_cb(ctx, http_tls_shared::tls_get_session_cb);
+    
+#if 0
+    // TODO - implement SNI, retrieve servername in callback function
+    // using SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name)
+    // and then call SSL_set_SSL_CTX to change to another SSL_CTX
+    // Call the following in startup code to set up the callback function
+    SSL_CTX_set_tlsext_servername_callback(ctx, http_tls_shared::tls_servername_cb);
+    SSL_CTX_set_tlsext_servername_arg(ctx, nullptr /* vhost */);
+#endif
 
     if (SSL_CTX_use_certificate_chain_file(ctx,
                                      cfg->tls_cert_file.c_str()) <= 0)
