@@ -204,6 +204,39 @@ std::string protocol_message::to_string() const
 }
 
 
+/* protocol_config */
+
+bool protocol_config::lookup_config_fn(std::string key, config_record &record)
+{
+    auto it = config_fn_map.find(key);
+    if (it != config_fn_map.end()) {
+        record = it->second;
+        return true;
+    }
+    return false;
+}
+
+bool protocol_config::lookup_block_start_fn(std::string key, block_record &record)
+{
+    auto it = block_start_fn_map.find(key);
+    if (it != block_start_fn_map.end()) {
+        record = it->second;
+        return true;
+    }
+    return false;
+}
+
+bool protocol_config::lookup_block_end_fn(std::string key, block_record &record)
+{
+    auto it = block_end_fn_map.find(key);
+    if (it != block_end_fn_map.end()) {
+        record = it->second;
+        return true;
+    }
+    return false;
+}
+
+
 /* protocol */
 
 protocol        protocol::proto_none("none");

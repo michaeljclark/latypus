@@ -98,11 +98,8 @@ struct http_client_connection_tmpl : protocol_object
 
 struct http_client_config : protocol_config
 {
-    config_function_map fn_map;
-    
     http_client_config();
     
-    bool lookup_config(std::string key, config_record &record);
     std::string to_string();
 };
 

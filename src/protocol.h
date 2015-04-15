@@ -200,7 +200,14 @@ struct protocol_thread_state
 
 struct protocol_config
 {
-    virtual bool lookup_config(std::string key, config_record &record) { return false; }
+    config_function_map                             config_fn_map;
+    block_function_map                              block_start_fn_map;
+    block_function_map                              block_end_fn_map;
+    
+    bool lookup_config_fn(std::string key, config_record &record);
+    bool lookup_block_start_fn(std::string key, block_record &record);
+    bool lookup_block_end_fn(std::string key, block_record &record);
+    
     virtual std::string to_string() { return ""; };
 };
 

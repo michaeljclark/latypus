@@ -51,6 +51,7 @@ struct http_server_handler_factory_impl : http_server_handler_factory
     http_server_handler_ptr new_handler() { return http_server_handler_ptr(new T()); }
 };
 
+
 /* http_server_handler */
 
 struct http_server_handler
@@ -119,13 +120,10 @@ struct http_server_connection_tmpl : protocol_object
 
 struct http_server_config : protocol_config
 {
-    config_function_map fn_map;
-    
     std::vector<std::pair<std::string,std::string>> routes;
     
     http_server_config();
     
-    bool lookup_config(std::string key, config_record &record);
     std::string to_string();
 };
 

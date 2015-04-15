@@ -20,12 +20,15 @@
 
 struct config;
 struct config_record;
+struct block_record;
 struct config_addr;
 typedef std::shared_ptr<config> config_ptr;
 typedef std::shared_ptr<config_addr> config_addr_ptr;
 typedef std::vector<std::string> config_line;
 typedef std::function<void(config*,config_line&)>config_function;
 typedef std::map<std::string,config_record> config_function_map;
+typedef std::function<void(config*)>block_function;
+typedef std::map<std::string,block_record> block_function_map;
 struct protocol;
 struct protocol_config;
 typedef std::shared_ptr<protocol_config> protocol_config_ptr;
@@ -36,6 +39,12 @@ struct config_record
     int minargs;
     int maxargs;
     config_function fn;
+};
+
+struct block_record
+{
+    const char* parent_block;
+    block_function fn;
 };
 
 struct config_addr
@@ -49,13 +58,15 @@ struct config_addr
 
 struct config : config_parser
 {
-    config_function_map fn_map;
-    protocol_config_map proto_conf_map;
+    config_function_map         config_fn_map;
+    block_function_map          block_start_fn_map;
+    block_function_map          block_end_fn_map;
+    protocol_config_map         proto_conf_map;
  
     config();
 
-    std::vector<std::string> block;
-    std::vector<std::string> line;
+    std::vector<std::string>    block;
+    std::vector<std::string>    line;
     
     template <typename T>
     typename T::config_type* get_config()
@@ -105,7 +116,10 @@ struct config : config_parser
     void config_done();
     std::string to_string();
     
-    bool lookup_config(std::string key, config_record &record);
+    bool lookup_config_fn(std::string key, config_record &record);
+    bool lookup_block_start_fn(std::string key, block_record &block);
+    bool lookup_block_end_fn(std::string key, block_record &block);
+    
     std::pair<std::string,std::string> lookup_mime_type(std::string path);
 };
 

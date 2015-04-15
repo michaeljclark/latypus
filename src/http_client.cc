@@ -157,16 +157,6 @@ http_client_config::http_client_config()
     
 }
 
-bool http_client_config::lookup_config(std::string key, config_record &record)
-{
-    auto it = fn_map.find(key);
-    if (it != fn_map.end()) {
-        record = it->second;
-        return true;
-    }
-    return false;
-}
-
 std::string http_client_config::to_string()
 {
     return "";
