@@ -198,6 +198,13 @@ void http_client::proto_init()
 
 void http_client::make_default_config(config_ptr cfg) const
 {
+    cfg->client_connections = CLIENT_CONNECTIONS_DEFAULT;
+    cfg->connection_timeout = CONNETION_TIMEOUT_DEFAULT;
+    cfg->keepalive_timeout = KEEPALIVE_TIMEOUT_DEFAULT;
+    cfg->max_headers = MAX_HEADERS_DEFAULT;
+    cfg->header_buffer_size = HEADER_BUFFER_SIZE_DEFAULT;
+    cfg->io_buffer_size = IO_BUFFER_SIZE_DEFAULT;
+    cfg->ipc_buffer_size = IPC_BUFFER_SIZE_DEFAULT;
 }
 
 protocol_config_ptr http_client::make_protocol_config() const
