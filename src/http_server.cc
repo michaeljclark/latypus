@@ -167,7 +167,7 @@ bool http_server_connection_tmpl<connection>::free(protocol_engine_delegate *del
 
 http_server_config::http_server_config()
 {
-    fn_map["http_route"] =          {3,  3,  [&] (config_line &line) {
+    fn_map["http_route"] =          {3,  3,  [&] (config *cfg, config_line &line) {
         routes.push_back(std::pair<std::string,std::string>(line[1], line[2]));
     }};
 }

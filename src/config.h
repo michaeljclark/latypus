@@ -24,7 +24,7 @@ struct config_addr;
 typedef std::shared_ptr<config> config_ptr;
 typedef std::shared_ptr<config_addr> config_addr_ptr;
 typedef std::vector<std::string> config_line;
-typedef std::function<void(config_line&)>config_function;
+typedef std::function<void(config*,config_line&)>config_function;
 typedef std::map<std::string,config_record> config_function_map;
 struct protocol;
 struct protocol_config;
@@ -54,6 +54,7 @@ struct config : config_parser
  
     config();
 
+    std::vector<std::string> block;
     std::vector<std::string> line;
     
     template <typename T>

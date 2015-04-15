@@ -63,36 +63,36 @@ config::config() :
     tls_session_timeout(TLS_SESSION_TIMEOUT_DEFAULT),
     tls_session_count(TLS_SESSION_COUNT_DEFAULT)
 {    
-    fn_map["error_log"] =           {2,  2,  [&] (config_line &line) { error_log = line[1]; }};
-    fn_map["access_log"] =          {2,  2,  [&] (config_line &line) { access_log = line[1]; }};
-    fn_map["pid_file"] =            {2,  2,  [&] (config_line &line) { pid_file = line[1]; }};
-    fn_map["tls_ca_file"] =         {2,  2,  [&] (config_line &line) { tls_ca_file = line[1]; }};
-    fn_map["tls_key_file"] =        {2,  2,  [&] (config_line &line) { tls_key_file = line[1]; }};
-    fn_map["tls_cert_file"] =       {2,  2,  [&] (config_line &line) { tls_cert_file = line[1]; }};
-    fn_map["tls_cipher_list"] =     {2,  2,  [&] (config_line &line) { tls_cipher_list = line[1]; }};
-    fn_map["tls_session_timeout"] = {2,  2,  [&] (config_line &line) { tls_session_timeout = atoi(line[1].c_str()); }};
-    fn_map["tls_session_count"] =   {2,  2,  [&] (config_line &line) { tls_session_count = atoi(line[1].c_str()); }};
-    fn_map["root"] =                {2,  2,  [&] (config_line &line) { root = line[1]; }};
-    fn_map["client_connections"] =  {2,  2,  [&] (config_line &line) { client_connections = atoi(line[1].c_str()); }};
-    fn_map["server_connections"] =  {2,  2,  [&] (config_line &line) { server_connections = atoi(line[1].c_str()); }};
-    fn_map["listen_backlog"] =      {2,  2,  [&] (config_line &line) { listen_backlog = atoi(line[1].c_str()); }};
-    fn_map["max_headers"] =         {2,  2,  [&] (config_line &line) { max_headers = atoi(line[1].c_str()); }};
-    fn_map["header_buffer_size"] =  {2,  2,  [&] (config_line &line) { header_buffer_size = atoi(line[1].c_str()); }};
-    fn_map["io_buffer_size"] =      {2,  2,  [&] (config_line &line) { io_buffer_size = atoi(line[1].c_str()); }};
-    fn_map["ipc_buffer_size"] =     {2,  2,  [&] (config_line &line) { ipc_buffer_size = atoi(line[1].c_str()); }};
-    fn_map["log_buffers"] =         {2,  2,  [&] (config_line &line) { log_buffers = atoi(line[1].c_str()); }};
-    fn_map["keepalive_timeout"] =   {2,  2,  [&] (config_line &line) { keepalive_timeout = atoi(line[1].c_str()); }};
-    fn_map["connection_timeout"] =  {2,  2,  [&] (config_line &line) { connection_timeout = atoi(line[1].c_str()); }};
-    fn_map["client_threads"] =      {3,  3,  [&] (config_line &line) {
+    fn_map["error_log"] =           {2,  2,  [&] (config *cfg, config_line &line) { error_log = line[1]; }};
+    fn_map["access_log"] =          {2,  2,  [&] (config *cfg, config_line &line) { access_log = line[1]; }};
+    fn_map["pid_file"] =            {2,  2,  [&] (config *cfg, config_line &line) { pid_file = line[1]; }};
+    fn_map["tls_ca_file"] =         {2,  2,  [&] (config *cfg, config_line &line) { tls_ca_file = line[1]; }};
+    fn_map["tls_key_file"] =        {2,  2,  [&] (config *cfg, config_line &line) { tls_key_file = line[1]; }};
+    fn_map["tls_cert_file"] =       {2,  2,  [&] (config *cfg, config_line &line) { tls_cert_file = line[1]; }};
+    fn_map["tls_cipher_list"] =     {2,  2,  [&] (config *cfg, config_line &line) { tls_cipher_list = line[1]; }};
+    fn_map["tls_session_timeout"] = {2,  2,  [&] (config *cfg, config_line &line) { tls_session_timeout = atoi(line[1].c_str()); }};
+    fn_map["tls_session_count"] =   {2,  2,  [&] (config *cfg, config_line &line) { tls_session_count = atoi(line[1].c_str()); }};
+    fn_map["root"] =                {2,  2,  [&] (config *cfg, config_line &line) { root = line[1]; }};
+    fn_map["client_connections"] =  {2,  2,  [&] (config *cfg, config_line &line) { client_connections = atoi(line[1].c_str()); }};
+    fn_map["server_connections"] =  {2,  2,  [&] (config *cfg, config_line &line) { server_connections = atoi(line[1].c_str()); }};
+    fn_map["listen_backlog"] =      {2,  2,  [&] (config *cfg, config_line &line) { listen_backlog = atoi(line[1].c_str()); }};
+    fn_map["max_headers"] =         {2,  2,  [&] (config *cfg, config_line &line) { max_headers = atoi(line[1].c_str()); }};
+    fn_map["header_buffer_size"] =  {2,  2,  [&] (config *cfg, config_line &line) { header_buffer_size = atoi(line[1].c_str()); }};
+    fn_map["io_buffer_size"] =      {2,  2,  [&] (config *cfg, config_line &line) { io_buffer_size = atoi(line[1].c_str()); }};
+    fn_map["ipc_buffer_size"] =     {2,  2,  [&] (config *cfg, config_line &line) { ipc_buffer_size = atoi(line[1].c_str()); }};
+    fn_map["log_buffers"] =         {2,  2,  [&] (config *cfg, config_line &line) { log_buffers = atoi(line[1].c_str()); }};
+    fn_map["keepalive_timeout"] =   {2,  2,  [&] (config *cfg, config_line &line) { keepalive_timeout = atoi(line[1].c_str()); }};
+    fn_map["connection_timeout"] =  {2,  2,  [&] (config *cfg, config_line &line) { connection_timeout = atoi(line[1].c_str()); }};
+    fn_map["client_threads"] =      {3,  3,  [&] (config *cfg, config_line &line) {
         client_threads.push_back(std::pair<std::string,size_t>(line[1], atoi(line[2].c_str())));
     }};
-    fn_map["server_threads"] =      {3,  3,  [&] (config_line &line) {
+    fn_map["server_threads"] =      {3,  3,  [&] (config *cfg, config_line &line) {
         server_threads.push_back(std::pair<std::string,size_t>(line[1], atoi(line[2].c_str())));
     }};
-    fn_map["proto_threads"] =      {3,  3,  [&] (config_line &line) {
+    fn_map["proto_threads"] =      {3,  3,  [&] (config *cfg, config_line &line) {
         proto_threads.push_back(std::pair<std::string,size_t>(line[1], atoi(line[2].c_str())));
     }};
-    fn_map["proto_listener"] =     {3,  4,  [&] (config_line &line) {
+    fn_map["proto_listener"] =     {3,  4,  [&] (config *cfg, config_line &line) {
         auto proto = (*protocol::get_map())[line[1]];
         auto addr = config_addr::decode(line[2]);
         if (!proto) {
@@ -109,12 +109,12 @@ config::config() :
             proto_listeners.push_back(std::tuple<protocol*,config_addr_ptr,socket_mode>(proto, addr, socket_mode_plain));
         }
     }};
-    fn_map["mime_type"] =           {3, -1,  [&] (config_line &line) {
+    fn_map["mime_type"] =           {3, -1,  [&] (config *cfg, config_line &line) {
         for (size_t s = 2; s < line.size(); s++) {
             mime_types[line[s]] = line[1];
         }
     }};
-    fn_map["index_file"] =          {2,  2,  [&] (config_line &line) {
+    fn_map["index_file"] =          {2,  2,  [&] (config *cfg, config_line &line) {
         if (std::find(index_files.begin(), index_files.end(), line[1]) == index_files.end()) {
             index_files.push_back(line[1]);
         }
@@ -157,12 +157,13 @@ void config::symbol(const char *value, size_t vlen)
 
 void config::start_block()
 {
-
+    block.push_back(line[0]);
+    line.clear();
 }
 
 void config::end_block()
 {
-
+    block.pop_back();
 }
 
 void config::end_statement()
@@ -195,7 +196,7 @@ void config::end_statement()
             } else if (rec.maxargs > 0 && (int)line.size() > rec.maxargs) {
                 log_fatal_exit("%s requires no more than %d arguments", line[0].c_str(), rec.maxargs);
             }
-            rec.fn(line);
+            rec.fn(this, line);
         } else {
             log_fatal_exit("unrecognized directive: %s\n", line[0].c_str());
         }
