@@ -31,8 +31,8 @@
     comment = '/*' ( any* - ( any* '*/' any* ) ) '*/';
     symbol = ( ( any - ';' - ws - '{' - '}' )+ - ('/*') ) >mark %w_symbol;
     statement = ( symbol ( ws symbol)* ) ws* Eol;
-    end_block = symbol ws+ '{' %w_start_block;
-    start_block = '}' ws* ';' %w_end_block;
+    start_block = symbol ws+ '{' %w_start_block;
+    end_block = '}' ws* ';' %w_end_block;
     config = ( comment | start_block | end_block | statement | ws )* %done;
 
     main := config;
