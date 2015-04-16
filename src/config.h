@@ -25,9 +25,10 @@ struct config_addr;
 typedef std::shared_ptr<config> config_ptr;
 typedef std::shared_ptr<config_addr> config_addr_ptr;
 typedef std::vector<std::string> config_line;
+typedef std::vector<config_line> block_stack;
 typedef std::function<void(config*,config_line&)>config_function;
 typedef std::map<std::string,config_record> config_function_map;
-typedef std::function<void(config*)>block_function;
+typedef std::function<void(config*,config_line&)>block_function;
 typedef std::map<std::string,block_record> block_function_map;
 struct protocol;
 struct protocol_config;
@@ -43,6 +44,8 @@ struct config_record
 
 struct block_record
 {
+    int minargs;
+    int maxargs;
     const char* parent_block;
     block_function fn;
 };
@@ -65,9 +68,19 @@ struct config : config_parser
  
     config();
 
-    std::vector<std::string>    block;
-    std::vector<std::string>    line;
+    block_stack                 block;
+    config_line                 line;
     
+    static std::string join(config_line &line, std::string sep = " ")
+    {
+        std::stringstream ss;
+        for (size_t i = 0; i < line.size(); i++) {
+            if (i > 0) ss << sep;
+            ss << line[i];
+        }
+        return ss.str();
+    }
+
     template <typename T>
     typename T::config_type* get_config()
     {

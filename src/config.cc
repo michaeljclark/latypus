@@ -157,23 +157,29 @@ void config::symbol(const char *value, size_t vlen)
 
 void config::start_block()
 {
-    assert(line.size() == 1);
-    block.push_back(line[0]);
-    line.clear();
+    config_line block_line = line;
     
     // look up  block record
     block_record rec;
     bool found = lookup_block_start_fn(line[0], rec);
     if (found) {
-        if (rec.parent_block) {
-            if (block.size() < 2 ||
-                block[block.size() - 2] != std::string(rec.parent_block))
-            {
-                log_fatal_exit("invalid parent block: %s for block: %s\n",
-                               block[block.size() - 2].c_str(), line[0].c_str());
-            }
+        if (rec.parent_block && (block.size() < 1 || block[block.size() - 1][0] != std::string(rec.parent_block)))
+        {
+            log_fatal_exit("invalid parent block \"%s\" for block \"%s\"\n",
+                           block[block.size() - 1][0].c_str(), block_line[0].c_str());
+        } else if (!rec.parent_block && block.size() > 0) {
+            log_fatal_exit("invalid parent block \"root\" for block \"%s\"\n",
+                           block_line[0].c_str());
+        } else if (rec.minargs == rec.maxargs && (int)line.size() != rec.minargs) {
+            log_fatal_exit("%s requires %d argument(s)", line[0].c_str(), rec.minargs);
+        } else if (rec.minargs > 0 && (int)line.size() < rec.minargs) {
+            log_fatal_exit("%s requires at least %d argument(s)", line[0].c_str(), rec.minargs);
+        } else if (rec.maxargs > 0 && (int)line.size() > rec.maxargs) {
+            log_fatal_exit("%s requires no more than %d argument(s)", line[0].c_str(), rec.maxargs);
         }
-        rec.fn(this);
+        block.push_back(block_line);
+        line.clear();
+        rec.fn(this, block.back());
     } else {
         log_fatal_exit("unrecognized block: %s\n", line[0].c_str());
     }
@@ -184,11 +190,10 @@ void config::end_block()
     assert(block.size() == 1);
     
     // look up  block record
-    std::string block_name = block.back();
     block_record rec;
-    bool found = lookup_block_end_fn(block_name, rec);
+    bool found = lookup_block_end_fn(block.back()[0], rec);
     if (found) {
-        rec.fn(this);
+        rec.fn(this, block.back());
     }
     
     block.pop_back();
@@ -205,11 +210,11 @@ void config::end_statement()
         // if found call config function
         if (found) {
             if (rec.minargs == rec.maxargs && (int)line.size() != rec.minargs) {
-                log_fatal_exit("%s requires %d arguments", line[0].c_str(), rec.minargs);
+                log_fatal_exit("%s requires %d argument(s)", line[0].c_str(), rec.minargs);
             } else if (rec.minargs > 0 && (int)line.size() < rec.minargs) {
-                log_fatal_exit("%s requires at least %d arguments", line[0].c_str(), rec.minargs);
+                log_fatal_exit("%s requires at least %d argument(s)", line[0].c_str(), rec.minargs);
             } else if (rec.maxargs > 0 && (int)line.size() > rec.maxargs) {
-                log_fatal_exit("%s requires no more than %d arguments", line[0].c_str(), rec.maxargs);
+                log_fatal_exit("%s requires no more than %d argument(s)", line[0].c_str(), rec.maxargs);
             }
             rec.fn(this, line);
         } else {
@@ -367,4 +372,3 @@ std::pair<std::string,std::string> config::lookup_mime_type(std::string path)
     }
     return std::pair<std::string,std::string>(extension, mime_type);
 }
-
