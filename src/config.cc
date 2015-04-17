@@ -72,7 +72,7 @@ config::config() :
     config_fn_map["tls_cipher_list"] =     {2,  2,  [&] (config *cfg, config_line &line) { tls_cipher_list = line[1]; }};
     config_fn_map["tls_session_timeout"] = {2,  2,  [&] (config *cfg, config_line &line) { tls_session_timeout = atoi(line[1].c_str()); }};
     config_fn_map["tls_session_count"] =   {2,  2,  [&] (config *cfg, config_line &line) { tls_session_count = atoi(line[1].c_str()); }};
-    config_fn_map["root"] =                {2,  2,  [&] (config *cfg, config_line &line) { root = line[1]; }};
+    //config_fn_map["root"] =                {2,  2,  [&] (config *cfg, config_line &line) { root = line[1]; }};
     config_fn_map["client_connections"] =  {2,  2,  [&] (config *cfg, config_line &line) { client_connections = atoi(line[1].c_str()); }};
     config_fn_map["server_connections"] =  {2,  2,  [&] (config *cfg, config_line &line) { server_connections = atoi(line[1].c_str()); }};
     config_fn_map["listen_backlog"] =      {2,  2,  [&] (config *cfg, config_line &line) { listen_backlog = atoi(line[1].c_str()); }};
@@ -114,13 +114,13 @@ config::config() :
             mime_types[line[s]] = line[1];
         }
     }};
-    config_fn_map["index"] =               {2, -1,  [&] (config *cfg, config_line &line) {
-        for (size_t i = 1; i < line.size(); i++) {
-            if (std::find(index_files.begin(), index_files.end(), line[i]) == index_files.end()) {
-                index_files.push_back(line[i]);
-            }
-        }
-    }};
+    //config_fn_map["index"] =               {2, -1,  [&] (config *cfg, config_line &line) {
+    //    for (size_t i = 1; i < line.size(); i++) {
+    //        if (std::find(index_files.begin(), index_files.end(), line[i]) == index_files.end()) {
+    //            index_files.push_back(line[i]);
+    //        }
+    //    }
+    //}};
 }
 
 void config::read(std::string cfg_file)

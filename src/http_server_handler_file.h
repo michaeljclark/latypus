@@ -13,7 +13,6 @@ struct http_server_handler_file : http_server_handler
     HTTPVersion     http_version;
     HTTPMethod      request_method;
     std::string     open_path;
-    std::string     translated_path;
     std::string     mime_type;
     std::string     status_text;
     io_reader*      reader;
@@ -33,7 +32,6 @@ struct http_server_handler_file : http_server_handler
     
     static void init_handler();
     
-    virtual void translate_path();
     virtual size_t create_error_response();
     virtual int open_resource(int oflag, int mask);
     

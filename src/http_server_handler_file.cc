@@ -72,29 +72,11 @@ void http_server_handler_file::init_handler()
     http_server::register_handler<http_server_handler_file>("http_server_handler_file");
 }
 
-void http_server_handler_file::translate_path()
-{
-    // TODO - valid root path exists in config
-    // TODO - unescape path
-    auto cfg = delegate->get_config();
-    auto root = cfg->root;
-    const char* request_path = http_conn->request.get_request_path();
-    // TODO - handle canonical unescaping of path
-    // TODO - windows LFN http://support.microsoft.com/kb/142982 GetShortPathName
-    // TODO - windows forks using : or ::$DATA (alternate name for main fork)
-    // TODO - case insensitive filesystems
-    if (root.length() > 0 && root[root.length() - 1] != '/' && request_path[0] != '/') {
-        translated_path = cfg->root + "/" + request_path;
-    } else {
-        translated_path = cfg->root + request_path;
-    }
-}
-
 int http_server_handler_file::open_resource(int oflag, int mask)
 {
-    open_path = translated_path;
-    
-    stat_err = io_file::stat(translated_path, stat_result);
+    open_path = path_translated;
+
+    stat_err = io_file::stat(path_translated, stat_result);
     
     if (stat_err.errcode == EACCES) {
         return HTTPStatusCodeForbidden;
@@ -107,17 +89,33 @@ int http_server_handler_file::open_resource(int oflag, int mask)
         // TODO - handle directory listings
         bool found_index = false;
         auto cfg = delegate->get_config();
-        for (auto index : cfg->index_files) {
-            std::string index_path;
-            if (translated_path.length() > 0 && translated_path[translated_path.length() - 1] == '/') {
-                index_path = translated_path + index;
-            } else {
-                index_path = translated_path + "/" + index;
+        if (location) {
+            for (auto index : location->index_files) {
+                std::string index_path;
+                if (path_translated.length() > 0 && path_translated[path_translated.length() - 1] == '/') {
+                    index_path = path_translated + index;
+                } else {
+                    index_path = path_translated + "/" + index;
+                }
+                if (io_file::stat(index_path, stat_result).errcode == 0) {
+                    open_path = index_path;
+                    found_index = true;
+                    break;
+                }
             }
-            if (io_file::stat(index_path, stat_result).errcode == 0) {
-                open_path = index_path;
-                found_index = true;
-                break;
+        } else {
+            for (auto index : cfg->index_files) {
+                std::string index_path;
+                if (path_translated.length() > 0 && path_translated[path_translated.length() - 1] == '/') {
+                    index_path = path_translated + index;
+                } else {
+                    index_path = path_translated + "/" + index;
+                }
+                if (io_file::stat(index_path, stat_result).errcode == 0) {
+                    open_path = index_path;
+                    found_index = true;
+                    break;
+                }
             }
         }
         if (!found_index) {
@@ -162,7 +160,6 @@ size_t http_server_handler_file::create_error_response()
 void http_server_handler_file::init()
 {
     open_path.clear();
-    translated_path.clear();
     reader = nullptr;
     file_resource.close();
     error_buffer.reset();
@@ -182,9 +179,7 @@ bool http_server_handler_file::handle_request()
     // get request http version and request method
     http_version = http_constants::get_version_type(http_conn->request.get_http_version());
     request_method = http_constants::get_method_type(http_conn->request.get_request_method());
-    
-    translate_path();
-    
+        
     switch (request_method) {
         case HTTPMethodGET:
         case HTTPMethodHEAD:
@@ -221,9 +216,9 @@ bool http_server_handler_file::handle_request()
     
     if (delegate->get_debug_mask() & protocol_debug_handler) {
         log_debug("handle_request: status_code=%d status_text=%s "
-                  "open_path=%s translated_path=%s mime_type=%s",
+                  "open_path=%s path_translated=%s mime_type=%s",
                   status_code, status_text.c_str(), open_path.c_str(),
-                  translated_path.c_str(), mime_type.c_str());
+                  path_translated.c_str(), mime_type.c_str());
     }
     
     return true;

@@ -36,6 +36,7 @@ union socket_addr {
     struct sockaddr_storage storage;
     
     static socklen_t len(const socket_addr &addr);
+    static int port(const socket_addr &addr);
     static std::string addr_to_string(const socket_addr &addr);
     static int string_to_addr(std::string addr_spec, socket_addr &addr);
     

@@ -31,6 +31,15 @@ socklen_t socket_addr::len(const socket_addr &addr)
     return sa_len;
 }
 
+int socket_addr::port(const socket_addr &addr)
+{
+    switch (addr.saddr.sa_family) {
+        case AF_INET: return ntohs(addr.ip4addr.sin_port);
+        case AF_INET6: return ntohs(addr.ip6addr.sin6_port);
+    }
+    return 0;
+}
+
 std::string socket_addr::addr_to_string(const socket_addr &addr)
 {
     std::stringstream ss;

@@ -30,6 +30,21 @@ typedef http_server_connection_tmpl<connection> http_server_connection;
 
 typedef std::function<std::string(http_server_connection*)> http_server_function;
 
+struct http_server_location;
+typedef std::shared_ptr<http_server_location> http_server_location_ptr;
+typedef std::vector<http_server_location_ptr> http_server_location_list;
+typedef trie<http_server_location*> http_server_location_trie;
+
+struct http_server_vhost;
+typedef std::pair<config_addr_ptr,socket_mode> http_server_listen_spec;
+typedef std::shared_ptr<http_server_vhost> http_server_vhost_ptr;
+typedef std::vector<http_server_vhost_ptr> http_server_vhost_list;
+typedef std::map<std::string,http_server_vhost*> http_server_vhost_map;
+typedef std::pair<std::string,http_server_vhost*> http_server_vhost_entry;
+
+struct http_server_config;
+
+
 /* http_server_handler_factory */
 
 struct http_server_handler_factory
@@ -52,12 +67,40 @@ struct http_server_handler_factory_impl : http_server_handler_factory
 };
 
 
+/* http_server_location */
+
+struct http_server_location
+{
+    std::string                                     uri;
+    std::string                                     root;
+    std::string                                     handler;
+    std::vector<std::string>                        index_files;
+    http_server_handler_factory_ptr                 handler_factory;
+};
+
+
+/* http_server_vhost */
+
+struct http_server_vhost
+{
+    std::vector<http_server_listen_spec>            listens;
+    std::vector<std::string>                        server_names;
+    std::string                                     access_log;
+    std::string                                     error_log;
+    http_server_location_list                       location_list;
+    http_server_location_trie                       location_trie;
+};
+
+
 /* http_server_handler */
 
 struct http_server_handler
 {
     http_server_connection      *http_conn;
     protocol_thread_delegate    *delegate;
+    http_server_vhost           *vhost;
+    http_server_location        *location;
+    std::string                 path_translated;
     time_t                      current_time;
     
     void set_connection(http_server_connection *conn) { http_conn = conn; }
@@ -120,6 +163,12 @@ struct http_server_connection_tmpl : protocol_object
 
 struct http_server_config : protocol_config
 {
+    http_server_vhost_ptr                           current_vhost;
+    http_server_location_ptr                        current_location;
+    
+    http_server_vhost_list                          vhost_list;
+    http_server_vhost_map                           vhost_map;
+
     std::vector<std::pair<std::string,std::string>> routes;
     
     http_server_config();
@@ -289,7 +338,8 @@ struct http_server_engine_state : protocol_engine_state, protocol_connection_sta
     
     protocol* get_proto() const { return http_server::get_proto(); }
     
-    http_server_handler_ptr lookup_handler(http_server_connection *http_conn);
+    http_server_handler_ptr translate_path(protocol_thread_delegate *delegate,
+                                           http_server_connection *http_conn);
     
     void bind_function(std::string path, typename http_server::function_type);
 };

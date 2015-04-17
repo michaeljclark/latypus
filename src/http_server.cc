@@ -167,17 +167,97 @@ bool http_server_connection_tmpl<connection>::free(protocol_engine_delegate *del
 
 http_server_config::http_server_config()
 {
-    config_fn_map["http_route"] =           {3,  3,  [&] (config *cfg, config_line &line) {
-        routes.push_back(std::pair<std::string,std::string>(line[1], line[2]));
+    http_server::get_proto();
+    
+    block_start_fn_map["http_server"] =     {1, 1, nullptr, [&] (config *cfg, config_line &line) {
+        current_vhost = std::make_shared<http_server_vhost>();
+        vhost_list.push_back(current_vhost);
+    }};
+    block_start_fn_map["location"] =        {2, 2, "http_server", [&] (config *cfg, config_line &line) {
+        current_location = std::make_shared<http_server_location>();
+        current_location->uri = line[1];
+        current_vhost->location_list.push_back(current_location);
+    }};
+    block_end_fn_map["http_server"] =       {0, 0, nullptr, [&] (config *cfg, config_line &line) {
+        if (current_vhost->location_list.size() == 0) {
+            log_fatal_exit("configuration error: http_server must contain one or more \"location\" directives");
+        }
+        current_vhost = http_server_vhost_ptr();
+    }};
+    block_end_fn_map["location"] =          {0, 0, nullptr, [&] (config *cfg, config_line &line) {
+        if (current_location->root.length() == 0 && current_location->handler.length() == 0) {
+            log_fatal_exit("configuration error: location \"%s\" must contain \"root\" and or \"handler\" directives", line[0].c_str());
+        }
+        current_location = http_server_location_ptr();
+    }};
+    config_fn_map["listen"] =               {2,  3,  [&] (config *cfg, config_line &line) {
+        if (cfg->block.size() > 0 && cfg->block.back()[0] == "http_server") {
+            auto addr = config_addr::decode(line[1]);
+            if (line.size() == 3) {
+                if (line[2] != "tls") {
+                    log_error("configuration error: proto_listener: invalid option: %s", line[2].c_str());
+                }
+                current_vhost->listens.push_back(http_server_listen_spec(addr, socket_mode_tls));
+            } else {
+                current_vhost->listens.push_back(http_server_listen_spec(addr, socket_mode_plain));
+            }
+        } else {
+            log_fatal_exit("configuration error: listen must be defined at the toplevel or in a http_server block", line[0].c_str());
+        }
+    }};
+    config_fn_map["server_name"] =          {2,  -1,  [&] (config *cfg, config_line &line) {
+        if (cfg->block.size() > 0 && cfg->block.back()[0] == "http_server") {
+            for (size_t i = 1; i < line.size(); i++) {
+                auto &server_names = current_vhost->server_names;
+                if (std::find(server_names.begin(), server_names.end(), line[i]) == server_names.end()) {
+                    server_names.push_back(line[i]);
+                }
+            }
+        } else {
+            log_fatal_exit("configuration error: server_name must be defined at the toplevel or in a http_server block", line[0].c_str());
+        }
+    }};
+    config_fn_map["root"] =                 {2,  2,  [&] (config *cfg, config_line &line) {
+        if (cfg->block.size() == 0) {
+            cfg->root = line[1];
+        } else if (cfg->block.size() > 0 && cfg->block.back()[0] == "location") {
+            current_location->root = line[1];
+        } else {
+            log_fatal_exit("configuration error: root must be defined at the toplevel or in a location block", line[0].c_str());
+        }
+    }};
+    config_fn_map["index"] =                {2,  -1,  [&] (config *cfg, config_line &line) {
+        if (cfg->block.size() == 0) {
+            auto &index_files = cfg->index_files;
+            for (size_t i = 1; i < line.size(); i++) {
+                if (std::find(index_files.begin(), index_files.end(), line[i]) == index_files.end()) {
+                    index_files.push_back(line[i]);
+                }
+            }
+        } else if (cfg->block.size() > 0 && cfg->block.back()[0] == "location") {
+            for (size_t i = 1; i < line.size(); i++) {
+                auto &index_files = current_location->index_files;
+                if (std::find(index_files.begin(), index_files.end(), line[i]) == index_files.end()) {
+                    index_files.push_back(line[i]);
+                }
+            }
+        } else {
+            log_fatal_exit("configuration error: index must be defined at the toplevel or in a location block", line[0].c_str());
+        }
+    }};
+    config_fn_map["handler"] =              {2,  2,  [&] (config *cfg, config_line &line) {
+        if (cfg->block.size() > 0 && cfg->block.back()[0] == "location") {
+            current_location->handler = line[1];
+        } else {
+            log_fatal_exit("configuration error: handler must be defined at the toplevel or in a location block", line[0].c_str());
+        }
     }};
 }
 
 std::string http_server_config::to_string()
 {
     std::stringstream ss;
-    for (auto http_route : routes) {
-        ss << "http_route          " << http_route.first << " " << http_route.second << ";" << std::endl;
-    }
+    // todo
     return ss.str();
 }
 
@@ -281,7 +361,37 @@ void http_server::engine_init(protocol_engine_delegate *delegate) const
     // get config
     auto cfg = delegate->get_config();
     auto engine_state = get_engine_state(delegate);
+    auto server_cfg = cfg->get_config<http_server>();
     
+    // initialize virtual hosts
+    for (auto &vhost : server_cfg->vhost_list) {
+        for (auto &location : vhost->location_list) {
+            std::string handler_name;
+            if (location->handler.length() == 0) {
+                handler_name = "http_server_handler_file";
+            } else {
+                handler_name = std::string("http_server_handler_") + location->handler;
+            }
+            auto fi = handler_factory_map.find(handler_name);
+            if (fi == handler_factory_map.end()) {
+                log_error("%s couldn't find handler factory: %s", get_proto()->name.c_str(), handler_name.c_str());
+            } else {
+                location->handler_factory = fi->second;
+            }
+            vhost->location_trie.insert(location->uri, location.get());
+        }
+        for (auto &server_name : vhost->server_names) {
+            server_cfg->vhost_map.insert(http_server_vhost_entry(server_name, vhost.get()));
+        }
+        for (auto &listen : vhost->listens) {
+            auto proto_listen = std::tuple<protocol*,config_addr_ptr,socket_mode>(get_proto(), listen.first, listen.second);
+            auto &proto_listeners = cfg->proto_listeners;
+            if (std::find(proto_listeners.begin(), proto_listeners.end(), proto_listen) == proto_listeners.end()) {
+                proto_listeners.push_back(proto_listen);
+            }
+        }
+    }
+
     // initialize routes
     for (auto &route : cfg->get_config<http_server>()->routes) {
         auto &path = route.first;
@@ -357,7 +467,6 @@ void http_server::thread_init(protocol_thread_delegate *delegate) const
 {
     if (delegate->get_thread_mask() & thread_mask_listener.mask) {
         for (auto &listen : get_engine_state(delegate)->listens) {
-            // TODO - handle TLS listening sockets
             delegate->get_pollset()->add_object(poll_object(server_sock_tcp_listen.type,
                                                             listen.get(), listen->get_fd()), poll_event_in);
         }
@@ -441,9 +550,9 @@ void http_server::handle_accept(protocol_thread_delegate *delegate, const protoc
         }
         
         // copy local address into connection and get peer address
-        memcpy(&conn.get_local_addr().storage, &addr, sizeof(sockaddr_storage));
+        memcpy(&conn.get_peer_addr().storage, &addr, sizeof(sockaddr_storage));
         addrlen = sizeof(sockaddr_storage);
-        if (getpeername(fd, (sockaddr*)&conn.get_peer_addr().storage, &addrlen) < 0) {
+        if (getsockname(fd, (sockaddr*)&conn.get_local_addr().storage, &addrlen) < 0) {
             log_error("%90s:%p: getpeername: %s",
                       delegate->get_thread_string().c_str(),
                       delegate->get_thread_id(),
@@ -926,7 +1035,7 @@ void http_server::worker_process_request(protocol_thread_delegate *delegate, pro
     http_conn->response.set_http_version(kHTTPVersion11);
     http_conn->response.set_header_field(kHTTPHeaderServer, format_string("%s/%s", ServerName, ServerVersion));
     http_conn->response.set_header_field(kHTTPHeaderDate, http_date(current_time).to_header_string(date_buf, sizeof(date_buf)));
-    http_conn->handler = get_engine_state(delegate)->lookup_handler(http_conn);
+    http_conn->handler = get_engine_state(delegate)->translate_path(delegate, http_conn);
     http_conn->handler->init();
     http_conn->handler->set_delegate(delegate);
     http_conn->handler->set_connection(http_conn);
@@ -1117,6 +1226,108 @@ void http_server::close_connection(protocol_thread_delegate *delegate, protocol_
     get_engine_state(delegate)->close_connection(delegate->get_engine_delegate(), obj);
 }
 
+http_server_handler_ptr http_server_engine_state::translate_path(protocol_thread_delegate *delegate,
+                                                                 http_server_connection *http_conn)
+{
+    // TODO - unescape path
+    // TODO - valid root path exists in config
+    // TODO - handle canonical unescaping of path
+    // TODO - windows LFN http://support.microsoft.com/kb/142982 GetShortPathName
+    // TODO - windows forks using : or ::$DATA (alternate name for main fork)
+    // TODO - case insensitive filesystems
+
+    http_server_handler_ptr handler;
+    auto cfg = delegate->get_config();
+    auto server_cfg = cfg->get_config<http_server>();
+    const char* request_path = http_conn->request.get_request_path();
+    const char* host_header = http_conn->request.get_header_string(kHTTPHeaderHost);
+    int host_port = socket_addr::port(http_conn->conn.get_local_addr());
+
+#define LEGACY_ROUTES 1
+#if LEGACY_ROUTES
+    // find longest match
+    std::string path = http_conn->request.get_request_path();
+    ssize_t best_offset = -1;
+    http_server_handler_info_ptr *best_match = nullptr;
+    for (auto &handler_info : handler_list) {
+        ssize_t i = 0;
+        while (i < (ssize_t)path.length() &&
+               i < (ssize_t)handler_info->path.length() &&
+               path[i] == handler_info->path[i]) i++;
+        if (i > best_offset) {
+            best_offset = i;
+            best_match = &handler_info;
+        }
+    }
+    // return best match, or if no match, the default file handler
+    if (best_match) {
+        handler = (*best_match)->factory->new_handler();
+        
+        auto root = cfg->root;
+        std::string path_translated;
+        if (root.length() > 0 && root[root.length() - 1] != '/' && request_path[0] != '/') {
+            path_translated = root + "/" + request_path;
+        } else {
+            path_translated = root + request_path;
+        }
+        
+        handler->vhost = nullptr;
+        handler->location = nullptr;
+        handler->path_translated = path_translated;
+        return handler;
+    }
+#endif
+    
+    if (!host_header) host_header = "default";
+    auto vi = server_cfg->vhost_map.find(host_header);
+    if (vi == server_cfg->vhost_map.end()) {
+        vi = server_cfg->vhost_map.find("default");
+    }
+    
+    if (vi != server_cfg->vhost_map.end()) {
+        auto vhost = vi->second;
+        auto lp = vhost->location_trie.find_nearest(request_path);
+        auto prefix = lp.first;
+        auto location = lp.second;
+        auto root = location->root;
+        std::string partial_path = request_path + prefix.length();
+        std::string path_translated;
+        if (root.length() > 0 && root[root.length() - 1] != '/' && partial_path[0] != '/') {
+            path_translated = root + "/" + partial_path;
+        } else {
+            path_translated = root + partial_path;
+        }
+        handler = location->handler_factory->new_handler();
+        handler->vhost = vhost;
+        handler->location = location;
+        handler->path_translated = path_translated;
+        if (delegate->get_debug_mask() & protocol_debug_handler) {
+            log_debug("vhost=%s host_header=%s host_port=%d root=%s path_translated=%s",
+                      vhost->server_names[0].c_str(), host_header, host_port, root.c_str(), handler->path_translated.c_str());
+        }
+    } else {
+        auto root = cfg->root;
+        std::string path_translated;
+        if (root.length() > 0 && root[root.length() - 1] != '/' && request_path[0] != '/') {
+            path_translated = root + "/" + request_path;
+        } else {
+            path_translated = root + request_path;
+        }
+        
+        handler = std::make_shared<http_server_handler_file>();
+        handler->vhost = nullptr;
+        handler->location = nullptr;
+        handler->path_translated = path_translated;
+        if (delegate->get_debug_mask() & protocol_debug_handler) {
+            log_debug("host_header=%s host_port=%d root=%s path_translated=%s",
+                      host_header, host_port, root.c_str(), handler->path_translated.c_str());
+        }
+    }
+    
+    return handler;
+}
+    
+#if 0
 http_server_handler_ptr http_server_engine_state::lookup_handler(http_server_connection *http_conn)
 {
     // find longest match
@@ -1140,6 +1351,8 @@ http_server_handler_ptr http_server_engine_state::lookup_handler(http_server_con
         return std::make_shared<http_server_handler_file>();
     }
 }
+#endif
+
 
 void http_server_engine_state::bind_function(std::string path, typename http_server::function_type fn)
 {
