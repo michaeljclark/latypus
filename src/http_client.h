@@ -226,7 +226,7 @@ struct http_client_engine_state : protocol_engine_state, protocol_connection_sta
 
     protocol* get_proto() const { return http_client::get_proto(); }
 
-    void bind_function(std::string path, typename http_client::function_type)
+    void bind_function(config_ptr cfg, std::string path, typename http_client::function_type)
     {
         log_error("%s bind_function not implemented", get_proto()->name.c_str());
     }
