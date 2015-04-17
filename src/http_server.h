@@ -123,6 +123,11 @@ struct http_server_connection_tmpl : protocol_object
 
 struct http_server_location
 {
+    http_server_vhost*                              vhost;
+    
+    http_server_location() = delete;
+    http_server_location(http_server_vhost *vhost) : vhost(vhost) {}
+    
     std::string                                     uri;
     std::string                                     root;
     std::string                                     handler;
@@ -135,6 +140,11 @@ struct http_server_location
 
 struct http_server_vhost
 {
+    http_server_config*                             server_cfg;
+    
+    http_server_vhost() = delete;
+    http_server_vhost(http_server_config *server_cfg) : server_cfg(server_cfg) {}
+    
     std::vector<http_server_listen_spec>            listens;
     std::vector<std::string>                        server_names;
     std::string                                     access_log;

@@ -170,11 +170,11 @@ http_server_config::http_server_config()
     http_server::get_proto();
     
     block_start_fn_map["http_server"] =     {1, 1, nullptr, [&] (config *cfg, config_line &line) {
-        current_vhost = std::make_shared<http_server_vhost>();
+        current_vhost = std::make_shared<http_server_vhost>(cfg->get_config<http_server>());
         vhost_list.push_back(current_vhost);
     }};
     block_start_fn_map["location"] =        {2, 2, "http_server", [&] (config *cfg, config_line &line) {
-        current_location = std::make_shared<http_server_location>();
+        current_location = std::make_shared<http_server_location>(current_vhost.get());
         current_location->uri = line[1];
         current_vhost->location_list.push_back(current_location);
     }};
@@ -332,12 +332,12 @@ void http_server::make_default_config(config_ptr cfg) const
     
     // configure default virtual host
     auto server_cfg = cfg->get_config<http_server>();
-    auto default_vhost = std::make_shared<http_server_vhost>();
+    auto default_vhost = std::make_shared<http_server_vhost>(server_cfg);
     default_vhost->server_names.push_back("default");
     server_cfg->vhost_list.push_back(default_vhost);
 
     // configure default locations
-    auto default_location = std::make_shared<http_server_location>();
+    auto default_location = std::make_shared<http_server_location>(default_vhost.get());
     default_location->uri = "/";
     default_location->root = cfg->root;
     default_location->handler = "file";
@@ -346,7 +346,7 @@ void http_server::make_default_config(config_ptr cfg) const
     default_vhost->location_list.push_back(default_location);
 
     // configure default locations
-    auto stats_location = std::make_shared<http_server_location>();
+    auto stats_location = std::make_shared<http_server_location>(default_vhost.get());
     stats_location->uri = "/stats/";
     stats_location->handler = "stats";
     default_vhost->location_list.push_back(stats_location);
@@ -1311,7 +1311,7 @@ void http_server_engine_state::bind_function(config_ptr cfg, std::string path, t
     
     // bind function to location in default vhost
     std::string handler_name = std::string("bind_function(") + path + std::string(")");
-    auto bind_location = std::make_shared<http_server_location>();
+    auto bind_location = std::make_shared<http_server_location>(default_vhost.get());
     bind_location->uri = path;
     bind_location->root = cfg->root;
     bind_location->handler = handler_name;
