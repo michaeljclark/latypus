@@ -344,6 +344,12 @@ void http_server::make_default_config(config_ptr cfg) const
     default_location->index_files.push_back("index.html");
     default_location->index_files.push_back("index.htm");
     default_vhost->location_list.push_back(default_location);
+
+    // configure default locations
+    auto stats_location = std::make_shared<http_server_location>();
+    stats_location->uri = "/stats/";
+    stats_location->handler = "stats";
+    default_vhost->location_list.push_back(stats_location);
 }
 
 protocol_config_ptr http_server::make_protocol_config() const
