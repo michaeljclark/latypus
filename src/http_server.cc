@@ -441,8 +441,9 @@ void http_server::engine_init(protocol_engine_delegate *delegate) const
         }
         auto &listen = engine_state->listens[i];
         if (listen->start_listening(listener->addr, cfg->listen_backlog)) {
-            log_info("%s listening on: %s",
-                     get_proto()->name.c_str(), listen->to_string().c_str());
+            log_info("%s listening on: %s%s",
+                     get_proto()->name.c_str(), listen->to_string().c_str(),
+                     (mode == socket_mode_tls ? " tls" : ""));
         } else {
             log_fatal_exit("%s can't listen on: %s",
                            get_proto()->name.c_str(), listen->to_string().c_str());
