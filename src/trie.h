@@ -26,7 +26,7 @@ struct trie_node
 template<typename T>
 struct trie
 {
-    typedef std::pair<std::string,uint32_t> trie_entry;
+    typedef std::pair<std::string,T> trie_entry;
     
     trie_node<trie_entry> *root_node;
     
