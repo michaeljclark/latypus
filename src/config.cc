@@ -183,7 +183,7 @@ void config::start_block()
         line.clear();
         rec.fn(this, block.back());
     } else {
-        log_fatal_exit("unrecognized block: %s\n", line[0].c_str());
+        log_fatal_exit("unrecognized block: %s", line[0].c_str());
     }
 }
 
@@ -220,7 +220,7 @@ void config::end_statement()
             }
             rec.fn(this, line);
         } else {
-            log_fatal_exit("unrecognized directive: %s\n", line[0].c_str());
+            log_fatal_exit("unrecognized directive: %s", line[0].c_str());
         }
     }
     line.clear();
