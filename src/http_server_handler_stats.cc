@@ -104,10 +104,9 @@ bool http_server_handler_stats::handle_request()
     
     std::stringstream ss;
     size_t engine_num = 0;
-    ss << "server statistics" << std::endl << std::endl;
     for (auto engine : protocol_engine::engine_list)
     {
-        ss << "engine-" << engine_num++ << std::endl;
+        ss << "http-engine-" << engine_num++ << std::endl;
         auto http_engine_state = static_cast<http_server_engine_state*>
             (engine->get_engine_state(http_server::get_proto()));
         ss << "  listens " << http_engine_state->listens.size() << std::endl;
@@ -119,12 +118,6 @@ bool http_server_handler_stats::handle_request()
             std::string thread_mask = protocol_thread::thread_mask_to_string(thread->thread_mask);
             ss << "    " << thread->get_thread_id() << " " << thread_mask << std::endl;
         }
-#if 0
-        ss << "  handlers " << http_engine_state->handler_list.size() << std::endl;
-        for (auto &handler : http_engine_state->handler_list) {
-            ss << "    " << handler->factory->get_name() << " " << handler->path << std::endl;
-        }
-#endif
         size_t connections_total = http_engine_state->connections_all.size();
         size_t connections_free = http_engine_state->connections_free.size();
         ss << "  connections" << std::endl;
@@ -138,7 +131,36 @@ bool http_server_handler_stats::handle_request()
         ss << "    lingers    " << http_engine_state->stats.connections_linger << std::endl;
         ss << "    requests   " << http_engine_state->stats.requests_processed << std::endl;
     }
-    
+    ss << std::endl;
+
+    size_t vhost_num = 0;
+    auto cfg = delegate->get_config();
+    auto server_cfg = cfg->get_config<http_server>();
+    for (auto vhost : server_cfg->vhost_list)
+    {
+        ss << "http-vhost-" << vhost_num++ << std::endl;
+        ss << "  server_names" << std::endl;
+        for (auto server_name : vhost->server_names) {
+            ss << "    " << server_name << std::endl;
+        }
+        ss << "  locations" << std::endl;
+        size_t location_num = 0;
+        for (auto location : vhost->location_list) {
+            ss << "    location-" << location_num++ << std::endl;
+            ss << "      uri     " << location->uri << std::endl;
+            if (location->root.length() > 0) {
+                ss << "      root    " << location->root << std::endl;
+            }
+            if (location->handler.length() > 0) {
+                ss << "      handler " << location->handler << std::endl;
+            }
+            if (location->index_files.size() > 0) {
+                ss << "      index   " << config::join(location->index_files) << std::endl;
+            }
+        }
+    }
+    ss << std::endl;
+
     std::string str = ss.str();;
     response_buffer.set(str.c_str(), str.length());
     content_length = str.length();

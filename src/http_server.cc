@@ -330,7 +330,7 @@ void http_server::make_default_config(config_ptr cfg) const
     cfg->index_files.push_back("index.html");
     cfg->index_files.push_back("index.htm");
     
-    // configure default virtual server
+    // configure default virtual host
     auto server_cfg = cfg->get_config<http_server>();
     auto default_vhost = std::make_shared<http_server_vhost>();
     default_vhost->server_names.push_back("default");
@@ -382,6 +382,7 @@ void http_server::engine_init(protocol_engine_delegate *delegate) const
             if (!location->handler_factory) {
                 std::string handler_name;
                 if (location->handler.length() == 0) {
+                    location->handler = "file";
                     handler_name = "http_server_handler_file";
                 } else {
                     handler_name = std::string("http_server_handler_") + location->handler;
