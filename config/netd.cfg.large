@@ -17,6 +17,7 @@ access_log          /tmp/netd.access;
 pid_file            /tmp/netd.pid;
 
 root                html;
+index 		        index.html index.htm;
 
 proto_threads       http_server/listener                                                                1;
 proto_threads       http_server/router,http_server/worker,http_server/keepalive,http_server/linger      16;
@@ -37,6 +38,3 @@ mime_type           application/java-script         js;
 mime_type           image/png                       png;
 mime_type           application/octet-stream        default;
 mime_type           application/x-x509-ca-cert      crt;
-
-index_file          index.html;
-index_file          index.htm;

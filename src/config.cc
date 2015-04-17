@@ -114,9 +114,11 @@ config::config() :
             mime_types[line[s]] = line[1];
         }
     }};
-    config_fn_map["index_file"] =          {2,  2,  [&] (config *cfg, config_line &line) {
-        if (std::find(index_files.begin(), index_files.end(), line[1]) == index_files.end()) {
-            index_files.push_back(line[1]);
+    config_fn_map["index"] =               {2, -1,  [&] (config *cfg, config_line &line) {
+        for (size_t i = 1; i < line.size(); i++) {
+            if (std::find(index_files.begin(), index_files.end(), line[i]) == index_files.end()) {
+                index_files.push_back(line[i]);
+            }
         }
     }};
 }
