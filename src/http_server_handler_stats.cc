@@ -119,10 +119,12 @@ bool http_server_handler_stats::handle_request()
             std::string thread_mask = protocol_thread::thread_mask_to_string(thread->thread_mask);
             ss << "    " << thread->get_thread_id() << " " << thread_mask << std::endl;
         }
+#if 0
         ss << "  handlers " << http_engine_state->handler_list.size() << std::endl;
         for (auto &handler : http_engine_state->handler_list) {
             ss << "    " << handler->factory->get_name() << " " << handler->path << std::endl;
         }
+#endif
         size_t connections_total = http_engine_state->connections_all.size();
         size_t connections_free = http_engine_state->connections_free.size();
         ss << "  connections" << std::endl;

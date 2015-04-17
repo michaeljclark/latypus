@@ -89,7 +89,7 @@ int http_server_handler_file::open_resource(int oflag, int mask)
         // TODO - handle directory listings
         bool found_index = false;
         auto cfg = delegate->get_config();
-        if (location) {
+        if (location && location->index_files.size() > 0) {
             for (auto index : location->index_files) {
                 std::string index_path;
                 if (path_translated.length() > 0 && path_translated[path_translated.length() - 1] == '/') {

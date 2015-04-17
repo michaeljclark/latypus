@@ -22,9 +22,6 @@ struct http_server_handler_factory;
 typedef std::shared_ptr<http_server_handler_factory> http_server_handler_factory_ptr;
 typedef std::pair<std::string,http_server_handler_factory_ptr> http_server_handler_factory_entry;
 
-struct http_server_handler_info;
-typedef std::unique_ptr<http_server_handler_info> http_server_handler_info_ptr;
-
 template <typename TransportConnection> struct http_server_connection_tmpl;
 typedef http_server_connection_tmpl<connection> http_server_connection;
 
@@ -67,31 +64,6 @@ struct http_server_handler_factory_impl : http_server_handler_factory
 };
 
 
-/* http_server_location */
-
-struct http_server_location
-{
-    std::string                                     uri;
-    std::string                                     root;
-    std::string                                     handler;
-    std::vector<std::string>                        index_files;
-    http_server_handler_factory_ptr                 handler_factory;
-};
-
-
-/* http_server_vhost */
-
-struct http_server_vhost
-{
-    std::vector<http_server_listen_spec>            listens;
-    std::vector<std::string>                        server_names;
-    std::string                                     access_log;
-    std::string                                     error_log;
-    http_server_location_list                       location_list;
-    http_server_location_trie                       location_trie;
-};
-
-
 /* http_server_handler */
 
 struct http_server_handler
@@ -113,18 +85,6 @@ struct http_server_handler
     virtual bool populate_response() = 0;
     virtual io_result write_response_body() = 0;
     virtual bool end_request() = 0;
-};
-
-
-/* http_server_handler_info */
-
-struct http_server_handler_info
-{
-    std::string                     path;
-    http_server_handler_factory_ptr factory;
-    
-    http_server_handler_info(std::string path, http_server_handler_factory_ptr factory) :
-        path(path), factory(factory) {}
 };
 
 
@@ -156,6 +116,31 @@ struct http_server_connection_tmpl : protocol_object
     poll_object_type get_poll_type();
     bool init(protocol_engine_delegate *delegate);
     bool free(protocol_engine_delegate *delegate);
+};
+
+
+/* http_server_location */
+
+struct http_server_location
+{
+    std::string                                     uri;
+    std::string                                     root;
+    std::string                                     handler;
+    std::vector<std::string>                        index_files;
+    http_server_handler_factory_ptr                 handler_factory;
+};
+
+
+/* http_server_vhost */
+
+struct http_server_vhost
+{
+    std::vector<http_server_listen_spec>            listens;
+    std::vector<std::string>                        server_names;
+    std::string                                     access_log;
+    std::string                                     error_log;
+    http_server_location_list                       location_list;
+    http_server_location_trie                       location_trie;
 };
 
 
@@ -329,7 +314,6 @@ struct http_server_engine_state : protocol_engine_state, protocol_connection_sta
 {
     http_server_engine_stats                    stats;
     connected_socket_list                       listens;
-    std::vector<http_server_handler_info_ptr>   handler_list;
     io_file                                     access_log_file;
     log_thread_ptr                              access_log_thread;
     SSL_CTX*                                    ssl_ctx;
@@ -341,7 +325,7 @@ struct http_server_engine_state : protocol_engine_state, protocol_connection_sta
     http_server_handler_ptr translate_path(protocol_thread_delegate *delegate,
                                            http_server_connection *http_conn);
     
-    void bind_function(std::string path, typename http_server::function_type);
+    void bind_function(config_ptr cfg, std::string path, typename http_server::function_type);
 };
 
 /* http_server_thread_state */

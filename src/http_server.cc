@@ -316,8 +316,6 @@ void http_server::make_default_config(config_ptr cfg) const
     cfg->proto_threads.push_back(std::pair<std::string,size_t>("http_server/listener", 1));
     cfg->proto_threads.push_back(std::pair<std::string,size_t>("http_server/router,http_server/worker,http_server/keepalive,http_server/linger", std::thread::hardware_concurrency()));
     cfg->root = "html";
-    cfg->get_config<http_server>()->routes.push_back(std::pair<std::string,std::string>("/", "http_server_handler_file"));
-    cfg->get_config<http_server>()->routes.push_back(std::pair<std::string,std::string>("/stats/", "http_server_handler_stats"));
     cfg->mime_types["html"] = "text/html";
     cfg->mime_types["htm"] = "text/html";
     cfg->mime_types["txt"] = "text/plain";
@@ -331,6 +329,21 @@ void http_server::make_default_config(config_ptr cfg) const
     cfg->mime_types["default"] = "application/octet-stream";
     cfg->index_files.push_back("index.html");
     cfg->index_files.push_back("index.htm");
+    
+    // configure default virtual server
+    auto server_cfg = cfg->get_config<http_server>();
+    auto default_vhost = std::make_shared<http_server_vhost>();
+    default_vhost->server_names.push_back("default");
+    server_cfg->vhost_list.push_back(default_vhost);
+
+    // configure default locations
+    auto default_location = std::make_shared<http_server_location>();
+    default_location->uri = "/";
+    default_location->root = cfg->root;
+    default_location->handler = "file";
+    default_location->index_files.push_back("index.html");
+    default_location->index_files.push_back("index.htm");
+    default_vhost->location_list.push_back(default_location);
 }
 
 protocol_config_ptr http_server::make_protocol_config() const
@@ -366,17 +379,19 @@ void http_server::engine_init(protocol_engine_delegate *delegate) const
     // initialize virtual hosts
     for (auto &vhost : server_cfg->vhost_list) {
         for (auto &location : vhost->location_list) {
-            std::string handler_name;
-            if (location->handler.length() == 0) {
-                handler_name = "http_server_handler_file";
-            } else {
-                handler_name = std::string("http_server_handler_") + location->handler;
-            }
-            auto fi = handler_factory_map.find(handler_name);
-            if (fi == handler_factory_map.end()) {
-                log_error("%s couldn't find handler factory: %s", get_proto()->name.c_str(), handler_name.c_str());
-            } else {
-                location->handler_factory = fi->second;
+            if (!location->handler_factory) {
+                std::string handler_name;
+                if (location->handler.length() == 0) {
+                    handler_name = "http_server_handler_file";
+                } else {
+                    handler_name = std::string("http_server_handler_") + location->handler;
+                }
+                auto fi = handler_factory_map.find(handler_name);
+                if (fi == handler_factory_map.end()) {
+                    log_error("%s couldn't find handler factory: %s", get_proto()->name.c_str(), handler_name.c_str());
+                } else {
+                    location->handler_factory = fi->second;
+                }
             }
             vhost->location_trie.insert(location->uri, location.get());
         }
@@ -392,20 +407,6 @@ void http_server::engine_init(protocol_engine_delegate *delegate) const
         }
     }
 
-    // initialize routes
-    for (auto &route : cfg->get_config<http_server>()->routes) {
-        auto &path = route.first;
-        auto &handler = route.second;
-        auto fi = handler_factory_map.find(handler);
-        if (fi == handler_factory_map.end()) {
-            log_error("%s couldn't find handler factory: %s", get_proto()->name.c_str(), handler.c_str());
-        } else {
-            log_info("%s registering route \"%s\" -> %s", get_proto()->name.c_str(), path.c_str(), handler.c_str());
-            engine_state->handler_list.push_back
-                (http_server_handler_info_ptr(new http_server_handler_info(path, fi->second)));
-        }
-    }
-    
     // initialize connection table
     engine_state->init(delegate, cfg->server_connections);
     
@@ -1242,41 +1243,6 @@ http_server_handler_ptr http_server_engine_state::translate_path(protocol_thread
     const char* request_path = http_conn->request.get_request_path();
     const char* host_header = http_conn->request.get_header_string(kHTTPHeaderHost);
     int host_port = socket_addr::port(http_conn->conn.get_local_addr());
-
-#define LEGACY_ROUTES 1
-#if LEGACY_ROUTES
-    // find longest match
-    std::string path = http_conn->request.get_request_path();
-    ssize_t best_offset = -1;
-    http_server_handler_info_ptr *best_match = nullptr;
-    for (auto &handler_info : handler_list) {
-        ssize_t i = 0;
-        while (i < (ssize_t)path.length() &&
-               i < (ssize_t)handler_info->path.length() &&
-               path[i] == handler_info->path[i]) i++;
-        if (i > best_offset) {
-            best_offset = i;
-            best_match = &handler_info;
-        }
-    }
-    // return best match, or if no match, the default file handler
-    if (best_match) {
-        handler = (*best_match)->factory->new_handler();
-        
-        auto root = cfg->root;
-        std::string path_translated;
-        if (root.length() > 0 && root[root.length() - 1] != '/' && request_path[0] != '/') {
-            path_translated = root + "/" + request_path;
-        } else {
-            path_translated = root + request_path;
-        }
-        
-        handler->vhost = nullptr;
-        handler->location = nullptr;
-        handler->path_translated = path_translated;
-        return handler;
-    }
-#endif
     
     if (!host_header) host_header = "default";
     auto vi = server_cfg->vhost_map.find(host_header);
@@ -1326,37 +1292,21 @@ http_server_handler_ptr http_server_engine_state::translate_path(protocol_thread
     
     return handler;
 }
+
+void http_server_engine_state::bind_function(config_ptr cfg, std::string path, typename http_server::function_type fn)
+{
+    auto server_cfg = cfg->get_config<http_server>();
+    if (server_cfg->vhost_list.size() == 0) {
+        log_fatal_exit("%s: no vhosts defined", __func__);
+    }
+    auto default_vhost = server_cfg->vhost_list[0];
     
-#if 0
-http_server_handler_ptr http_server_engine_state::lookup_handler(http_server_connection *http_conn)
-{
-    // find longest match
-    std::string path = http_conn->request.get_request_path();
-    ssize_t best_offset = -1;
-    http_server_handler_info_ptr *best_match = nullptr;
-    for (auto &handler_info : handler_list) {
-        ssize_t i = 0;
-        while (i < (ssize_t)path.length() &&
-               i < (ssize_t)handler_info->path.length() &&
-               path[i] == handler_info->path[i]) i++;
-        if (i > best_offset) {
-            best_offset = i;
-            best_match = &handler_info;
-        }
-    }
-    // return best match, or if no match, the default file handler
-    if (best_match) {
-        return (*best_match)->factory->new_handler();
-    } else {
-        return std::make_shared<http_server_handler_file>();
-    }
-}
-#endif
-
-
-void http_server_engine_state::bind_function(std::string path, typename http_server::function_type fn)
-{
+    // bind function to location in default vhost
     std::string handler_name = std::string("bind_function(") + path + std::string(")");
-    http_server_handler_factory_ptr factory(new http_server_handler_factory_func(handler_name, fn));
-    handler_list.push_back(http_server_handler_info_ptr(new http_server_handler_info(path, factory)));
+    auto bind_location = std::make_shared<http_server_location>();
+    bind_location->uri = path;
+    bind_location->root = cfg->root;
+    bind_location->handler = handler_name;
+    bind_location->handler_factory = http_server_handler_factory_ptr(new http_server_handler_factory_func(handler_name, fn));
+    default_vhost->location_list.push_back(bind_location);
 }

@@ -127,11 +127,12 @@ void protocol_engine::protocol_config_init(config_ptr cfg)
     }
 }
 
-void protocol_engine::default_config(protocol* proto)
+config_ptr protocol_engine::default_config(protocol* proto)
 {
     cfg = config_ptr(new config());
     protocol_config_init(cfg);
     proto->make_default_config(cfg);
+    return cfg;
 }
 
 void protocol_engine::read_config(std::string config_file)
