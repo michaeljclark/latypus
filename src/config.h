@@ -21,9 +21,7 @@
 struct config;
 struct config_record;
 struct block_record;
-struct config_addr;
 typedef std::shared_ptr<config> config_ptr;
-typedef std::shared_ptr<config_addr> config_addr_ptr;
 typedef std::vector<std::string> config_line;
 typedef std::vector<config_line> block_stack;
 typedef std::function<void(config*,config_line&)>config_function;
@@ -48,15 +46,6 @@ struct block_record
     int maxargs;
     const char* parent_block;
     block_function fn;
-};
-
-struct config_addr
-{
-    socket_addr addr;
-        
-    std::string to_string();
-    
-    static config_addr_ptr decode(std::string addr_spec);
 };
 
 struct config : config_parser
@@ -117,7 +106,7 @@ struct config : config_parser
     std::vector<std::pair<std::string,size_t>> client_threads;
     std::vector<std::pair<std::string,size_t>> server_threads;
     std::vector<std::pair<std::string,size_t>> proto_threads;
-    std::vector<std::tuple<protocol*,config_addr_ptr,socket_mode>> proto_listeners;
+    std::vector<std::tuple<protocol*,socket_addr,socket_mode>> proto_listeners;
     std::map<std::string,std::string> mime_types;
     std::vector<std::string> index_files;
     

@@ -192,10 +192,13 @@ http_server_config::http_server_config()
     }};
     config_fn_map["listen"] =               {2,  3,  [&] (config *cfg, config_line &line) {
         if (cfg->block.size() > 0 && cfg->block.back()[0] == "http_server") {
-            auto addr = config_addr::decode(line[1]);
+            socket_addr addr;
+            if (socket_addr::string_to_addr(line[1], addr) < 0) {
+                log_fatal_exit("configuration error: proto_listener: invalid address: %s", line[1].c_str());
+            }
             if (line.size() == 3) {
                 if (line[2] != "tls") {
-                    log_error("configuration error: proto_listener: invalid option: %s", line[2].c_str());
+                    log_fatal_exit("configuration error: proto_listener: invalid option: %s", line[2].c_str());
                 }
                 current_vhost->listens.push_back(http_server_listen_spec(addr, socket_mode_tls));
             } else {
@@ -290,6 +293,8 @@ void http_server::proto_init()
 
 void http_server::make_default_config(config_ptr cfg) const
 {
+    static const char* ipv4_localhost_addr = "127.0.0.1:8080";
+    static const char* ipv6_localhost_addr = "[]:8080";
     log_info("%s using default config", http_server::get_proto()->name.c_str());
     cfg->pid_file = "/tmp/latypus.pid";
     cfg->error_log = "/tmp/latypus.errors";
@@ -305,14 +310,20 @@ void http_server::make_default_config(config_ptr cfg) const
     cfg->log_buffers = LOG_BUFFERS_DEFAULT;
     cfg->tls_session_timeout = TLS_SESSION_TIMEOUT_DEFAULT;
     cfg->tls_session_count = TLS_SESSION_COUNT_DEFAULT;
-    cfg->proto_listeners.push_back(std::tuple<protocol*,config_addr_ptr,socket_mode>
-                                   (http_server::get_proto(),
-                                    config_addr::decode("[]:8080"),
-                                    socket_mode_plain));
-    cfg->proto_listeners.push_back(std::tuple<protocol*,config_addr_ptr,socket_mode>
-                                   (http_server::get_proto(),
-                                    config_addr::decode("127.0.0.1:8080"),
-                                    socket_mode_plain));
+    socket_addr ipv4_localhost;
+    if (socket_addr::string_to_addr(ipv4_localhost_addr, ipv4_localhost) < 0) {
+        log_error("configuration error: unable to decode address: %s", ipv4_localhost);
+    } else {
+        cfg->proto_listeners.push_back(std::tuple<protocol*,socket_addr,socket_mode>
+                                       (http_server::get_proto(), ipv4_localhost, socket_mode_plain));
+    }
+    socket_addr ipv6_localhost;
+    if (socket_addr::string_to_addr(ipv6_localhost_addr, ipv6_localhost) < 0) {
+        log_error("configuration error: unable to decode address: %s", ipv6_localhost);
+    } else {
+        cfg->proto_listeners.push_back(std::tuple<protocol*,socket_addr,socket_mode>
+                                       (http_server::get_proto(), ipv6_localhost, socket_mode_plain));
+    }
     cfg->proto_threads.push_back(std::pair<std::string,size_t>("http_server/listener", 1));
     cfg->proto_threads.push_back(std::pair<std::string,size_t>("http_server/router,http_server/worker,http_server/keepalive,http_server/linger", std::thread::hardware_concurrency()));
     cfg->root = "html";
@@ -406,7 +417,7 @@ void http_server::engine_init(protocol_engine_delegate *delegate) const
             server_cfg->vhost_map.insert(http_server_vhost_entry(server_name, vhost.get()));
         }
         for (auto &listen : vhost->listens) {
-            auto proto_listen = std::tuple<protocol*,config_addr_ptr,socket_mode>(get_proto(), listen.first, listen.second);
+            auto proto_listen = std::tuple<protocol*,socket_addr,socket_mode>(get_proto(), listen.first, listen.second);
             auto &proto_listeners = cfg->proto_listeners;
             if (std::find(proto_listeners.begin(), proto_listeners.end(), proto_listen) == proto_listeners.end()) {
                 proto_listeners.push_back(proto_listen);
@@ -439,7 +450,7 @@ void http_server::engine_init(protocol_engine_delegate *delegate) const
         auto &proto_listener = cfg->proto_listeners[i];
         protocol *proto = std::get<0>(proto_listener);
         if (proto != get_proto()) continue;
-        auto listener = std::get<1>(proto_listener);
+        socket_addr addr = std::get<1>(proto_listener);
         socket_mode mode = std::get<2>(proto_listener);
         if (mode == socket_mode_tls) {
             engine_state->listens.push_back(connected_socket_ptr(new tls_connected_socket()));
@@ -447,7 +458,7 @@ void http_server::engine_init(protocol_engine_delegate *delegate) const
             engine_state->listens.push_back(connected_socket_ptr(new tcp_connected_socket()));
         }
         auto &listen = engine_state->listens[i];
-        if (listen->start_listening(listener->addr, cfg->listen_backlog)) {
+        if (listen->start_listening(addr, cfg->listen_backlog)) {
             log_info("%s listening on: %s%s",
                      get_proto()->name.c_str(), listen->to_string().c_str(),
                      (mode == socket_mode_tls ? " tls" : ""));

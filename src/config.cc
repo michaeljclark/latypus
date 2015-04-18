@@ -30,23 +30,6 @@
 #include "protocol.h"
 
 
-/* config_addr */
-
-std::string config_addr::to_string()
-{
-    return socket_addr::addr_to_string(addr);
-}
-
-config_addr_ptr config_addr::decode(std::string addr_spec)
-{
-    config_addr_ptr addr_ptr(new config_addr());
-    if (socket_addr::string_to_addr(addr_spec, addr_ptr->addr) < 0) {
-        return config_addr_ptr();
-    }
-    return addr_ptr;
-}
-
-
 /* config */
 
 config::config() :
@@ -72,7 +55,6 @@ config::config() :
     config_fn_map["tls_cipher_list"] =     {2,  2,  [&] (config *cfg, config_line &line) { tls_cipher_list = line[1]; }};
     config_fn_map["tls_session_timeout"] = {2,  2,  [&] (config *cfg, config_line &line) { tls_session_timeout = atoi(line[1].c_str()); }};
     config_fn_map["tls_session_count"] =   {2,  2,  [&] (config *cfg, config_line &line) { tls_session_count = atoi(line[1].c_str()); }};
-    //config_fn_map["root"] =                {2,  2,  [&] (config *cfg, config_line &line) { root = line[1]; }};
     config_fn_map["client_connections"] =  {2,  2,  [&] (config *cfg, config_line &line) { client_connections = atoi(line[1].c_str()); }};
     config_fn_map["server_connections"] =  {2,  2,  [&] (config *cfg, config_line &line) { server_connections = atoi(line[1].c_str()); }};
     config_fn_map["listen_backlog"] =      {2,  2,  [&] (config *cfg, config_line &line) { listen_backlog = atoi(line[1].c_str()); }};
@@ -94,19 +76,20 @@ config::config() :
     }};
     config_fn_map["proto_listener"] =     {3,  4,  [&] (config *cfg, config_line &line) {
         auto proto = (*protocol::get_map())[line[1]];
-        auto addr = config_addr::decode(line[2]);
         if (!proto) {
-            log_error("configuration error: proto_listener: invalid protocol: %s", line[1].c_str());
-        } else if (!addr) {
-            log_error("configuration error: proto_listener: invalid address: %s", line[2].c_str());
+            log_fatal_exit("configuration error: proto_listener: invalid protocol: %s", line[1].c_str());
+        }
+        socket_addr addr;
+        if (socket_addr::string_to_addr(line[2], addr) < 0) {
+            log_fatal_exit("configuration error: proto_listener: invalid address: %s", line[2].c_str());
         }
         if (line.size() == 4) {
             if (line[3] != "tls") {
-                log_error("configuration error: proto_listener: invalid option: %s", line[3].c_str());
+                log_fatal_exit("configuration error: proto_listener: invalid option: %s", line[3].c_str());
             }
-            proto_listeners.push_back(std::tuple<protocol*,config_addr_ptr,socket_mode>(proto, addr, socket_mode_tls));
+            proto_listeners.push_back(std::tuple<protocol*,socket_addr,socket_mode>(proto, addr, socket_mode_tls));
         } else {
-            proto_listeners.push_back(std::tuple<protocol*,config_addr_ptr,socket_mode>(proto, addr, socket_mode_plain));
+            proto_listeners.push_back(std::tuple<protocol*,socket_addr,socket_mode>(proto, addr, socket_mode_plain));
         }
     }};
     config_fn_map["mime_type"] =           {3, -1,  [&] (config *cfg, config_line &line) {
@@ -114,13 +97,6 @@ config::config() :
             mime_types[line[s]] = line[1];
         }
     }};
-    //config_fn_map["index"] =               {2, -1,  [&] (config *cfg, config_line &line) {
-    //    for (size_t i = 1; i < line.size(); i++) {
-    //        if (std::find(index_files.begin(), index_files.end(), line[i]) == index_files.end()) {
-    //            index_files.push_back(line[i]);
-    //        }
-    //    }
-    //}};
 }
 
 void config::read(std::string cfg_file)
@@ -261,7 +237,7 @@ std::string config::to_string()
     }
     for (auto proto_listener : proto_listeners) {
         std::string proto = std::get<0>(proto_listener)->name;
-        std::string addr = std::get<1>(proto_listener)->to_string();
+        std::string addr = socket_addr::addr_to_string(std::get<1>(proto_listener));
         std::string mode = std::get<2>(proto_listener) == socket_mode_tls ? " tls" : "";
         ss << "proto_listener      " << proto << " " << addr << mode << ";" << std::endl;
     }

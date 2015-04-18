@@ -33,7 +33,7 @@ typedef std::vector<http_server_location_ptr> http_server_location_list;
 typedef trie<http_server_location*> http_server_location_trie;
 
 struct http_server_vhost;
-typedef std::pair<config_addr_ptr,socket_mode> http_server_listen_spec;
+typedef std::pair<socket_addr,socket_mode> http_server_listen_spec;
 typedef std::shared_ptr<http_server_vhost> http_server_vhost_ptr;
 typedef std::vector<http_server_vhost_ptr> http_server_vhost_list;
 typedef std::map<std::string,http_server_vhost*> http_server_vhost_map;
