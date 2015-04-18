@@ -165,8 +165,6 @@ void config::start_block()
 
 void config::end_block()
 {
-    assert(block.size() == 1);
-    
     // look up  block record
     block_record rec;
     bool found = lookup_block_end_fn(block.back()[0], rec);
