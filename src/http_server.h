@@ -282,7 +282,7 @@ struct http_server : protocol
 
     /* http_server internal */
 
-    static void process_request_headers(protocol_thread_delegate *, protocol_object *);
+    static bool process_request_headers(protocol_thread_delegate *, protocol_object *);
     static ssize_t populate_response_headers(protocol_thread_delegate *, protocol_object *);
     static void finished_request(protocol_thread_delegate *, protocol_object *);
     static void dispatch_connection(protocol_thread_delegate *, protocol_object *);

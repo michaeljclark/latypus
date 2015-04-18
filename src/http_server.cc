@@ -805,9 +805,13 @@ void http_server::handle_state_client_request(protocol_thread_delegate *delegate
     
     // switch state if request processing is finished
     if (http_conn->request.is_finished()) {
-        process_request_headers(delegate, http_conn);
-        delegate->remove_events(http_conn);
-        work_connection(delegate, http_conn);
+        if (!process_request_headers(delegate, http_conn)) {
+            delegate->remove_events(http_conn);
+            abort_connection(delegate, http_conn); // TODO - bad request or lingering close?
+        } else {
+            delegate->remove_events(http_conn);
+            work_connection(delegate, http_conn);
+        }
     } else if (http_conn->request.has_error() || http_conn->request.is_finished()) {
         log_debug("%90s:%p: %s: header parse error: aborting connection",
                   delegate->get_thread_string().c_str(),
@@ -1096,7 +1100,7 @@ void http_server::linger_read_connection(protocol_thread_delegate *delegate, pro
 
 /* http_server internal */
 
-void http_server::process_request_headers(protocol_thread_delegate *delegate, protocol_object *obj)
+bool http_server::process_request_headers(protocol_thread_delegate *delegate, protocol_object *obj)
 {
     auto http_conn = static_cast<http_server_connection*>(obj);
     
@@ -1111,14 +1115,14 @@ void http_server::process_request_headers(protocol_thread_delegate *delegate, pr
                   delegate->get_thread_string().c_str(),
                   delegate->get_thread_id(),
                   obj->to_string().c_str());
-        delegate->remove_events(http_conn);
-        abort_connection(delegate, http_conn); // TODO - bad request or lingering close?
+        return false;
     }
     
     // debug request
     if (delegate->get_debug_mask() & protocol_debug_headers) {
         printf("%s", http_conn->request.to_string().c_str());
     }
+    return true;
 }
 
 ssize_t http_server::populate_response_headers(protocol_thread_delegate *delegate, protocol_object *obj)
