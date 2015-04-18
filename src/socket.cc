@@ -57,6 +57,7 @@ std::string socket_addr::addr_to_string(const socket_addr &addr)
 
 int socket_addr::string_to_addr(std::string addr_spec, socket_addr &addr)
 {
+    memset(&addr, 0, sizeof(addr));
     size_t open_bracket = addr_spec.find_last_of("[");
     size_t close_bracket = addr_spec.find_last_of("]");
     size_t last_colon = addr_spec.find_last_of(":");
