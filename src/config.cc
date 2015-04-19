@@ -284,7 +284,7 @@ bool config::lookup_block_start_fn(std::string key, block_record &record)
 {
     bool found = false;
     
-    // look up protocol specific config record
+    // look up protocol specific block start record
     for (auto ent : proto_conf_map) {
         protocol_config_ptr proto_conf = ent.second;
         if (proto_conf->lookup_block_start_fn(key, record)) {
@@ -293,7 +293,7 @@ bool config::lookup_block_start_fn(std::string key, block_record &record)
         }
     }
 
-    // if not found lookup general block record
+    // if not found lookup general block start record
     auto it = block_start_fn_map.find(key);
     if (it != block_start_fn_map.end()) {
         record = it->second;
@@ -307,7 +307,7 @@ bool config::lookup_block_end_fn(std::string key, block_record &record)
 {
     bool found = false;
     
-    // look up protocol specific config record
+    // look up protocol specific block end record
     for (auto ent : proto_conf_map) {
         protocol_config_ptr proto_conf = ent.second;
         if (proto_conf->lookup_block_end_fn(key, record)) {
@@ -316,7 +316,7 @@ bool config::lookup_block_end_fn(std::string key, block_record &record)
         }
     }
     
-    // if not found lookup general block record
+    // if not found lookup general block end record
     auto it = block_end_fn_map.find(key);
     if (it != block_end_fn_map.end()) {
         record = it->second;
