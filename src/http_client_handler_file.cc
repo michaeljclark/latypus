@@ -152,7 +152,6 @@ io_result http_client_handler_file::read_response_body()
     if (total_read == content_length) return io_result(0);
     
     // read data from socket
-    // TODO - move buffer_read into http_client::handle_state_server_body
     io_result result = buffer.buffer_read(http_conn->conn);
     if (result.has_error()) {
         return io_result(io_error(errno));
