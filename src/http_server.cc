@@ -552,7 +552,6 @@ void http_server::handle_accept(protocol_thread_delegate *delegate, const protoc
 
         // assign file descriptor
         auto &conn = http_conn->conn;
-        // send connection to a router
         switch (listen->get_mode()) {
             case socket_mode_plain:
                 conn.accept(fd);
