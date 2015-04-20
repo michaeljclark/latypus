@@ -64,7 +64,9 @@ void log_thread::create_buffers()
             log_error("%s: error creating log buffer", __func__);
         }
     }
-    log_info("log_thread created %d buffers, %d bytes per buffer", num_buffers, LOG_BUFFER_SIZE);
+    if (debug) {
+        log_debug("log_thread created %d buffers, %d bytes per buffer", num_buffers, LOG_BUFFER_SIZE);
+    }
 }
 
 void log_thread::delete_buffers()
