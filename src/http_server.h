@@ -145,12 +145,17 @@ struct http_server_vhost
     http_server_vhost() = delete;
     http_server_vhost(http_server_config *server_cfg) : server_cfg(server_cfg) {}
     
-    std::vector<http_server_listen_spec>            listens;
-    std::vector<std::string>                        server_names;
-    std::string                                     access_log;
-    std::string                                     error_log;
-    http_server_location_list                       location_list;
-    http_server_location_trie                       location_trie;
+    std::vector<http_server_listen_spec>        listens;
+    std::vector<std::string>                    server_names;
+    std::string                                 access_log;
+    std::string                                 error_log;
+    http_server_location_list                   location_list;
+    
+    http_server_location_trie                   location_trie;
+    io_file                                     access_log_file;
+    log_thread_ptr                              access_log_thread;
+    io_file                                     error_log_file;
+    log_thread_ptr                              error_log_thread;
 };
 
 
@@ -247,6 +252,7 @@ struct http_server : protocol
     
     void proto_init();
     void make_default_config(config_ptr cfg) const;
+    void make_default_vhost(config_ptr cfg) const;
     protocol_config_ptr make_protocol_config() const;
 
     protocol_engine_state* create_engine_state() const;
@@ -283,6 +289,7 @@ struct http_server : protocol
     /* http_server internal */
 
     static bool process_request_headers(protocol_thread_delegate *, protocol_object *);
+    static http_server_handler_ptr translate_path(protocol_thread_delegate *, http_server_connection *);
     static ssize_t populate_response_headers(protocol_thread_delegate *, protocol_object *);
     static void finished_request(protocol_thread_delegate *, protocol_object *);
     static void dispatch_connection(protocol_thread_delegate *, protocol_object *);
@@ -324,16 +331,11 @@ struct http_server_engine_state : protocol_engine_state, protocol_connection_sta
 {
     http_server_engine_stats                    stats;
     connected_socket_list                       listens;
-    io_file                                     access_log_file;
-    log_thread_ptr                              access_log_thread;
     SSL_CTX*                                    ssl_ctx;
     
     http_server_engine_state() : ssl_ctx(nullptr) {}
     
     protocol* get_proto() const { return http_server::get_proto(); }
-    
-    http_server_handler_ptr translate_path(protocol_thread_delegate *delegate,
-                                           http_server_connection *http_conn);
     
     void bind_function(config_ptr cfg, std::string path, typename http_server::function_type);
 };

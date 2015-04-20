@@ -190,6 +190,25 @@ http_server_config::http_server_config()
         }
         current_location = http_server_location_ptr();
     }};
+
+    config_fn_map["error_log"] =           {2,  2,  [&] (config *cfg, config_line &line) {
+        if (cfg->block.size() == 0) {
+            cfg->error_log = line[1];
+        } else if (cfg->block.size() > 0 && cfg->block.back()[0] == "http_server") {
+            current_vhost->error_log = line[1];
+        } else {
+            log_fatal_exit("configuration error: error_log must be defined at the toplevel or in a http_server block", line[0].c_str());
+        }
+    }};
+    config_fn_map["access_log"] =          {2,  2,  [&] (config *cfg, config_line &line) {
+        if (cfg->block.size() == 0) {
+            cfg->access_log = line[1];
+        } else if (cfg->block.size() > 0 && cfg->block.back()[0] == "http_server") {
+            current_vhost->access_log = line[1];
+        } else {
+            log_fatal_exit("configuration error: access_log must be defined at the toplevel or in a http_server block", line[0].c_str());
+        }
+    }};
     config_fn_map["listen"] =               {2,  3,  [&] (config *cfg, config_line &line) {
         if (cfg->block.size() > 0 && cfg->block.back()[0] == "http_server") {
             socket_addr addr;
@@ -341,6 +360,11 @@ void http_server::make_default_config(config_ptr cfg) const
     cfg->index_files.push_back("index.html");
     cfg->index_files.push_back("index.htm");
     
+    make_default_vhost(cfg);
+}
+
+void http_server::make_default_vhost(config_ptr cfg) const
+{
     // configure default virtual host
     auto server_cfg = cfg->get_config<http_server>();
     auto default_vhost = std::make_shared<http_server_vhost>(server_cfg);
@@ -393,6 +417,30 @@ void http_server::engine_init(protocol_engine_delegate *delegate) const
     auto engine_state = get_engine_state(delegate);
     auto server_cfg = cfg->get_config<http_server>();
     
+    // check if we have a vhost with the server_name "default"
+    bool found_default_vhost = false;
+    for (auto &vhost : server_cfg->vhost_list) {
+        auto si = std::find(vhost->server_names.begin(), vhost->server_names.end(), "default");
+        if (si != vhost->server_names.end()) {
+            found_default_vhost = true;
+            break;
+        }
+    }
+    // if there are no vhosts, then create "default" vhost using top level root
+    if (server_cfg->vhost_list.size() == 0) {
+        if (!found_default_vhost) {
+            if (cfg->root.length() > 0) {
+                make_default_vhost(cfg);
+            } else {
+                log_fatal_exit("configuration error: no http_server with server_name default and no toplevel root directive defined");
+            }
+        }
+    }
+    // otherwise label the first vhost as default
+    else if (!found_default_vhost) {
+        server_cfg->vhost_list[0]->server_names.push_back("default");
+    }
+
     // initialize virtual hosts
     for (auto &vhost : server_cfg->vhost_list) {
         for (auto &location : vhost->location_list) {
@@ -423,21 +471,39 @@ void http_server::engine_init(protocol_engine_delegate *delegate) const
                 proto_listeners.push_back(proto_listen);
             }
         }
+        // open log files
+        if (vhost->access_log.length() == 0) {
+            vhost->access_log = cfg->access_log;
+        }
+        if (vhost->error_log.length() == 0) {
+            vhost->error_log = cfg->access_log;
+        }
+        if (vhost->access_log.size() > 0 && vhost->access_log != "off") {
+            int log_fd = open(vhost->access_log.c_str(), O_WRONLY|O_CREAT|O_APPEND, 0755);
+            if (log_fd < 0) {
+                log_fatal_exit("unable to open log file: %s: %s",
+                               vhost->access_log.c_str(), strerror(errno));
+            } else {
+                log_info("opened access log file: %s", vhost->access_log.c_str());
+            }
+            vhost->access_log_file.set_fd(log_fd);
+            vhost->access_log_thread = log_thread_ptr(new log_thread(log_fd, cfg->log_buffers));
+        }
+        if (vhost->error_log.size() > 0 && vhost->error_log != "off") {
+            int log_fd = open(vhost->error_log.c_str(), O_WRONLY|O_CREAT|O_APPEND, 0755);
+            if (log_fd < 0) {
+                log_fatal_exit("unable to open log file: %s: %s",
+                               vhost->error_log.c_str(), strerror(errno));
+            } else {
+                log_info("opened error log file: %s", vhost->error_log.c_str());
+            }
+            vhost->error_log_file.set_fd(log_fd);
+            vhost->error_log_thread = log_thread_ptr(new log_thread(log_fd, cfg->log_buffers));
+        }
     }
 
     // initialize connection table
     engine_state->init(delegate, cfg->server_connections);
-    
-    // open log file
-    if (cfg->access_log.size() > 0 && cfg->access_log != "off") {
-        int log_fd = open(cfg->access_log.c_str(), O_WRONLY|O_CREAT|O_APPEND, 0755);
-        if (log_fd < 0) {
-            log_fatal_exit("unable to open log file: %s: %s",
-                           cfg->access_log.c_str(), strerror(errno));
-        }
-        engine_state->access_log_file.set_fd(log_fd);
-        engine_state->access_log_thread = log_thread_ptr(new log_thread(log_fd, cfg->log_buffers));
-    }
     
     // initialize TLS
     if (cfg->tls_cert_file.length() > 0 && cfg->tls_key_file.length() > 0)
@@ -476,10 +542,13 @@ void http_server::engine_shutdown(protocol_engine_delegate *delegate) const
         listen->close_connection();
     }
     
-    // shutdown log thread
-    log_thread_ptr access_log_thread = get_engine_state(delegate)->access_log_thread;
-    if (access_log_thread) {
-        access_log_thread->shutdown();
+    // shutdown log threads
+    auto cfg = delegate->get_config();
+    auto server_cfg = cfg->get_config<http_server>();
+    for (auto vhost : server_cfg->vhost_list) {
+        if (vhost->access_log_thread) {
+            vhost->access_log_thread->shutdown();
+        }
     }
 }
 
@@ -962,8 +1031,12 @@ void http_server::finished_request(protocol_thread_delegate *delegate, protocol_
 {
     auto engine_state = get_engine_state(delegate);
     engine_state->stats.requests_processed++;
-    if (engine_state->access_log_thread)
+
+    auto http_conn = static_cast<http_server_connection*>(obj);
+    if (http_conn->handler && http_conn->handler->vhost && http_conn->handler->vhost->access_log_thread)
     {
+        auto &access_log_thread = http_conn->handler->vhost->access_log_thread;
+        
         char date_buf[32], addr_buf[32];
         char log_buffer[LOG_BUFFER_SIZE];
         
@@ -994,7 +1067,7 @@ void http_server::finished_request(protocol_thread_delegate *delegate, protocol_
                  addr_buf, user.c_str(), date_buf, request_method.c_str(), request_path.c_str(),
                  http_version.c_str(), status_code, bytes_transferred);
         log_buffer[sizeof(log_buffer) - 1] = '\0';
-        engine_state->access_log_thread->log(current_time, log_buffer);
+        access_log_thread->log(current_time, log_buffer);
     }
 }
     
@@ -1058,7 +1131,7 @@ void http_server::worker_process_request(protocol_thread_delegate *delegate, pro
     http_conn->response.set_http_version(kHTTPVersion11);
     http_conn->response.set_header_field(kHTTPHeaderServer, format_string("%s/%s", ServerName, ServerVersion));
     http_conn->response.set_header_field(kHTTPHeaderDate, http_date(current_time).to_header_string(date_buf, sizeof(date_buf)));
-    http_conn->handler = get_engine_state(delegate)->translate_path(delegate, http_conn);
+    http_conn->handler = translate_path(delegate, http_conn);
     http_conn->handler->init();
     http_conn->handler->set_delegate(delegate);
     http_conn->handler->set_connection(http_conn);
@@ -1122,6 +1195,56 @@ bool http_server::process_request_headers(protocol_thread_delegate *delegate, pr
         printf("%s", http_conn->request.to_string().c_str());
     }
     return true;
+}
+
+http_server_handler_ptr http_server::translate_path(protocol_thread_delegate *delegate, http_server_connection *http_conn)
+{
+    // TODO - unescape path
+    // TODO - valid root path exists in config
+    // TODO - handle canonical unescaping of path
+    // TODO - windows LFN http://support.microsoft.com/kb/142982 GetShortPathName
+    // TODO - windows forks using : or ::$DATA (alternate name for main fork)
+    // TODO - case insensitive filesystems
+    
+    http_server_handler_ptr handler;
+    auto cfg = delegate->get_config();
+    auto server_cfg = cfg->get_config<http_server>();
+    const char* request_path = http_conn->request.get_request_path();
+    const char* host_header = http_conn->request.get_header_string(kHTTPHeaderHost);
+    int host_port = socket_addr::port(http_conn->conn.get_local_addr());
+    
+    if (!host_header) host_header = "default";
+    auto vi = server_cfg->vhost_map.find(host_header);
+    if (vi == server_cfg->vhost_map.end()) {
+        vi = server_cfg->vhost_map.find("default");
+    }
+    
+    if (vi != server_cfg->vhost_map.end()) {
+        auto vhost = vi->second;
+        auto lp = vhost->location_trie.find_nearest(request_path);
+        auto prefix = lp.first;
+        auto location = lp.second;
+        auto root = location->root;
+        std::string partial_path = request_path + prefix.length();
+        std::string path_translated;
+        if (root.length() > 0 && root[root.length() - 1] != '/' && partial_path[0] != '/') {
+            path_translated = root + "/" + partial_path;
+        } else {
+            path_translated = root + partial_path;
+        }
+        handler = location->handler_factory->new_handler();
+        handler->vhost = vhost;
+        handler->location = location;
+        handler->path_translated = path_translated;
+        if (delegate->get_debug_mask() & protocol_debug_handler) {
+            log_debug("vhost=%s host_header=%s host_port=%d root=%s path_translated=%s",
+                      vhost->server_names[0].c_str(), host_header, host_port, root.c_str(), handler->path_translated.c_str());
+        }
+    } else {
+        log_fatal_exit("%s: default virtual host not found", get_proto());
+    }
+    
+    return handler;
 }
 
 ssize_t http_server::populate_response_headers(protocol_thread_delegate *delegate, protocol_object *obj)
@@ -1247,72 +1370,6 @@ void http_server::close_connection(protocol_thread_delegate *delegate, protocol_
 {
     get_engine_state(delegate)->stats.connections_closed++;
     get_engine_state(delegate)->close_connection(delegate->get_engine_delegate(), obj);
-}
-
-http_server_handler_ptr http_server_engine_state::translate_path(protocol_thread_delegate *delegate,
-                                                                 http_server_connection *http_conn)
-{
-    // TODO - unescape path
-    // TODO - valid root path exists in config
-    // TODO - handle canonical unescaping of path
-    // TODO - windows LFN http://support.microsoft.com/kb/142982 GetShortPathName
-    // TODO - windows forks using : or ::$DATA (alternate name for main fork)
-    // TODO - case insensitive filesystems
-
-    http_server_handler_ptr handler;
-    auto cfg = delegate->get_config();
-    auto server_cfg = cfg->get_config<http_server>();
-    const char* request_path = http_conn->request.get_request_path();
-    const char* host_header = http_conn->request.get_header_string(kHTTPHeaderHost);
-    int host_port = socket_addr::port(http_conn->conn.get_local_addr());
-    
-    if (!host_header) host_header = "default";
-    auto vi = server_cfg->vhost_map.find(host_header);
-    if (vi == server_cfg->vhost_map.end()) {
-        vi = server_cfg->vhost_map.find("default");
-    }
-    
-    if (vi != server_cfg->vhost_map.end()) {
-        auto vhost = vi->second;
-        auto lp = vhost->location_trie.find_nearest(request_path);
-        auto prefix = lp.first;
-        auto location = lp.second;
-        auto root = location->root;
-        std::string partial_path = request_path + prefix.length();
-        std::string path_translated;
-        if (root.length() > 0 && root[root.length() - 1] != '/' && partial_path[0] != '/') {
-            path_translated = root + "/" + partial_path;
-        } else {
-            path_translated = root + partial_path;
-        }
-        handler = location->handler_factory->new_handler();
-        handler->vhost = vhost;
-        handler->location = location;
-        handler->path_translated = path_translated;
-        if (delegate->get_debug_mask() & protocol_debug_handler) {
-            log_debug("vhost=%s host_header=%s host_port=%d root=%s path_translated=%s",
-                      vhost->server_names[0].c_str(), host_header, host_port, root.c_str(), handler->path_translated.c_str());
-        }
-    } else {
-        auto root = cfg->root;
-        std::string path_translated;
-        if (root.length() > 0 && root[root.length() - 1] != '/' && request_path[0] != '/') {
-            path_translated = root + "/" + request_path;
-        } else {
-            path_translated = root + request_path;
-        }
-        
-        handler = std::make_shared<http_server_handler_file>();
-        handler->vhost = nullptr;
-        handler->location = nullptr;
-        handler->path_translated = path_translated;
-        if (delegate->get_debug_mask() & protocol_debug_handler) {
-            log_debug("host_header=%s host_port=%d root=%s path_translated=%s",
-                      host_header, host_port, root.c_str(), handler->path_translated.c_str());
-        }
-    }
-    
-    return handler;
 }
 
 void http_server_engine_state::bind_function(config_ptr cfg, std::string path, typename http_server::function_type fn)
