@@ -1,0 +1,84 @@
+/* httpd config */
+
+server_connections  1024;
+listen_backlog      128;
+max_headers         64;
+header_buffer_size  8192;
+io_buffer_size      32768;
+ipc_buffer_size     1048576;
+log_buffers         1024;
+keepalive_timeout   5;
+connection_timeout  60;
+
+error_log           /var/log/netd/error.log;
+access_log          /var/log/netd/access.log;
+pid_file            /var/run/netd.pid;
+
+root                html;
+index               index.html index.htm;
+
+proto_threads       http_server/listener                                                                1;
+proto_threads       http_server/router,http_server/worker,http_server/keepalive,http_server/linger      4;
+
+proto_threads       http_client/connect                                                                 1;
+proto_threads       http_client/processor,http_client/keepalive                                         4;
+
+http_server {
+    listen          127.0.0.1:80;
+
+    server_name     default;
+
+    location / {
+        root        /var/www;
+        index       index.html index.htm;
+    };
+
+    location /stats/ {
+        handler     stats;
+    };
+};
+
+http_server {
+    listen          443 tls;
+
+    server_name     server1;
+
+    tls_cert_file   /etc/ssl/certs/server1_cert.pem;
+    tls_key_file    /etc/ssl/private/server1_key.pem;
+
+    error_log       /var/log/netd/server1.errors;
+    access_log      /var/log/netd/server1.access;
+
+    location / {
+        root        /var/www/server1;
+        index       index.html index.htm;
+    };
+
+};
+
+http_server {
+    listen          443 tls;
+
+    server_name     server2;
+
+    tls_cert_file   /etc/ssl/certs/server2_cert.pem;
+    tls_key_file    /etc/ssl/private/server2_key.pem;
+
+    error_log       /var/log/netd/server2.errors;
+	access_log      /var/log/netd/server2.access;
+
+    location / {
+        root        /var/www/server2;
+        index       index.html index.htm;
+    };
+};
+
+mime_type           text/css                        css;
+mime_type           text/html                       htm html;
+mime_type           text/plain                      txt;
+mime_type           image/gif                       gif;
+mime_type           image/jpeg                      jpg jpeg;
+mime_type           application/java-script         js;
+mime_type           image/png                       png;
+mime_type           application/octet-stream        default;
+mime_type           application/x-x509-ca-cert      crt;
