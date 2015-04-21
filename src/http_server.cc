@@ -1330,7 +1330,7 @@ http_server_handler_ptr http_server::translate_path(protocol_thread_delegate *de
     handler->vhost = vhost;
     handler->location = location;
     handler->path_translated = path_translated;
-    if (true || delegate->get_debug_mask() & protocol_debug_handler) {
+    if (delegate->get_debug_mask() & protocol_debug_handler) {
         log_debug("vhost=%s host_header=%s host_port=%d root=%s path_translated=%s",
                   vhost->server_names[0].c_str(), host_header, host_port, root.c_str(), handler->path_translated.c_str());
     }
