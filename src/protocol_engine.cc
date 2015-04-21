@@ -26,6 +26,7 @@
 #include <mutex>
 #include <condition_variable>
 
+#include "os.h"
 #include "io.h"
 #include "url.h"
 #include "log.h"
@@ -153,6 +154,16 @@ void protocol_engine::run()
         proto->engine_init(this);
     }
     
+    // set os_group
+    if (cfg->os_group.length() > 0) {
+        os::set_group(cfg->os_group);
+    }
+
+    // set os_user
+    if (cfg->os_user.length() > 0) {
+        os::set_user(cfg->os_user);
+    }
+
     // create threads for all protocols handled by this engine
     for (int thread_mask : get_thread_masks()) {
         add_thread(new protocol_thread(this, thread_mask));

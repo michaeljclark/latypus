@@ -78,3 +78,47 @@ void os::daemonize(std::string pid_file, std::string log_file)
     latypus_log_file = fdopen(stderr_fd, "w");
     close(log_fd);
 }
+
+void os::set_group(std::string os_group)
+{
+    ssize_t group_buflen = sysconf(_SC_GETGR_R_SIZE_MAX);
+    if (group_buflen < 0) {
+        log_fatal_exit("sysconf(_SC_GETGR_R_SIZE_MAX) failed: %s", strerror(errno));
+    }
+    char *group_buf = new char[group_buflen];
+    if (!group_buf) {
+        log_fatal_exit("getgrnam allocation failed");
+    }
+    struct group group_ent;
+    struct group *group_result;
+    getgrnam_r(os_group.c_str(), &group_ent, group_buf, group_buflen, &group_result);
+    if (!group_result) {
+        log_fatal_exit("getgrnam failed: %s", strerror(errno));
+    }
+    if (setgid(group_result->gr_gid) < 0) {
+        log_fatal_exit("setgid failed: %s", strerror(errno));
+    }
+    delete [] group_buf;
+}
+
+void os::set_user(std::string os_user)
+{
+    ssize_t passwd_buflen = sysconf(_SC_GETPW_R_SIZE_MAX);
+    if (passwd_buflen < 0) {
+        log_fatal_exit("sysconf(_SC_GETPW_R_SIZE_MAX) failed: %s", strerror(errno));
+    }
+    char *passwd_buf = new char[passwd_buflen];
+    if (!passwd_buf) {
+        log_fatal_exit("getpwnam allocation failed");
+    }
+    struct passwd passwd_ent;
+    struct passwd *passwd_result;
+    getpwnam_r(os_user.c_str(), &passwd_ent, passwd_buf, passwd_buflen, &passwd_result);
+    if (!passwd_result) {
+        log_fatal_exit("getpwnam failed: %s", strerror(errno));
+    }
+    if (setuid(passwd_result->pw_uid) < 0) {
+        log_fatal_exit("setuid failed: %s", strerror(errno));
+    }
+    delete [] passwd_buf;
+}

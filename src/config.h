@@ -98,6 +98,8 @@ struct config : config_parser
     int tls_session_timeout;
     int tls_session_count;
 
+    std::string os_user;
+    std::string os_group;
     std::string error_log;
     std::string access_log;
     std::string pid_file;

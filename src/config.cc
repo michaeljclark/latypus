@@ -46,6 +46,9 @@ config::config() :
     tls_session_timeout(TLS_SESSION_TIMEOUT_DEFAULT),
     tls_session_count(TLS_SESSION_COUNT_DEFAULT)
 {    
+    config_fn_map["os_user"] =             {2,  2,  [&] (config *cfg, config_line &line) { os_user = line[1]; }};
+    config_fn_map["os_group"] =            {2,  2,  [&] (config *cfg, config_line &line) { os_group = line[1]; }};
+    config_fn_map["pid_file"] =            {2,  2,  [&] (config *cfg, config_line &line) { pid_file = line[1]; }};
     config_fn_map["pid_file"] =            {2,  2,  [&] (config *cfg, config_line &line) { pid_file = line[1]; }};
     config_fn_map["tls_ca_file"] =         {2,  2,  [&] (config *cfg, config_line &line) { tls_ca_file = line[1]; }};
     config_fn_map["tls_key_file"] =        {2,  2,  [&] (config *cfg, config_line &line) { tls_key_file = line[1]; }};
