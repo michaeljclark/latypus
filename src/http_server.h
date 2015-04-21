@@ -293,6 +293,7 @@ struct http_server : protocol
     /* http_server internal */
 
     static bool process_request_headers(protocol_thread_delegate *, protocol_object *);
+    static http_server_vhost* lookup_vhost(config *cfg, const char *host_name);
     static http_server_handler_ptr translate_path(protocol_thread_delegate *, http_server_connection *);
     static ssize_t populate_response_headers(protocol_thread_delegate *, protocol_object *);
     static void finished_request(protocol_thread_delegate *, protocol_object *);

@@ -555,14 +555,33 @@ void http_server::engine_init(protocol_engine_delegate *delegate) const
         }
     }
 
-    // initialize TLS context
+    // initialize global TLS context
     if (have_tls) {
         engine_state->ssl_ctx = http_tls_shared::init_server(get_proto(), cfg,
                                                              cfg->tls_cipher_list,
                                                              cfg->tls_key_file,
                                                              cfg->tls_cert_file);
+        // initialize per virtual host TLS contexts
+        for (auto &vhost : server_cfg->vhost_list) {
+            bool vhost_has_tls_listen = false;
+            for (auto &listen : vhost->listens) {
+                if (listen.second == socket_mode_tls) {
+                    vhost_has_tls_listen = true;
+                    break;
+                }
+            }
+            if (vhost_has_tls_listen &&
+                vhost->tls_key_file.length() > 0 && vhost->tls_key_file != cfg->tls_key_file &&
+                vhost->tls_cert_file.length() > 0 && vhost->tls_cert_file != cfg->tls_cert_file)
+            {
+                vhost->ssl_ctx = http_tls_shared::init_server(get_proto(), cfg,
+                                                              vhost->tls_cipher_list,
+                                                              vhost->tls_key_file,
+                                                              vhost->tls_cert_file);
+            }
+        }
     }
-
+    
     // create listening sockets for this protocol
     for (size_t i = 0; i < cfg->proto_listeners.size(); i++) {
         auto &proto_listener = cfg->proto_listeners[i];
@@ -1251,6 +1270,22 @@ bool http_server::process_request_headers(protocol_thread_delegate *delegate, pr
     }
     return true;
 }
+    
+http_server_vhost* http_server::lookup_vhost(config *cfg, const char *server_name)
+{
+    http_server_vhost *vhost = nullptr;
+    auto server_cfg = cfg->get_config<http_server>();
+    auto vi = server_cfg->vhost_map.find(server_name);
+    if (vi == server_cfg->vhost_map.end()) {
+        vi = server_cfg->vhost_map.find("default");
+    }
+    if (vi != server_cfg->vhost_map.end()) {
+        vhost = vi->second;
+    } else {
+        log_fatal_exit("%s: default virtual host not found", get_proto());
+    }
+    return vhost;
+}
 
 http_server_handler_ptr http_server::translate_path(protocol_thread_delegate *delegate, http_server_connection *http_conn)
 {
@@ -1260,43 +1295,44 @@ http_server_handler_ptr http_server::translate_path(protocol_thread_delegate *de
     // TODO - windows LFN http://support.microsoft.com/kb/142982 GetShortPathName
     // TODO - windows forks using : or ::$DATA (alternate name for main fork)
     // TODO - case insensitive filesystems
+    // TODO - check vhost has listen for host_port
     
     http_server_handler_ptr handler;
     auto cfg = delegate->get_config();
-    auto server_cfg = cfg->get_config<http_server>();
     const char* request_path = http_conn->request.get_request_path();
+    
+    std::string server_name;
     const char* host_header = http_conn->request.get_header_string(kHTTPHeaderHost);
-    int host_port = socket_addr::port(http_conn->conn.get_local_addr());
-    
-    if (!host_header) host_header = "default";
-    auto vi = server_cfg->vhost_map.find(host_header);
-    if (vi == server_cfg->vhost_map.end()) {
-        vi = server_cfg->vhost_map.find("default");
-    }
-    
-    if (vi != server_cfg->vhost_map.end()) {
-        auto vhost = vi->second;
-        auto lp = vhost->location_trie.find_nearest(request_path);
-        auto prefix = lp.first;
-        auto location = lp.second;
-        auto root = location->root;
-        std::string partial_path = request_path + prefix.length();
-        std::string path_translated;
-        if (root.length() > 0 && root[root.length() - 1] != '/' && partial_path[0] != '/') {
-            path_translated = root + "/" + partial_path;
-        } else {
-            path_translated = root + partial_path;
-        }
-        handler = location->handler_factory->new_handler();
-        handler->vhost = vhost;
-        handler->location = location;
-        handler->path_translated = path_translated;
-        if (delegate->get_debug_mask() & protocol_debug_handler) {
-            log_debug("vhost=%s host_header=%s host_port=%d root=%s path_translated=%s",
-                      vhost->server_names[0].c_str(), host_header, host_port, root.c_str(), handler->path_translated.c_str());
-        }
+    if (!host_header) {
+        server_name = "default";
     } else {
-        log_fatal_exit("%s: default virtual host not found", get_proto());
+        const char* colon = strchr(host_header, ':');
+        if (colon) {
+            server_name = std::string(host_header, colon - host_header);
+        } else {
+            server_name = host_header;
+        }
+    }
+    int host_port = socket_addr::port(http_conn->conn.get_local_addr());
+    auto vhost = lookup_vhost(cfg.get(), server_name.c_str());
+    auto lp = vhost->location_trie.find_nearest(request_path);
+    auto prefix = lp.first;
+    auto location = lp.second;
+    auto root = location->root;
+    std::string partial_path = request_path + prefix.length();
+    std::string path_translated;
+    if (root.length() > 0 && root[root.length() - 1] != '/' && partial_path[0] != '/') {
+        path_translated = root + "/" + partial_path;
+    } else {
+        path_translated = root + partial_path;
+    }
+    handler = location->handler_factory->new_handler();
+    handler->vhost = vhost;
+    handler->location = location;
+    handler->path_translated = path_translated;
+    if (true || delegate->get_debug_mask() & protocol_debug_handler) {
+        log_debug("vhost=%s host_header=%s host_port=%d root=%s path_translated=%s",
+                  vhost->server_names[0].c_str(), host_header, host_port, root.c_str(), handler->path_translated.c_str());
     }
     
     return handler;
