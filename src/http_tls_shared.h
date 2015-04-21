@@ -62,8 +62,13 @@ struct http_tls_shared
 
     static void init_dh(SSL_CTX *ctx);
     static void init_ecdh(SSL_CTX *ctx, int curve);
-    static SSL_CTX* init_client(protocol *proto, config_ptr cfg);
-    static SSL_CTX* init_server(protocol *proto, config_ptr cfg);
+    static SSL_CTX* init_client(protocol *proto, config_ptr cfg,
+                                std::string tls_cipher_list,
+                                std::string tls_ca_file);
+    static SSL_CTX* init_server(protocol *proto, config_ptr cfg,
+                                std::string tls_cipher_list,
+                                std::string tls_key_file,
+                                std::string tls_cert_file);
     
     static std::string log_cipher(SSL *ssl);
 };

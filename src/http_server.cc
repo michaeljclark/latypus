@@ -557,7 +557,10 @@ void http_server::engine_init(protocol_engine_delegate *delegate) const
 
     // initialize TLS context
     if (have_tls) {
-        engine_state->ssl_ctx = http_tls_shared::init_server(get_proto(), cfg);
+        engine_state->ssl_ctx = http_tls_shared::init_server(get_proto(), cfg,
+                                                             cfg->tls_cipher_list,
+                                                             cfg->tls_key_file,
+                                                             cfg->tls_cert_file);
     }
 
     // create listening sockets for this protocol

@@ -230,7 +230,9 @@ void http_client::engine_init(protocol_engine_delegate *delegate) const
     get_engine_state(delegate)->init(delegate, cfg->client_connections);
 
     // initialize TLS
-    engine_state->ssl_ctx = http_tls_shared::init_client(get_proto(), cfg);
+    engine_state->ssl_ctx = http_tls_shared::init_client(get_proto(), cfg,
+                                                         cfg->tls_cipher_list,
+                                                         cfg->tls_ca_file);
 }
 
 void http_client::engine_shutdown(protocol_engine_delegate *delegate) const

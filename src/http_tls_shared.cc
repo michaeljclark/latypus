@@ -247,7 +247,9 @@ void http_tls_shared::init_ecdh(SSL_CTX *ctx, int curve)
     EC_KEY_free(ecdh);
 }
 
-SSL_CTX* http_tls_shared::init_client(protocol *proto, config_ptr cfg)
+SSL_CTX* http_tls_shared::init_client(protocol *proto, config_ptr cfg,
+                                      std::string tls_cipher_list,
+                                      std::string tls_ca_file)
 {
     SSL_library_init();
     SSL_load_error_strings();
@@ -266,19 +268,19 @@ SSL_CTX* http_tls_shared::init_client(protocol *proto, config_ptr cfg)
     init_dh(ctx);
     init_ecdh(ctx, NID_secp256k1);
     
-    if (cfg->tls_cipher_list.length() > 0) {
-        SSL_CTX_set_cipher_list(ctx, cfg->tls_cipher_list.c_str());
+    if (tls_cipher_list.length() > 0) {
+        SSL_CTX_set_cipher_list(ctx, tls_cipher_list.c_str());
     }
     
-    if (cfg->tls_ca_file.length() > 0) {
-        if ((!SSL_CTX_load_verify_locations(ctx, cfg->tls_ca_file.c_str(), NULL)) ||
+    if (tls_ca_file.length() > 0) {
+        if ((!SSL_CTX_load_verify_locations(ctx, tls_ca_file.c_str(), NULL)) ||
             (!SSL_CTX_set_default_verify_paths(ctx))) {
             ERR_print_errors_cb(http_tls_shared::tls_log_errors, NULL);
             log_fatal_exit("%s failed to load cacert: %s",
-                           proto->name.c_str(), cfg->tls_ca_file.c_str());
+                           proto->name.c_str(), tls_ca_file.c_str());
         } else {
             log_debug("%s loaded cacert: %s",
-                      proto->name.c_str(), cfg->tls_ca_file.c_str());
+                      proto->name.c_str(), tls_ca_file.c_str());
         }
         SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL);
         SSL_CTX_set_verify_depth(ctx, 9);
@@ -287,7 +289,10 @@ SSL_CTX* http_tls_shared::init_client(protocol *proto, config_ptr cfg)
     return ctx;
 }
 
-SSL_CTX* http_tls_shared::init_server(protocol *proto, config_ptr cfg)
+SSL_CTX* http_tls_shared::init_server(protocol *proto, config_ptr cfg,
+                                      std::string tls_cipher_list,
+                                      std::string tls_key_file,
+                                      std::string tls_cert_file)
 {
     SSL_library_init();
     SSL_load_error_strings();
@@ -306,8 +311,8 @@ SSL_CTX* http_tls_shared::init_server(protocol *proto, config_ptr cfg)
     init_dh(ctx);
     init_ecdh(ctx, NID_secp256k1);
     
-    if (cfg->tls_cipher_list.length() > 0) {
-        SSL_CTX_set_cipher_list(ctx, cfg->tls_cipher_list.c_str());
+    if (tls_cipher_list.length() > 0) {
+        SSL_CTX_set_cipher_list(ctx, tls_cipher_list.c_str());
     }
 
     SSL_CTX_set_options(ctx, SSL_OP_NO_TICKET);
@@ -324,30 +329,30 @@ SSL_CTX* http_tls_shared::init_server(protocol *proto, config_ptr cfg)
     // and then call SSL_set_SSL_CTX to change to another SSL_CTX
     // Call the following in startup code to set up the callback function
     SSL_CTX_set_tlsext_servername_callback(ctx, http_tls_shared::tls_servername_cb);
-    SSL_CTX_set_tlsext_servername_arg(ctx, nullptr /* vhost */);
+    SSL_CTX_set_tlsext_servername_arg(ctx, cfg.get());
 #endif
 
-    if (cfg->tls_cert_file.length() > 0) {
-        if (SSL_CTX_use_certificate_chain_file(ctx, cfg->tls_cert_file.c_str()) <= 0)
+    if (tls_cert_file.length() > 0) {
+        if (SSL_CTX_use_certificate_chain_file(ctx, tls_cert_file.c_str()) <= 0)
         {
             ERR_print_errors_cb(http_tls_shared::tls_log_errors, NULL);
             log_fatal_exit("%s failed to load certificate: %s",
-                           proto->name.c_str(), cfg->tls_cert_file.c_str());
+                           proto->name.c_str(), tls_cert_file.c_str());
         } else {
             log_info("%s loaded cert: %s",
-                     proto->name.c_str(), cfg->tls_cert_file.c_str());
+                     proto->name.c_str(), tls_cert_file.c_str());
         }
     }
     
-    if (cfg->tls_key_file.length() > 0) {
-        if (SSL_CTX_use_PrivateKey_file(ctx, cfg->tls_key_file.c_str(), SSL_FILETYPE_PEM) <= 0)
+    if (tls_key_file.length() > 0) {
+        if (SSL_CTX_use_PrivateKey_file(ctx, tls_key_file.c_str(), SSL_FILETYPE_PEM) <= 0)
         {
             ERR_print_errors_cb(http_tls_shared::tls_log_errors, NULL);
             log_fatal_exit("%s failed to load private key: %s",
-                           proto->name.c_str(), cfg->tls_key_file.c_str());
+                           proto->name.c_str(), tls_key_file.c_str());
         } else {
             log_info("%s loaded key: %s",
-                     proto->name.c_str(), cfg->tls_key_file.c_str());
+                     proto->name.c_str(), tls_key_file.c_str());
         }
     }
     
