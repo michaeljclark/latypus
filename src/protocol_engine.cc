@@ -220,7 +220,7 @@ protocol_engine_state* protocol_engine::get_engine_state(protocol *proto)
     for (auto &state : state_list) {
         if (state->get_proto() == proto) return state.get();
     }
-    auto state = proto->create_engine_state();
+    auto state = proto->create_engine_state(cfg);
     if (state) {
         state_list.push_back(protocol_engine_state_ptr(state));
     }

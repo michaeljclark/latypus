@@ -149,6 +149,9 @@ struct http_server_vhost
     std::vector<std::string>                    server_names;
     std::string                                 access_log;
     std::string                                 error_log;
+    std::string                                 tls_key_file;
+    std::string                                 tls_cert_file;
+    std::string                                 tls_cipher_list;
     http_server_location_list                   location_list;
     
     http_server_location_trie                   location_trie;
@@ -255,8 +258,8 @@ struct http_server : protocol
     void make_default_vhost(config_ptr cfg) const;
     protocol_config_ptr make_protocol_config() const;
 
-    protocol_engine_state* create_engine_state() const;
-    protocol_thread_state* create_thread_state() const;
+    protocol_engine_state* create_engine_state(config_ptr cfg) const;
+    protocol_thread_state* create_thread_state(config_ptr cfg) const;
     
     void engine_init(protocol_engine_delegate *) const;
     void engine_shutdown(protocol_engine_delegate *) const;
@@ -329,11 +332,12 @@ struct http_server_engine_stats
 
 struct http_server_engine_state : protocol_engine_state, protocol_connection_state<http_server_connection>
 {
+    config_ptr                                  cfg;
     http_server_engine_stats                    stats;
     connected_socket_list                       listens;
-    SSL_CTX*                                    ssl_ctx;
+    SSL_CTX*                                    root_ssl_ctx;
     
-    http_server_engine_state() : ssl_ctx(nullptr) {}
+    http_server_engine_state(config_ptr cfg) : cfg(cfg), root_ssl_ctx(nullptr) {}
     
     protocol* get_proto() const { return http_server::get_proto(); }
     
@@ -344,6 +348,10 @@ struct http_server_engine_state : protocol_engine_state, protocol_connection_sta
 
 struct http_server_thread_state : protocol_thread_state
 {
+    config_ptr                                  cfg;
+    
+    http_server_thread_state(config_ptr cfg) : cfg(cfg) {}
+
     protocol* get_proto() const { return http_server::get_proto(); }
 };
 

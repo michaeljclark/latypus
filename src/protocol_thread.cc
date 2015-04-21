@@ -144,7 +144,7 @@ protocol_thread_state* protocol_thread::get_thread_state(protocol *proto)
     for (auto &state : state_list) {
         if (state->get_proto() == proto) return state.get();
     }
-    auto state = proto->create_thread_state();
+    auto state = proto->create_thread_state(engine->cfg);
     if (state) {
         state_list.push_back(protocol_thread_state_ptr(state));
     }

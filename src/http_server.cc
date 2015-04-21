@@ -209,6 +209,33 @@ http_server_config::http_server_config()
             log_fatal_exit("configuration error: access_log must be defined at the toplevel or in a http_server block", line[0].c_str());
         }
     }};
+    config_fn_map["tls_key_file"] =        {2,  2,  [&] (config *cfg, config_line &line) {
+        if (cfg->block.size() == 0) {
+            cfg->tls_key_file = line[1];
+        } else if (cfg->block.size() > 0 && cfg->block.back()[0] == "http_server") {
+            current_vhost->tls_key_file = line[1];
+        } else {
+            log_fatal_exit("configuration error: tls_key_file must be defined at the toplevel or in a http_server block", line[0].c_str());
+        }
+    }};
+    config_fn_map["tls_cert_file"] =       {2,  2,  [&] (config *cfg, config_line &line) {
+        if (cfg->block.size() == 0) {
+            cfg->tls_cert_file = line[1];
+        } else if (cfg->block.size() > 0 && cfg->block.back()[0] == "http_server") {
+            current_vhost->tls_cert_file = line[1];
+        } else {
+            log_fatal_exit("configuration error: tls_cert_file must be defined at the toplevel or in a http_server block", line[0].c_str());
+        }
+    }};
+    config_fn_map["tls_cipher_list"] =       {2,  2,  [&] (config *cfg, config_line &line) {
+        if (cfg->block.size() == 0) {
+            cfg->tls_cipher_list = line[1];
+        } else if (cfg->block.size() > 0 && cfg->block.back()[0] == "http_server") {
+            current_vhost->tls_cipher_list = line[1];
+        } else {
+            log_fatal_exit("configuration error: tls_cipher_list must be defined at the toplevel or in a http_server block", line[0].c_str());
+        }
+    }};
     config_fn_map["listen"] =               {2,  3,  [&] (config *cfg, config_line &line) {
         if (cfg->block.size() > 0 && cfg->block.back()[0] == "http_server") {
             socket_addr addr;
@@ -400,14 +427,14 @@ http_server_engine_state* http_server::get_engine_state(protocol_engine_delegate
     return static_cast<http_server_engine_state*>(delegate->get_engine_state(get_proto()));
 }
 
-protocol_engine_state* http_server::create_engine_state() const
+protocol_engine_state* http_server::create_engine_state(config_ptr cfg) const
 {
-    return new http_server_engine_state();
+    return new http_server_engine_state(cfg);
 }
 
-protocol_thread_state* http_server::create_thread_state() const
+protocol_thread_state* http_server::create_thread_state(config_ptr cfg) const
 {
-    return new http_server_thread_state();
+    return new http_server_thread_state(cfg);
 }
 
 void http_server::engine_init(protocol_engine_delegate *delegate) const
@@ -471,13 +498,23 @@ void http_server::engine_init(protocol_engine_delegate *delegate) const
                 proto_listeners.push_back(proto_listen);
             }
         }
-        // open log files
+        // set defaults from root context
+        if (vhost->tls_key_file.length() == 0) {
+            vhost->tls_key_file = cfg->tls_key_file;
+        }
+        if (vhost->tls_cert_file.length() == 0) {
+            vhost->tls_cert_file = cfg->tls_cert_file;
+        }
+        if (vhost->tls_cipher_list.length() == 0) {
+            vhost->tls_cipher_list = cfg->tls_cipher_list;
+        }
         if (vhost->access_log.length() == 0) {
             vhost->access_log = cfg->access_log;
         }
         if (vhost->error_log.length() == 0) {
             vhost->error_log = cfg->access_log;
         }
+        // open log files
         if (vhost->access_log.size() > 0 && vhost->access_log != "off") {
             int log_fd = open(vhost->access_log.c_str(), O_WRONLY|O_CREAT|O_APPEND, 0755);
             if (log_fd < 0) {
@@ -504,11 +541,23 @@ void http_server::engine_init(protocol_engine_delegate *delegate) const
 
     // initialize connection table
     engine_state->init(delegate, cfg->server_connections);
-    
-    // initialize TLS
-    if (cfg->tls_cert_file.length() > 0 && cfg->tls_key_file.length() > 0)
-    {
-        engine_state->ssl_ctx = http_tls_shared::init_server(get_proto(), cfg);
+
+    // check for TLS listening sockets
+    bool have_tls = false;
+    for (size_t i = 0; i < cfg->proto_listeners.size(); i++) {
+        auto &proto_listener = cfg->proto_listeners[i];
+        protocol *proto = std::get<0>(proto_listener);
+        if (proto != get_proto()) continue;
+        socket_mode mode = std::get<2>(proto_listener);
+        if (mode == socket_mode_tls) {
+            have_tls = true;
+            break;
+        }
+    }
+
+    // initialize TLS context
+    if (have_tls) {
+        engine_state->root_ssl_ctx = http_tls_shared::init_server(get_proto(), cfg);
     }
 
     // create listening sockets for this protocol
@@ -548,6 +597,9 @@ void http_server::engine_shutdown(protocol_engine_delegate *delegate) const
     for (auto vhost : server_cfg->vhost_list) {
         if (vhost->access_log_thread) {
             vhost->access_log_thread->shutdown();
+        }
+        if (vhost->error_log_thread) {
+            vhost->error_log_thread->shutdown();
         }
     }
 }
@@ -626,7 +678,7 @@ void http_server::handle_accept(protocol_thread_delegate *delegate, const protoc
                 conn.accept(fd);
                 break;
             case socket_mode_tls:
-                conn.accept_tls(fd, engine_state->ssl_ctx);
+                conn.accept_tls(fd, engine_state->root_ssl_ctx);
                 break;
         }
         if (delegate->get_debug_mask() & protocol_debug_socket) {

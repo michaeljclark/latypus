@@ -164,8 +164,8 @@ struct http_client : protocol
     void make_default_config(config_ptr cfg) const;
     protocol_config_ptr make_protocol_config() const;
 
-    protocol_engine_state* create_engine_state() const;
-    protocol_thread_state* create_thread_state() const;
+    protocol_engine_state* create_engine_state(config_ptr cfg) const;
+    protocol_thread_state* create_thread_state(config_ptr cfg) const;
     
     void engine_init(protocol_engine_delegate *) const;
     void engine_shutdown(protocol_engine_delegate *) const;
@@ -220,9 +220,10 @@ struct http_client : protocol
 
 struct http_client_engine_state : protocol_engine_state, protocol_connection_state<http_client_connection>
 {
-    SSL_CTX*    ssl_ctx;
+    config_ptr                                  cfg;
+    SSL_CTX*                                    ssl_ctx;
     
-    http_client_engine_state() : ssl_ctx(nullptr) {}
+    http_client_engine_state(config_ptr cfg) : cfg(cfg), ssl_ctx(nullptr) {}
 
     protocol* get_proto() const { return http_client::get_proto(); }
 
@@ -236,7 +237,11 @@ struct http_client_engine_state : protocol_engine_state, protocol_connection_sta
 /* http_client_thread_state */
 
 struct http_client_thread_state : protocol_thread_state
-{    
+{
+    config_ptr                                  cfg;
+    
+    http_client_thread_state(config_ptr cfg) : cfg(cfg) {}
+    
     protocol* get_proto() const { return http_client::get_proto(); }
 };
 

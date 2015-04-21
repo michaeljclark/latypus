@@ -210,14 +210,14 @@ http_client_engine_state* http_client::get_engine_state(protocol_engine_delegate
     return static_cast<http_client_engine_state*>(delegate->get_engine_state(get_proto()));
 }
 
-protocol_engine_state* http_client::create_engine_state() const
+protocol_engine_state* http_client::create_engine_state(config_ptr cfg) const
 {
-    return new http_client_engine_state();
+    return new http_client_engine_state(cfg);
 }
 
-protocol_thread_state* http_client::create_thread_state() const
+protocol_thread_state* http_client::create_thread_state(config_ptr cfg) const
 {
-    return new http_client_thread_state();
+    return new http_client_thread_state(cfg);
 }
 
 void http_client::engine_init(protocol_engine_delegate *delegate) const
