@@ -1,0 +1,32 @@
+pid_file            /tmp/netd.pid;
+
+proto_threads       http_server/listener                                                                1;
+proto_threads       http_server/router,http_server/worker,http_server/keepalive,http_server/linger      4;
+
+http_server {
+    listen          8080;
+
+    server_name     default;
+
+    error_log       /tmp/netd.errors;
+    access_log      /tmp/netd.access;
+
+    location / {
+        root        html;
+        index       index.html index.htm;
+    };
+
+    location /stats/ {
+        handler     stats;
+    };
+};
+
+mime_type           text/css                        css;
+mime_type           text/html                       htm html;
+mime_type           text/plain                      txt;
+mime_type           image/gif                       gif;
+mime_type           image/jpeg                      jpg jpeg;
+mime_type           application/java-script         js;
+mime_type           image/png                       png;
+mime_type           application/octet-stream        default;
+mime_type           application/x-x509-ca-cert      crt;
