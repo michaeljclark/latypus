@@ -270,17 +270,19 @@ SSL_CTX* http_tls_shared::init_client(protocol *proto, config_ptr cfg)
         SSL_CTX_set_cipher_list(ctx, cfg->tls_cipher_list.c_str());
     }
     
-    if ((!SSL_CTX_load_verify_locations(ctx, cfg->tls_ca_file.c_str(), NULL)) ||
-        (!SSL_CTX_set_default_verify_paths(ctx))) {
-        ERR_print_errors_cb(http_tls_shared::tls_log_errors, NULL);
-        log_fatal_exit("%s failed to load cacert: %s",
-                       proto->name.c_str(), cfg->tls_ca_file.c_str());
-    } else {
-        log_debug("%s loaded cacert: %s",
-                  proto->name.c_str(), cfg->tls_ca_file.c_str());
+    if (cfg->tls_ca_file.length() > 0) {
+        if ((!SSL_CTX_load_verify_locations(ctx, cfg->tls_ca_file.c_str(), NULL)) ||
+            (!SSL_CTX_set_default_verify_paths(ctx))) {
+            ERR_print_errors_cb(http_tls_shared::tls_log_errors, NULL);
+            log_fatal_exit("%s failed to load cacert: %s",
+                           proto->name.c_str(), cfg->tls_ca_file.c_str());
+        } else {
+            log_debug("%s loaded cacert: %s",
+                      proto->name.c_str(), cfg->tls_ca_file.c_str());
+        }
+        SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL);
+        SSL_CTX_set_verify_depth(ctx, 9);
     }
-    SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL);
-    SSL_CTX_set_verify_depth(ctx, 9);
     
     return ctx;
 }
@@ -325,26 +327,28 @@ SSL_CTX* http_tls_shared::init_server(protocol *proto, config_ptr cfg)
     SSL_CTX_set_tlsext_servername_arg(ctx, nullptr /* vhost */);
 #endif
 
-    if (SSL_CTX_use_certificate_chain_file(ctx,
-                                     cfg->tls_cert_file.c_str()) <= 0)
-    {
-        ERR_print_errors_cb(http_tls_shared::tls_log_errors, NULL);
-        log_fatal_exit("%s failed to load certificate: %s",
-                       proto->name.c_str(), cfg->tls_cert_file.c_str());
-    } else {
-        log_info("%s loaded cert: %s",
-                 proto->name.c_str(), cfg->tls_cert_file.c_str());
+    if (cfg->tls_cert_file.length() > 0) {
+        if (SSL_CTX_use_certificate_chain_file(ctx, cfg->tls_cert_file.c_str()) <= 0)
+        {
+            ERR_print_errors_cb(http_tls_shared::tls_log_errors, NULL);
+            log_fatal_exit("%s failed to load certificate: %s",
+                           proto->name.c_str(), cfg->tls_cert_file.c_str());
+        } else {
+            log_info("%s loaded cert: %s",
+                     proto->name.c_str(), cfg->tls_cert_file.c_str());
+        }
     }
     
-    if (SSL_CTX_use_PrivateKey_file(ctx,
-                                    cfg->tls_key_file.c_str(), SSL_FILETYPE_PEM) <= 0)
-    {
-        ERR_print_errors_cb(http_tls_shared::tls_log_errors, NULL);
-        log_fatal_exit("%s failed to load private key: %s",
-                       proto->name.c_str(), cfg->tls_key_file.c_str());
-    } else {
-        log_info("%s loaded key: %s",
-                 proto->name.c_str(), cfg->tls_key_file.c_str());
+    if (cfg->tls_key_file.length() > 0) {
+        if (SSL_CTX_use_PrivateKey_file(ctx, cfg->tls_key_file.c_str(), SSL_FILETYPE_PEM) <= 0)
+        {
+            ERR_print_errors_cb(http_tls_shared::tls_log_errors, NULL);
+            log_fatal_exit("%s failed to load private key: %s",
+                           proto->name.c_str(), cfg->tls_key_file.c_str());
+        } else {
+            log_info("%s loaded key: %s",
+                     proto->name.c_str(), cfg->tls_key_file.c_str());
+        }
     }
     
     return ctx;
