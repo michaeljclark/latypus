@@ -172,8 +172,6 @@ struct http_server_config : protocol_config
     
     http_server_vhost_list                      vhost_list;
     http_server_vhost_map                       vhost_map;
-
-    std::vector<std::pair<std::string,std::string>> routes;
     
     http_server_config();
     
