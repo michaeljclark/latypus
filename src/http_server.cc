@@ -557,7 +557,7 @@ void http_server::engine_init(protocol_engine_delegate *delegate) const
 
     // initialize TLS context
     if (have_tls) {
-        engine_state->root_ssl_ctx = http_tls_shared::init_server(get_proto(), cfg);
+        engine_state->ssl_ctx = http_tls_shared::init_server(get_proto(), cfg);
     }
 
     // create listening sockets for this protocol
@@ -678,7 +678,7 @@ void http_server::handle_accept(protocol_thread_delegate *delegate, const protoc
                 conn.accept(fd);
                 break;
             case socket_mode_tls:
-                conn.accept_tls(fd, engine_state->root_ssl_ctx);
+                conn.accept_tls(fd, engine_state->ssl_ctx);
                 break;
         }
         if (delegate->get_debug_mask() & protocol_debug_socket) {

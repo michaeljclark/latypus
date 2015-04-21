@@ -335,9 +335,9 @@ struct http_server_engine_state : protocol_engine_state, protocol_connection_sta
     config_ptr                                  cfg;
     http_server_engine_stats                    stats;
     connected_socket_list                       listens;
-    SSL_CTX*                                    root_ssl_ctx;
+    SSL_CTX*                                    ssl_ctx;
     
-    http_server_engine_state(config_ptr cfg) : cfg(cfg), root_ssl_ctx(nullptr) {}
+    http_server_engine_state(config_ptr cfg) : cfg(cfg), ssl_ctx(nullptr) {}
     
     protocol* get_proto() const { return http_server::get_proto(); }
     
