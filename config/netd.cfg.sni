@@ -65,7 +65,7 @@ http_server {
     tls_key_file    /etc/ssl/private/server2_key.pem;
 
     error_log       /var/log/netd/server2.errors;
-	access_log      /var/log/netd/server2.access;
+    access_log      /var/log/netd/server2.access;
 
     location / {
         root        /var/www/server2;
