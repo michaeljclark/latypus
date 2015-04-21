@@ -172,7 +172,10 @@ struct http_server_config : protocol_config
     
     http_server_vhost_list                      vhost_list;
     http_server_vhost_map                       vhost_map;
-    
+
+    connected_socket_list                       listens;
+    SSL_CTX*                                    ssl_ctx;
+
     http_server_config();
     
     std::string to_string();
@@ -334,10 +337,8 @@ struct http_server_engine_state : protocol_engine_state, protocol_connection_sta
 {
     config_ptr                                  cfg;
     http_server_engine_stats                    stats;
-    connected_socket_list                       listens;
-    SSL_CTX*                                    ssl_ctx;
     
-    http_server_engine_state(config_ptr cfg) : cfg(cfg), ssl_ctx(nullptr) {}
+    http_server_engine_state(config_ptr cfg) : cfg(cfg) {}
     
     protocol* get_proto() const { return http_server::get_proto(); }
     

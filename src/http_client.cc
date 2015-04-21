@@ -129,7 +129,7 @@ bool http_client_connection_tmpl<connection>::init(protocol_engine_delegate *del
     handler = http_client_handler_ptr();
     requests_processed = 0;
     if (buffer.size() == 0) {
-        auto cfg = delegate->get_config();
+        const auto &cfg = delegate->get_config();
         buffer.resize(cfg->io_buffer_size);
         request.resize(cfg->header_buffer_size);
         response.resize(cfg->header_buffer_size);
@@ -223,7 +223,7 @@ protocol_thread_state* http_client::create_thread_state(config_ptr cfg) const
 void http_client::engine_init(protocol_engine_delegate *delegate) const
 {
     // get config
-    auto cfg = delegate->get_config();
+    const auto &cfg = delegate->get_config();
     auto engine_state = get_engine_state(delegate);
     
     // initialize connection table
@@ -325,7 +325,7 @@ void http_client::timeout_connection(protocol_thread_delegate *delegate, protoco
 {
     auto http_conn = static_cast<http_client_connection*>(obj);
     auto &conn = http_conn->conn;
-    auto cfg = delegate->get_config();
+    const auto &cfg = delegate->get_config();
     time_t current_time = delegate->get_current_time();
     time_t last_activity = conn.get_last_activity();
     

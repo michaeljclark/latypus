@@ -142,7 +142,7 @@ bool http_server_connection_tmpl<connection>::init(protocol_engine_delegate *del
     connection_close = true;
     state = &http_server::connection_state_free;
     if (buffer.size() == 0) {
-        auto cfg = delegate->get_config();
+        const auto &cfg = delegate->get_config();
         buffer.resize(cfg->io_buffer_size);
         request.resize(cfg->header_buffer_size);
         response.resize(cfg->header_buffer_size);
@@ -165,7 +165,7 @@ bool http_server_connection_tmpl<connection>::free(protocol_engine_delegate *del
 
 /* http_server_config */
 
-http_server_config::http_server_config()
+http_server_config::http_server_config() : ssl_ctx(nullptr)
 {
     http_server::get_proto();
     
@@ -440,7 +440,7 @@ protocol_thread_state* http_server::create_thread_state(config_ptr cfg) const
 void http_server::engine_init(protocol_engine_delegate *delegate) const
 {
     // get config
-    auto cfg = delegate->get_config();
+    const auto &cfg = delegate->get_config();
     auto engine_state = get_engine_state(delegate);
     auto server_cfg = cfg->get_config<http_server>();
     
@@ -557,10 +557,10 @@ void http_server::engine_init(protocol_engine_delegate *delegate) const
 
     // initialize global TLS context
     if (have_tls) {
-        engine_state->ssl_ctx = http_tls_shared::init_server(get_proto(), cfg,
-                                                             cfg->tls_cipher_list,
-                                                             cfg->tls_key_file,
-                                                             cfg->tls_cert_file);
+        server_cfg->ssl_ctx = http_tls_shared::init_server(get_proto(), cfg,
+                                                           cfg->tls_cipher_list,
+                                                           cfg->tls_key_file,
+                                                           cfg->tls_cert_file);
         // initialize per virtual host TLS contexts
         for (auto &vhost : server_cfg->vhost_list) {
             bool vhost_has_tls_listen = false;
@@ -590,11 +590,11 @@ void http_server::engine_init(protocol_engine_delegate *delegate) const
         socket_addr addr = std::get<1>(proto_listener);
         socket_mode mode = std::get<2>(proto_listener);
         if (mode == socket_mode_tls) {
-            engine_state->listens.push_back(connected_socket_ptr(new tls_connected_socket()));
+            server_cfg->listens.push_back(connected_socket_ptr(new tls_connected_socket()));
         } else {
-            engine_state->listens.push_back(connected_socket_ptr(new tcp_connected_socket()));
+            server_cfg->listens.push_back(connected_socket_ptr(new tcp_connected_socket()));
         }
-        auto &listen = engine_state->listens[i];
+        auto &listen = server_cfg->listens[i];
         if (listen->start_listening(addr, cfg->listen_backlog)) {
             log_info("%s listening on: %s%s",
                      get_proto()->name.c_str(), listen->to_string().c_str(),
@@ -608,14 +608,15 @@ void http_server::engine_init(protocol_engine_delegate *delegate) const
 
 void http_server::engine_shutdown(protocol_engine_delegate *delegate) const
 {
+    const auto &cfg = delegate->get_config();
+    auto server_cfg = cfg->get_config<http_server>();
+    
     // shutdown listeners
-    for (auto &listen : get_engine_state(delegate)->listens) {
+    for (auto &listen : server_cfg->listens) {
         listen->close_connection();
     }
     
     // shutdown log threads
-    auto cfg = delegate->get_config();
-    auto server_cfg = cfg->get_config<http_server>();
     for (auto vhost : server_cfg->vhost_list) {
         if (vhost->access_log_thread) {
             vhost->access_log_thread->shutdown();
@@ -628,8 +629,11 @@ void http_server::engine_shutdown(protocol_engine_delegate *delegate) const
 
 void http_server::thread_init(protocol_thread_delegate *delegate) const
 {
+    const auto &cfg = delegate->get_config();
+    auto server_cfg = cfg->get_config<http_server>();
+    
     if (delegate->get_thread_mask() & thread_mask_listener.mask) {
-        for (auto &listen : get_engine_state(delegate)->listens) {
+        for (auto &listen : server_cfg->listens) {
             delegate->get_pollset()->add_object(poll_object(server_sock_tcp_listen.type,
                                                             listen.get(), listen->get_fd()), poll_event_in);
         }
@@ -659,7 +663,8 @@ void http_server::handle_message(protocol_thread_delegate *delegate, protocol_me
 
 void http_server::handle_accept(protocol_thread_delegate *delegate, const protocol_sock *proto_sock, int listen_fd) const
 {
-    auto engine_state = get_engine_state(delegate);
+    const auto &cfg = delegate->get_config();
+    auto server_cfg = cfg->get_config<http_server>();
     
     // accept new connections
     while (true) {
@@ -688,7 +693,7 @@ void http_server::handle_accept(protocol_thread_delegate *delegate, const protoc
         }
 
         // find listen socket
-        auto it = std::find_if(engine_state->listens.begin(), engine_state->listens.end(),
+        auto it = std::find_if(server_cfg->listens.begin(), server_cfg->listens.end(),
                                [listen_fd](const connected_socket_ptr& listen)
                                { return listen->get_fd() == listen_fd; });
         auto &listen = *it;
@@ -700,7 +705,7 @@ void http_server::handle_accept(protocol_thread_delegate *delegate, const protoc
                 conn.accept(fd);
                 break;
             case socket_mode_tls:
-                conn.accept_tls(fd, engine_state->ssl_ctx);
+                conn.accept_tls(fd, server_cfg->ssl_ctx);
                 break;
         }
         if (delegate->get_debug_mask() & protocol_debug_socket) {
@@ -792,7 +797,7 @@ void http_server::timeout_connection(protocol_thread_delegate *delegate, protoco
 {
     auto http_conn = static_cast<http_server_connection*>(obj);
     auto &conn = http_conn->conn;
-    auto cfg = delegate->get_config();
+    const auto &cfg = delegate->get_config();
     time_t current_time = delegate->get_current_time();
     time_t last_activity = conn.get_last_activity();
     
@@ -1298,7 +1303,7 @@ http_server_handler_ptr http_server::translate_path(protocol_thread_delegate *de
     // TODO - check vhost has listen for host_port
     
     http_server_handler_ptr handler;
-    auto cfg = delegate->get_config();
+    const auto &cfg = delegate->get_config();
     const char* request_path = http_conn->request.get_request_path();
     
     std::string server_name;

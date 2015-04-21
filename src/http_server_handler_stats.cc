@@ -102,17 +102,20 @@ bool http_server_handler_stats::handle_request()
     status_text = http_constants::get_status_text(status_code);
     mime_type = "text/plain";
     
+    auto cfg = delegate->get_config();
+    auto server_cfg = cfg->get_config<http_server>();
+
     std::stringstream ss;
     size_t engine_num = 0;
     for (auto engine : protocol_engine::engine_list)
     {
         ss << "http-engine-" << engine_num++ << std::endl;
-        auto http_engine_state = static_cast<http_server_engine_state*>
-            (engine->get_engine_state(http_server::get_proto()));
-        ss << "  listens " << http_engine_state->listens.size() << std::endl;
-        for (auto &listen : http_engine_state->listens) {
+        ss << "  listens " << server_cfg->listens.size() << std::endl;
+        for (auto &listen : server_cfg->listens) {
             ss << "    " << listen->to_string() << std::endl;
         }
+        auto http_engine_state = static_cast<http_server_engine_state*>
+            (engine->get_engine_state(http_server::get_proto()));
         ss << "  threads " << engine->threads_all.size() << std::endl;
         for (auto &thread : engine->threads_all) {
             std::string thread_mask = protocol_thread::thread_mask_to_string(thread->thread_mask);
@@ -134,8 +137,6 @@ bool http_server_handler_stats::handle_request()
     ss << std::endl;
 
     size_t vhost_num = 0;
-    auto cfg = delegate->get_config();
-    auto server_cfg = cfg->get_config<http_server>();
     for (auto vhost : server_cfg->vhost_list)
     {
         ss << "http-vhost-" << vhost_num++ << std::endl;
