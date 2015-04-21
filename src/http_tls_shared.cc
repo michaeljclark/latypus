@@ -27,12 +27,31 @@
 #include "hex.h"
 #include "url.h"
 #include "log.h"
+#include "log_thread.h"
+#include "trie.h"
 #include "socket.h"
+#include "socket_unix.h"
+#include "socket_tcp.h"
+#include "socket_tls.h"
 #include "resolver.h"
 #include "config_parser.h"
 #include "config.h"
 #include "pollset.h"
 #include "protocol.h"
+#include "connection.h"
+#include "connection.h"
+#include "protocol_thread.h"
+#include "protocol_engine.h"
+#include "protocol_connection.h"
+
+#include "http_common.h"
+#include "http_constants.h"
+#include "http_parser.h"
+#include "http_request.h"
+#include "http_response.h"
+#include "http_date.h"
+#include "http_server.h"
+#include "http_client.h"
 #include "http_tls_shared.h"
 
 
@@ -204,7 +223,13 @@ int http_tls_shared::tls_servername_cb(SSL *ssl, int *ad, void *arg)
 {
     const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
     
-    log_debug("%s: servername=%s", __func__, servername);
+    if (servername) {
+        http_server_vhost *vhost = http_server::lookup_vhost(static_cast<config*>(arg), servername);
+        
+        if (vhost && vhost->ssl_ctx) {
+            SSL_set_SSL_CTX(ssl, vhost->ssl_ctx);
+        }
+    }
     
     return SSL_TLSEXT_ERR_OK;
 }
@@ -322,15 +347,10 @@ SSL_CTX* http_tls_shared::init_server(protocol *proto, config_ptr cfg,
     SSL_CTX_sess_set_new_cb(ctx, http_tls_shared::tls_new_session_cb);
     SSL_CTX_sess_set_remove_cb(ctx, http_tls_shared::tls_remove_session_cb);
     SSL_CTX_sess_set_get_cb(ctx, http_tls_shared::tls_get_session_cb);
-    
-#if 0
-    // TODO - implement SNI, retrieve servername in callback function
-    // using SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name)
-    // and then call SSL_set_SSL_CTX to change to another SSL_CTX
-    // Call the following in startup code to set up the callback function
+
+    // set up SNI callback
     SSL_CTX_set_tlsext_servername_callback(ctx, http_tls_shared::tls_servername_cb);
     SSL_CTX_set_tlsext_servername_arg(ctx, cfg.get());
-#endif
 
     if (tls_cert_file.length() > 0) {
         if (SSL_CTX_use_certificate_chain_file(ctx, tls_cert_file.c_str()) <= 0)
