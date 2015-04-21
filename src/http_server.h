@@ -123,16 +123,16 @@ struct http_server_connection_tmpl : protocol_object
 
 struct http_server_location
 {
-    http_server_vhost*                              vhost;
+    http_server_vhost*                          vhost;
     
     http_server_location() = delete;
     http_server_location(http_server_vhost *vhost) : vhost(vhost) {}
     
-    std::string                                     uri;
-    std::string                                     root;
-    std::string                                     handler;
-    std::vector<std::string>                        index_files;
-    http_server_handler_factory_ptr                 handler_factory;
+    std::string                                 uri;
+    std::string                                 root;
+    std::string                                 handler;
+    std::vector<std::string>                    index_files;
+    http_server_handler_factory_ptr             handler_factory;
 };
 
 
@@ -140,7 +140,7 @@ struct http_server_location
 
 struct http_server_vhost
 {
-    http_server_config*                             server_cfg;
+    http_server_config*                         server_cfg;
     
     http_server_vhost() = delete;
     http_server_vhost(http_server_config *server_cfg) : server_cfg(server_cfg) {}
@@ -153,6 +153,7 @@ struct http_server_vhost
     std::string                                 tls_cert_file;
     std::string                                 tls_cipher_list;
     http_server_location_list                   location_list;
+    SSL_CTX*                                    ssl_ctx;
     
     http_server_location_trie                   location_trie;
     io_file                                     access_log_file;
@@ -166,11 +167,11 @@ struct http_server_vhost
 
 struct http_server_config : protocol_config
 {
-    http_server_vhost_ptr                           current_vhost;
-    http_server_location_ptr                        current_location;
+    http_server_vhost_ptr                       current_vhost;
+    http_server_location_ptr                    current_location;
     
-    http_server_vhost_list                          vhost_list;
-    http_server_vhost_map                           vhost_map;
+    http_server_vhost_list                      vhost_list;
+    http_server_vhost_map                       vhost_map;
 
     std::vector<std::pair<std::string,std::string>> routes;
     
