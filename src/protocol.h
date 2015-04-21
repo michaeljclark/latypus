@@ -295,8 +295,8 @@ struct protocol
     virtual void make_default_config(config_ptr cfg) const {};
     virtual protocol_config_ptr make_protocol_config() const { return protocol_config_ptr(); }
     
-    virtual protocol_engine_state* create_engine_state() const { return nullptr; }
-    virtual protocol_thread_state* create_thread_state() const { return nullptr; }
+    virtual protocol_engine_state* create_engine_state(config_ptr cfg) const { return nullptr; }
+    virtual protocol_thread_state* create_thread_state(config_ptr cfg) const { return nullptr; }
     
     virtual void engine_init(protocol_engine_delegate *) const {};
     virtual void engine_shutdown(protocol_engine_delegate *) const {};
