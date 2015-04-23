@@ -432,11 +432,6 @@ protocol_engine_state* http_server::create_engine_state(config_ptr cfg) const
     return new http_server_engine_state(cfg);
 }
 
-protocol_thread_state* http_server::create_thread_state(config_ptr cfg) const
-{
-    return new http_server_thread_state(cfg);
-}
-
 void http_server::engine_init(protocol_engine_delegate *delegate) const
 {
     // get config

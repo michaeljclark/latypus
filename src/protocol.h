@@ -38,9 +38,6 @@ typedef std::shared_ptr<protocol_handler> protocol_handler_ptr;
 struct protocol_engine_state;
 typedef std::unique_ptr<protocol_engine_state> protocol_engine_state_ptr;
 typedef std::vector<protocol_engine_state_ptr> protocol_engine_state_list;
-struct protocol_thread_state;
-typedef std::unique_ptr<protocol_thread_state> protocol_thread_state_ptr;
-typedef std::vector<protocol_thread_state_ptr> protocol_thread_state_list;
 struct protocol_engine_delegate;
 struct protocol_thread_delegate;
 struct protocol_config;
@@ -187,15 +184,6 @@ struct protocol_engine_state
 };
 
 
-/* protocol_thread_state */
-
-struct protocol_thread_state
-{
-    virtual ~protocol_thread_state() {}
-    virtual protocol* get_proto() const = 0;
-};
-
-
 /* protocol_config */
 
 struct protocol_config
@@ -231,7 +219,6 @@ struct protocol_thread_delegate
 {
     virtual ~protocol_thread_delegate() {}
     
-    virtual protocol_thread_state* get_thread_state(protocol *proto) = 0;
     virtual protocol_engine_delegate* get_engine_delegate() const = 0;
     virtual time_t get_current_time() const = 0;
     virtual config_ptr get_config() const = 0;
@@ -296,7 +283,6 @@ struct protocol
     virtual protocol_config_ptr make_protocol_config() const { return protocol_config_ptr(); }
     
     virtual protocol_engine_state* create_engine_state(config_ptr cfg) const { return nullptr; }
-    virtual protocol_thread_state* create_thread_state(config_ptr cfg) const { return nullptr; }
     
     virtual void engine_init(protocol_engine_delegate *) const {};
     virtual void engine_shutdown(protocol_engine_delegate *) const {};

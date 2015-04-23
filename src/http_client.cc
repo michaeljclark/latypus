@@ -215,11 +215,6 @@ protocol_engine_state* http_client::create_engine_state(config_ptr cfg) const
     return new http_client_engine_state(cfg);
 }
 
-protocol_thread_state* http_client::create_thread_state(config_ptr cfg) const
-{
-    return new http_client_thread_state(cfg);
-}
-
 void http_client::engine_init(protocol_engine_delegate *delegate) const
 {
     // get config

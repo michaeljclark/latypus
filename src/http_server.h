@@ -13,7 +13,6 @@
 
 struct http_server;
 struct http_server_engine_state;
-struct http_server_thread_state;
 
 struct http_server_handler;
 typedef std::shared_ptr<http_server_handler> http_server_handler_ptr;
@@ -187,7 +186,6 @@ struct http_server_config : protocol_config
 struct http_server : protocol
 {
     typedef http_server_engine_state engine_state_type;
-    typedef http_server_thread_state thread_state_type;
     typedef http_server_connection connection_type;
     typedef http_server_config config_type;
     typedef std::function<std::string(http_server_connection*)> function_type;
@@ -261,7 +259,6 @@ struct http_server : protocol
     protocol_config_ptr make_protocol_config() const;
 
     protocol_engine_state* create_engine_state(config_ptr cfg) const;
-    protocol_thread_state* create_thread_state(config_ptr cfg) const;
     
     void engine_init(protocol_engine_delegate *) const;
     void engine_shutdown(protocol_engine_delegate *) const;
@@ -343,17 +340,6 @@ struct http_server_engine_state : protocol_engine_state, protocol_connection_sta
     protocol* get_proto() const { return http_server::get_proto(); }
     
     void bind_function(config_ptr cfg, std::string path, typename http_server::function_type);
-};
-
-/* http_server_thread_state */
-
-struct http_server_thread_state : protocol_thread_state
-{
-    config_ptr                                  cfg;
-    
-    http_server_thread_state(config_ptr cfg) : cfg(cfg) {}
-
-    protocol* get_proto() const { return http_server::get_proto(); }
 };
 
 #endif

@@ -139,18 +139,6 @@ void protocol_thread::set_thread_name(std::string name)
 #endif
 }
 
-protocol_thread_state* protocol_thread::get_thread_state(protocol *proto)
-{
-    for (auto &state : state_list) {
-        if (state->get_proto() == proto) return state.get();
-    }
-    auto state = proto->create_thread_state(engine->cfg);
-    if (state) {
-        state_list.push_back(protocol_thread_state_ptr(state));
-    }
-    return state;
-}
-
 protocol_engine_delegate* protocol_thread::get_engine_delegate() const { return engine; }
 time_t protocol_thread::get_current_time() const { return current_time; }
 config_ptr protocol_thread::get_config() const { return engine->cfg; }

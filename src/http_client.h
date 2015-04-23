@@ -13,7 +13,6 @@
 
 struct http_client;
 struct http_client_engine_state;
-struct http_client_thread_state;
 
 struct http_client_handler;
 typedef std::shared_ptr<http_client_handler> http_client_handler_ptr;
@@ -109,7 +108,6 @@ struct http_client_config : protocol_config
 struct http_client : protocol
 {
     typedef http_client_engine_state engine_state_type;
-    typedef http_client_thread_state thread_state_type;
     typedef http_client_connection connection_type;
     typedef http_client_config config_type;
     typedef std::function<std::string(http_client_connection*)> function_type;
@@ -165,7 +163,6 @@ struct http_client : protocol
     protocol_config_ptr make_protocol_config() const;
 
     protocol_engine_state* create_engine_state(config_ptr cfg) const;
-    protocol_thread_state* create_thread_state(config_ptr cfg) const;
     
     void engine_init(protocol_engine_delegate *) const;
     void engine_shutdown(protocol_engine_delegate *) const;
@@ -231,18 +228,6 @@ struct http_client_engine_state : protocol_engine_state, protocol_connection_sta
     {
         log_error("%s bind_function not implemented", get_proto()->name.c_str());
     }
-};
-
-
-/* http_client_thread_state */
-
-struct http_client_thread_state : protocol_thread_state
-{
-    config_ptr                                  cfg;
-    
-    http_client_thread_state(config_ptr cfg) : cfg(cfg) {}
-    
-    protocol* get_proto() const { return http_client::get_proto(); }
 };
 
 #endif

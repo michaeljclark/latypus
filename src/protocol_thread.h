@@ -18,8 +18,6 @@ typedef std::map<int,size_t> protocol_thread_next_map;
 
 struct protocol_thread : protocol_thread_delegate
 {
-    protocol_thread_state_list      state_list;
-    
     protocol_engine                 *engine;
     int                             thread_mask;
     unix_socketpair                 notify;
@@ -41,7 +39,6 @@ struct protocol_thread : protocol_thread_delegate
     static protocol_table thread_mask_to_protocols(int mask);
 
     void set_thread_name(std::string name);
-    protocol_thread_state* get_thread_state(protocol *proto);
     protocol_engine_delegate* get_engine_delegate() const;
     time_t get_current_time() const;
     config_ptr get_config() const;
