@@ -18,8 +18,6 @@ typedef std::map<int,size_t> protocol_thread_next_map;
 
 struct protocol_thread : protocol_thread_delegate
 {
-    static const int NOTIFY_BUFFER_SIZE = 1048576;
-    
     protocol_thread_state_list      state_list;
     
     protocol_engine                 *engine;
