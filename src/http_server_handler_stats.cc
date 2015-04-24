@@ -163,6 +163,10 @@ bool http_server_handler_stats::handle_request()
     ss << std::endl;
 
     std::string str = ss.str();;
+    if (response_buffer.size() < str.length()) {
+        response_buffer.resize(str.length());
+    }
+
     response_buffer.set(str.c_str(), str.length());
     content_length = str.length();
     reader = &response_buffer;

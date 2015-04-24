@@ -97,6 +97,9 @@ bool http_server_handler_func::handle_request()
     status_text = http_constants::get_status_text(status_code);
     mime_type = "text/plain";
     std::string fn_result = fn(http_conn);
+    if (response_buffer.size() < fn_result.length()) {
+        response_buffer.resize(fn_result.length());
+    }
     response_buffer.set(fn_result.c_str(), fn_result.length());
     content_length = fn_result.length();
     reader = &response_buffer;
