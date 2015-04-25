@@ -124,7 +124,7 @@ struct http_client : protocol
     
     /* threads */
     static protocol_mask thread_mask_connect;
-    static protocol_mask thread_mask_processor;
+    static protocol_mask thread_mask_worker;
     static protocol_mask thread_mask_keepalive;
     
     /* states */

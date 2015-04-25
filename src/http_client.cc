@@ -72,8 +72,8 @@ protocol_action http_client::action_keepalive_wait_connection
 // threads
 protocol_mask http_client::thread_mask_connect
     (get_proto(), "connect");
-protocol_mask http_client::thread_mask_processor
-    (get_proto(), "processor");
+protocol_mask http_client::thread_mask_worker
+    (get_proto(), "worker");
 protocol_mask http_client::thread_mask_keepalive
     (get_proto(), "keepalive");
 
@@ -814,12 +814,12 @@ void http_client::connect_connection(protocol_thread_delegate *delegate, protoco
 
 void http_client::process_connection(protocol_thread_delegate *delegate, protocol_object *obj)
 {
-    forward_connection(delegate, obj, thread_mask_processor, action_process_next_request);
+    forward_connection(delegate, obj, thread_mask_worker, action_process_next_request);
 }
 
 void http_client::process_connection_tls(protocol_thread_delegate *delegate, protocol_object *obj)
 {
-    forward_connection(delegate, obj, thread_mask_processor, action_process_tls_handshake);
+    forward_connection(delegate, obj, thread_mask_worker, action_process_tls_handshake);
 }
 
 void http_client::keepalive_connection(protocol_thread_delegate *delegate, protocol_object *obj)
