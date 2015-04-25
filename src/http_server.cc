@@ -618,6 +618,16 @@ void http_server::engine_shutdown(protocol_engine_delegate *delegate) const
             vhost->error_log_thread->shutdown();
         }
     }
+    
+    // free SSL context
+    if (server_cfg->ssl_ctx) {
+        SSL_CTX_free(server_cfg->ssl_ctx);
+    }
+    for (auto vhost : server_cfg->vhost_list) {
+        if (vhost->ssl_ctx) {
+            SSL_CTX_free(vhost->ssl_ctx);
+        }
+    }
 }
 
 void http_server::thread_init(protocol_thread_delegate *delegate) const

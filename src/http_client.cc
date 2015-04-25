@@ -232,7 +232,10 @@ void http_client::engine_init(protocol_engine_delegate *delegate) const
 
 void http_client::engine_shutdown(protocol_engine_delegate *delegate) const
 {
-    
+    auto engine_state = get_engine_state(delegate);
+    if (engine_state->ssl_ctx) {
+        SSL_CTX_free(engine_state->ssl_ctx);
+    }
 }
 
 void http_client::thread_init(protocol_thread_delegate *delegate) const
