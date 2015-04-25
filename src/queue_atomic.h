@@ -43,7 +43,7 @@ struct queue_atomic
     
     /* queue constants */
     
-    static const int spin_limit =               65536;
+    static const int spin_limit =               1 << 24;
     static const int debug_spin =               true;
     static const int atomic_bits =              sizeof(atomic_uint_t) << 3;
     static const int offset_bits =              OFFSET_BITS;
