@@ -21,9 +21,7 @@ struct http_server_handler_factory;
 typedef std::shared_ptr<http_server_handler_factory> http_server_handler_factory_ptr;
 typedef std::pair<std::string,http_server_handler_factory_ptr> http_server_handler_factory_entry;
 
-template <typename TransportConnection> struct http_server_connection_tmpl;
-typedef http_server_connection_tmpl<connection> http_server_connection;
-
+struct http_server_connection;
 typedef std::function<std::string(http_server_connection*)> http_server_function;
 
 struct http_server_location;
@@ -89,10 +87,9 @@ struct http_server_handler
 
 /* http_server_connection */
 
-template <typename TransportConnection>
-struct http_server_connection_tmpl : protocol_object
+struct http_server_connection : protocol_object
 {
-    TransportConnection         conn;
+    connection                  conn;
 #if USE_RINGBUFFER
     io_ring_buffer              buffer;
 #else
@@ -108,8 +105,8 @@ struct http_server_connection_tmpl : protocol_object
 
     // TODO add stats
 
-    http_server_connection_tmpl<TransportConnection>() : state(nullptr) {}
-    http_server_connection_tmpl<TransportConnection>(const http_server_connection_tmpl&) : state(nullptr) {}
+    http_server_connection() : state(nullptr) {}
+    http_server_connection(const http_server_connection&) : state(nullptr) {}
 
     int get_poll_fd();
     poll_object_type get_poll_type();

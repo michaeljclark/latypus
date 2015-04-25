@@ -21,8 +21,7 @@ struct http_client_request;
 typedef std::shared_ptr<http_client_request> http_client_request_ptr;
 typedef std::deque<http_client_request_ptr> http_client_request_list;
 
-template <typename TransportConnection> struct http_client_connection_tmpl;
-typedef http_client_connection_tmpl<connection> http_client_connection;
+struct http_client_connection;
 
 
 /* http_client_request */
@@ -60,10 +59,9 @@ struct http_client_handler
 
 /* http_client_connection */
 
-template <typename TransportConnection>
-struct http_client_connection_tmpl : protocol_object
+struct http_client_connection : protocol_object
 {
-    TransportConnection         conn;
+    connection                  conn;
 #if USE_RINGBUFFER
     io_ring_buffer              buffer;
 #else
@@ -83,8 +81,8 @@ struct http_client_connection_tmpl : protocol_object
     
     // TODO add stats
     
-    http_client_connection_tmpl<TransportConnection>() : state(nullptr) {}
-    http_client_connection_tmpl<TransportConnection>(const http_client_connection_tmpl&) : state(nullptr) {}
+    http_client_connection() : state(nullptr) {}
+    http_client_connection(const http_client_connection&) : state(nullptr) {}
     
     int get_poll_fd();
     poll_object_type get_poll_type();    

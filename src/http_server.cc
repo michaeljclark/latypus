@@ -116,20 +116,17 @@ protocol_state http_server::connection_state_lingering_close
 
 /* http_server_connection */
 
-template <>
-int http_server_connection_tmpl<connection>::get_poll_fd()
+int http_server_connection::get_poll_fd()
 {
     return conn.get_poll_fd();
 }
 
-template <>
-poll_object_type http_server_connection_tmpl<connection>::get_poll_type()
+poll_object_type http_server_connection::get_poll_type()
 {
     return http_server::server_sock_tcp_connection.type;
 }
 
-template <>
-bool http_server_connection_tmpl<connection>::init(protocol_engine_delegate *delegate)
+bool http_server_connection::init(protocol_engine_delegate *delegate)
 {
     buffer.reset();
     conn.reset();
@@ -152,8 +149,7 @@ bool http_server_connection_tmpl<connection>::init(protocol_engine_delegate *del
     return true;
 }
 
-template <>
-bool http_server_connection_tmpl<connection>::free(protocol_engine_delegate *delegate)
+bool http_server_connection::free(protocol_engine_delegate *delegate)
 {
     state = &http_server::connection_state_free;
     handler = http_server_handler_ptr();
@@ -369,7 +365,7 @@ void http_server::make_default_config(config_ptr cfg) const
                                        (http_server::get_proto(), ipv6_localhost, socket_mode_plain));
     }
     cfg->proto_threads.push_back(std::pair<std::string,size_t>("http_server/listener", 1));
-    cfg->proto_threads.push_back(std::pair<std::string,size_t>("http_server/router,http_server/worker,http_server/keepalive,http_server/linger", std::thread::hardware_concurrency()));
+    cfg->proto_threads.push_back(std::pair<std::string,size_t>("http_server/router,http_server/worker,http_server/keepalive", std::thread::hardware_concurrency()));
     cfg->root = "html";
     cfg->mime_types["html"] = "text/html";
     cfg->mime_types["htm"] = "text/html";
