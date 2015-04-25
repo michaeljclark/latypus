@@ -501,7 +501,7 @@ void http_server::engine_init(protocol_engine_delegate *delegate) const
             vhost->access_log = cfg->access_log;
         }
         if (vhost->error_log.length() == 0) {
-            vhost->error_log = cfg->access_log;
+            vhost->error_log = cfg->error_log;
         }
         // open log files
         if (vhost->access_log.size() > 0 && vhost->access_log != "off") {
