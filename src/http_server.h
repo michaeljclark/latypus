@@ -208,7 +208,6 @@ struct http_server : protocol
     static protocol_mask thread_mask_router;
     static protocol_mask thread_mask_keepalive;
     static protocol_mask thread_mask_worker;
-    static protocol_mask thread_mask_linger;
     
     /* states */
     static protocol_state connection_state_free;

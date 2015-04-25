@@ -19,8 +19,8 @@ pid_file            /tmp/netd.pid;
 root                html;
 index               index.html index.htm;
 
-proto_threads       http_server/listener                                                                1;
-proto_threads       http_server/router,http_server/worker,http_server/keepalive,http_server/linger      8;
+proto_threads       http_server/listener                                             1;
+proto_threads       http_server/router,http_server/worker,http_server/keepalive      8;
 
 http_server {
     listen          8080;                   /* ipv4 ip addr any */

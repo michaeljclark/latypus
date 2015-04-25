@@ -94,8 +94,6 @@ protocol_mask http_server::thread_mask_keepalive
     (get_proto(), "keepalive");
 protocol_mask http_server::thread_mask_worker
     (get_proto(), "worker");
-protocol_mask http_server::thread_mask_linger
-    (get_proto(), "linger");
 
 // states
 protocol_state http_server::connection_state_free
@@ -1420,7 +1418,7 @@ void http_server::keepalive_connection(protocol_thread_delegate *delegate, proto
 void http_server::linger_connection(protocol_thread_delegate *delegate, protocol_object *obj)
 {
     get_engine_state(delegate)->stats.connections_linger++;
-    forward_connection(delegate, obj, thread_mask_linger, action_linger_read_connection);
+    forward_connection(delegate, obj, thread_mask_keepalive, action_linger_read_connection);
 }
 
 void http_server::forward_connection(protocol_thread_delegate* delegate, protocol_object *obj, const protocol_mask &proto_mask, const protocol_action &proto_action)
