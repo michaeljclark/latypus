@@ -164,7 +164,7 @@ void netb::run()
     engine.cfg->io_buffer_size = io_buffer_size;
     engine.cfg->tls_ca_file = tls_ca_file;
     engine.cfg->proto_threads.push_back(std::pair<std::string,size_t>("http_client/connect", 1));
-    engine.cfg->proto_threads.push_back(std::pair<std::string,size_t>("http_client/processor,http_client/keepalive", num_threads));
+    engine.cfg->proto_threads.push_back(std::pair<std::string,size_t>("http_client/worker,http_client/keepalive", num_threads));
     
     // enable debug messages
     if (debug_level >= 1) {
