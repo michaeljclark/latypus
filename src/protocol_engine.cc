@@ -66,11 +66,10 @@ protocol_engine::protocol_engine() : debug_mask(0)
     
     // set signal handlers if this is the first engine
     if (engine_list.size() == 0) {
-        struct sigaction sigaction_ignore;
-        memset(&sigaction_ignore, 0, sizeof(sigaction_ignore));
-        sigaction_ignore.sa_handler = SIG_IGN;
-        sigaction_ignore.sa_flags = 0;
-        sigaction(SIGPIPE, &sigaction_ignore, nullptr);
+        sigset_t sigpipe_set;
+        sigemptyset(&sigpipe_set);
+        sigaddset(&sigpipe_set, SIGPIPE);
+        sigprocmask(SIG_BLOCK, &sigpipe_set, nullptr);
 
         struct sigaction sigaction_handler;
         memset(&sigaction_handler, 0, sizeof(sigaction_handler));
