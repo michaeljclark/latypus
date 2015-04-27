@@ -289,6 +289,7 @@ SSL_CTX* http_tls_shared::init_client(protocol *proto, config_ptr cfg,
     SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2);
     SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv3);
     SSL_CTX_set_options(ctx, SSL_OP_NO_COMPRESSION);
+    SSL_CTX_set_options(ctx, SSL_OP_NO_TICKET);
     
     init_dh(ctx);
     init_ecdh(ctx, NID_secp256k1);
@@ -332,6 +333,7 @@ SSL_CTX* http_tls_shared::init_server(protocol *proto, config_ptr cfg,
     SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2);
     SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv3);
     SSL_CTX_set_options(ctx, SSL_OP_NO_COMPRESSION);
+    SSL_CTX_set_options(ctx, SSL_OP_NO_TICKET);
     
     init_dh(ctx);
     init_ecdh(ctx, NID_secp256k1);
@@ -340,7 +342,6 @@ SSL_CTX* http_tls_shared::init_server(protocol *proto, config_ptr cfg,
         SSL_CTX_set_cipher_list(ctx, tls_cipher_list.c_str());
     }
 
-    SSL_CTX_set_options(ctx, SSL_OP_NO_TICKET);
     SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_NO_INTERNAL |
                                         SSL_SESS_CACHE_NO_AUTO_CLEAR |
                                         SSL_SESS_CACHE_SERVER);
