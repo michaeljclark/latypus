@@ -190,8 +190,6 @@ struct http_server : protocol
     /* sock */
     static protocol_sock server_sock_tcp_listen;
     static protocol_sock server_sock_tcp_connection;
-    static protocol_sock server_sock_tcp_tls_listen;
-    static protocol_sock server_sock_tcp_tls_connection;
     
     /* actions */
     static protocol_action action_router_tls_handshake;

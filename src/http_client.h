@@ -112,7 +112,6 @@ struct http_client : protocol
     
     /* sock */
     static protocol_sock client_sock_tcp_connection;
-    static protocol_sock client_sock_tcp_tls_connection;
     
     /* actions */
     static protocol_action action_connect_host;

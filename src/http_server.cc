@@ -68,10 +68,6 @@ protocol_sock http_server::server_sock_tcp_listen
     (get_proto(), "tcp_listen", protocol_sock_tcp_listen);
 protocol_sock http_server::server_sock_tcp_connection
     (get_proto(), "tcp_connection", protocol_sock_tcp_connection);
-protocol_sock http_server::server_sock_tcp_tls_listen
-    (get_proto(), "tcp_tls_listen", protocol_sock_tcp_listen | protocol_sock_tcp_tls);
-protocol_sock http_server::server_sock_tcp_tls_connection
-    (get_proto(), "tcp_tls_connection", protocol_sock_tcp_connection | protocol_sock_tcp_tls);
 
 // actions
 protocol_action http_server::action_router_tls_handshake

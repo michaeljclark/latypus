@@ -56,8 +56,6 @@
 // sock
 protocol_sock http_client::client_sock_tcp_connection
     (get_proto(), "tcp_connection", protocol_sock_tcp_connection);
-protocol_sock http_client::client_sock_tcp_tls_connection
-    (get_proto(), "tcp_tls_connection", protocol_sock_tcp_connection | protocol_sock_tcp_tls);
 
 // actions
 protocol_action http_client::action_connect_host

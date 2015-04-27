@@ -76,9 +76,8 @@ enum protocol_sock_flags {
     protocol_sock_unix_ipc              = 0x0002,
     protocol_sock_tcp_listen            = 0x0004,
     protocol_sock_tcp_connection        = 0x0008,
-    protocol_sock_tcp_tls               = 0x0010,
-    protocol_sock_udp                   = 0x0020,
-    protocol_sock_udp_mcast             = 0x0040,
+    protocol_sock_udp                   = 0x0010,
+    protocol_sock_udp_mcast             = 0x0020,
 };
 
 
