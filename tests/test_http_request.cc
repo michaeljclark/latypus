@@ -59,7 +59,7 @@ public:
     {
         // test constructing request
         http_request request;
-        request.resize(4096);
+        request.resize(4096, 64);
         request.set_request_method(kHTTPMethodGET);
         request.set_request_uri("/textinputassistant/tia.png");
         request.set_http_version(kHTTPVersion11);
@@ -70,7 +70,7 @@ public:
     {
         // test constructing request
         http_request request;
-        request.resize(4096);
+        request.resize(4096, 64);
         request.set_request_method(kHTTPMethodGET);
         request.set_request_uri("/textinputassistant/tia.png");
         request.set_http_version(kHTTPVersion11);
@@ -82,7 +82,7 @@ public:
     {
         // test parsing headers with \n
         http_request request;
-        request.resize(4096);
+        request.resize(4096, 64);
         size_t bytes_parsed = request.parse(request_1_ok, strlen(request_1_ok));
         CPPUNIT_ASSERT(bytes_parsed == strlen(request_1_ok));
         CPPUNIT_ASSERT(request.header_map.size() == 0);
@@ -94,7 +94,7 @@ public:
     {
         // test parsing headers with \r\n
         http_request request;
-        request.resize(4096);
+        request.resize(4096, 64);
         size_t bytes_parsed = request.parse(request_2_ok, strlen(request_2_ok));
         CPPUNIT_ASSERT(bytes_parsed == strlen(request_2_ok));
         CPPUNIT_ASSERT(request.header_map.size() == 1);
@@ -106,7 +106,7 @@ public:
     {
         // test parsing headers with \r\n
         http_request request;
-        request.resize(4096);
+        request.resize(4096, 64);
         size_t bytes_parsed = request.parse(request_3_ok, strlen(request_3_ok));
         CPPUNIT_ASSERT(bytes_parsed == strlen(request_3_ok));
         CPPUNIT_ASSERT(request.header_map.size() == 9);
@@ -118,7 +118,7 @@ public:
     {
         // test parsing headers with \r\n
         http_request request;
-        request.resize(4096);
+        request.resize(4096, 64);
         size_t bytes_parsed = request.parse(request_4_ok, strlen(request_4_ok));
         CPPUNIT_ASSERT(bytes_parsed == strlen(request_4_ok));
         CPPUNIT_ASSERT(request.header_map.size() == 9);
@@ -130,7 +130,7 @@ public:
     {
         // test parsing headers with \n
         http_request request;
-        request.resize(4096);
+        request.resize(4096, 64);
         size_t bytes_parsed = request.parse(request_5_err, strlen(request_5_err));
         CPPUNIT_ASSERT(bytes_parsed != strlen(request_5_err));
         CPPUNIT_ASSERT(request.header_map.size() == 0);
@@ -142,7 +142,7 @@ public:
     {
         // test parsing headers with body fragment
         http_request request;
-        request.resize(4096);
+        request.resize(4096, 64);
         size_t bytes_parsed = request.parse(request_6_body, strlen(request_6_body));
         CPPUNIT_ASSERT(bytes_parsed == strlen(request_6_body) - strlen("body"));
         CPPUNIT_ASSERT(request.header_map.size() == 0);
@@ -155,7 +155,7 @@ public:
     {
         // test to_string matches parsed headers (only with \r\n)
         http_request request;
-        request.resize(4096);
+        request.resize(4096, 64);
         size_t bytes_parsed = request.parse(request_4_ok, strlen(request_4_ok));
         CPPUNIT_ASSERT(bytes_parsed == strlen(request_4_ok));
         CPPUNIT_ASSERT(request.to_string() == request_4_ok);
@@ -166,7 +166,7 @@ public:
         // test to_buffer matches parsed headers (only with \r\n)
         char buf[4096];
         http_request request;
-        request.resize(4096);
+        request.resize(4096, 64);
         size_t bytes_parsed = request.parse(request_4_ok, strlen(request_4_ok));
         size_t bytes_written = request.to_buffer(buf, sizeof(buf));
         CPPUNIT_ASSERT(bytes_parsed == strlen(request_4_ok));
@@ -178,7 +178,7 @@ public:
     {
         // test header buffer overflow
         http_request request;
-        request.resize(64);
+        request.resize(64, 64);
         size_t bytes_parsed = request.parse(request_4_ok, strlen(request_4_ok));
         CPPUNIT_ASSERT(bytes_parsed == strlen(request_4_ok));
         CPPUNIT_ASSERT(request.has_error() == true);
@@ -201,7 +201,7 @@ public:
     {
         // test parsing headers with \r\n
         http_request request;
-        request.resize(4096);
+        request.resize(4096, 64);
         size_t seg_1 = strlen(request_4_ok) - strlen(request_4_ok) / 2;
         size_t seg_2 = strlen(request_4_ok) - seg_1;
         size_t bytes_parsed = 0;

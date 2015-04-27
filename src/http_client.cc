@@ -128,8 +128,8 @@ bool http_client_connection::init(protocol_engine_delegate *delegate)
     if (buffer.size() == 0) {
         const auto &cfg = delegate->get_config();
         buffer.resize(cfg->io_buffer_size);
-        request.resize(cfg->header_buffer_size);
-        response.resize(cfg->header_buffer_size);
+        request.resize(cfg->header_buffer_size, cfg->max_headers);
+        response.resize(cfg->header_buffer_size, cfg->max_headers);
     } else {
 #if ZERO_BUFFERS
         io_buffer::clear();

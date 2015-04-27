@@ -46,7 +46,7 @@ public:
     {
         // test constructing response
         http_response response;
-        response.resize(4096);
+        response.resize(4096, 64);
         response.set_http_version(kHTTPVersion11);
         response.set_status_code(HTTPStatusCodeOK);
         response.set_reason_phrase(kHTTPStatusTextOK);
@@ -62,7 +62,7 @@ public:
     {
         // test parsing response with \r\n
         http_response response;
-        response.resize(4096);
+        response.resize(4096, 64);
         size_t bytes_parsed = response.parse(response_1_ok, strlen(response_1_ok));
         CPPUNIT_ASSERT(bytes_parsed == strlen(response_1_ok));
         CPPUNIT_ASSERT(response.header_map.size() == 3);
@@ -74,7 +74,7 @@ public:
     {
         // test parsing response with \r\n
         http_response response;
-        response.resize(4096);
+        response.resize(4096, 64);
         size_t bytes_parsed = response.parse(response_2_body, strlen(response_2_body));
         CPPUNIT_ASSERT(bytes_parsed == strlen(response_2_body) - strlen("body"));
         CPPUNIT_ASSERT(response.header_map.size() == 1);

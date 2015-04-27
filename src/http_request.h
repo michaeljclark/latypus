@@ -15,6 +15,7 @@ struct http_request : http_parser
 {    
     std::vector<char>   buffer;
     size_t              buffer_offset;
+    size_t              max_headers;
     http_parse_type     parse_type;
     http_header_string  request_method;
     http_header_string  request_uri;
@@ -34,7 +35,7 @@ struct http_request : http_parser
     bool has_error();
     bool has_overflow();
     
-    void resize(size_t header_buffer_size);
+    void resize(size_t header_buffer_size, size_t max_headers);
     size_t bytes_writable() { return buffer.capacity() - buffer_offset; }
     char* buffer_position() { return buffer.data() + buffer_offset; }
 

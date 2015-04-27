@@ -47,8 +47,9 @@ void http_response::reset()
     overflow = false;
 }
 
-void http_response::resize(size_t buffer_size)
+void http_response::resize(size_t buffer_size, size_t max_headers)
 {
+    this->max_headers = max_headers;
     // TODO - handle bad_alloc exceptions
     buffer.resize(buffer_size);
 }
@@ -91,6 +92,10 @@ bool http_response::has_overflow()
 
 bool http_response::set_header_field(http_header_string name, http_header_string value)
 {
+    if (header_map.size() == max_headers) {
+        overflow = true;
+        return false;
+    }
     auto hi = header_map.find(name);
     if (hi == header_map.end()) {
         
