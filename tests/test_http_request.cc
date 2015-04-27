@@ -45,7 +45,8 @@ class test_http_request : public CppUnit::TestFixture
     CPPUNIT_TEST(test_parse_request_6_body_fragment);
     CPPUNIT_TEST(test_parse_request_to_string);
     CPPUNIT_TEST(test_parse_request_to_buffer);
-    CPPUNIT_TEST(test_parse_request_overflow);
+    CPPUNIT_TEST(test_parse_request_buffer_overflow);
+    CPPUNIT_TEST(test_parse_request_max_headers_overflow);
     CPPUNIT_TEST(test_parse_request_no_buffer);
     CPPUNIT_TEST(test_parse_request_incremental);
     CPPUNIT_TEST_SUITE_END();
@@ -174,7 +175,7 @@ public:
         CPPUNIT_ASSERT(memcmp(buf, (const char*)request_4_ok, sizeof(request_4_ok)) == 0);
     }
     
-    void test_parse_request_overflow()
+    void test_parse_request_buffer_overflow()
     {
         // test header buffer overflow
         http_request request;
@@ -185,7 +186,19 @@ public:
         CPPUNIT_ASSERT(request.has_overflow() == true);
         CPPUNIT_ASSERT(request.to_string() != request_4_ok);
     }
-    
+
+    void test_parse_request_max_headers_overflow()
+    {
+        // test header buffer overflow
+        http_request request;
+        request.resize(4096, 2);
+        size_t bytes_parsed = request.parse(request_4_ok, strlen(request_4_ok));
+        CPPUNIT_ASSERT(bytes_parsed == strlen(request_4_ok));
+        CPPUNIT_ASSERT(request.has_error() == true);
+        CPPUNIT_ASSERT(request.has_overflow() == true);
+        CPPUNIT_ASSERT(request.to_string() != request_4_ok);
+    }
+
     void test_parse_request_no_buffer()
     {
         // test failure to call resize
