@@ -954,7 +954,7 @@ void http_server::handle_state_client_request(protocol_thread_delegate *delegate
             delegate->remove_events(http_conn);
             work_connection(delegate, http_conn);
         }
-    } else if (http_conn->request.has_error() || http_conn->request.is_finished()) {
+    } else if (http_conn->request.has_error()) {
         log_debug("%90s:%p: %s: header parse error: aborting connection",
                   delegate->get_thread_string().c_str(),
                   delegate->get_thread_id(),
@@ -1197,19 +1197,8 @@ void http_server::worker_process_request(protocol_thread_delegate *delegate, pro
 {
     auto http_conn = static_cast<http_server_connection*>(obj);
     auto &buffer = http_conn->buffer;
-    time_t current_time = delegate->get_current_time();
-    char date_buf[32];
     
     // start request processing
-    http_conn->response.reset();
-    http_conn->response.set_http_version(kHTTPVersion11);
-    http_conn->response.set_header_field(kHTTPHeaderServer, format_string("%s/%s", ServerName, ServerVersion));
-    http_conn->response.set_header_field(kHTTPHeaderDate, http_date(current_time).to_header_string(date_buf, sizeof(date_buf)));
-    http_conn->handler = translate_path(delegate, http_conn);
-    http_conn->handler->init();
-    http_conn->handler->set_delegate(delegate);
-    http_conn->handler->set_connection(http_conn);
-    http_conn->handler->set_current_time(current_time);
     if (!http_conn->handler->handle_request()) {
         log_debug("%90s:%p: %s: request handler failed",
                   delegate->get_thread_string().c_str(),
@@ -1249,18 +1238,13 @@ void http_server::linger_read_connection(protocol_thread_delegate *delegate, pro
 bool http_server::process_request_headers(protocol_thread_delegate *delegate, protocol_object *obj)
 {
     auto http_conn = static_cast<http_server_connection*>(obj);
+    time_t current_time = delegate->get_current_time();
+    char date_buf[32];
     
     // sanitize the request path
-    // TODO - correctly handle canonical unescaping before sanitizing path
-    // TODO - detect proxy requests
-    // TODO - null check on request path dereference
-    // TODO - handle authorization
-    int ret = http_common::sanitize_path(const_cast<char*>(http_conn->request.request_path.data));
-    if (ret < 0) {
-        log_error("%90s:%p: %s: TODO - send bad request error",
-                  delegate->get_thread_string().c_str(),
-                  delegate->get_thread_id(),
-                  obj->to_string().c_str());
+    if (http_conn->request.request_path.data == nullptr ||
+        http_common::sanitize_path(const_cast<char*>(http_conn->request.request_path.data)) < 0)
+    {
         return false;
     }
     
@@ -1268,6 +1252,25 @@ bool http_server::process_request_headers(protocol_thread_delegate *delegate, pr
     if (delegate->get_debug_mask() & protocol_debug_headers) {
         printf("%s", http_conn->request.to_string().c_str());
     }
+
+    // TODO - correctly handle canonical unescaping before sanitizing path
+    // TODO - detect proxy requests
+    // TODO - null check on request path dereference
+    // TODO - handle authorization
+
+    // lookup handler
+    http_conn->handler = translate_path(delegate, http_conn);
+    http_conn->handler->init();
+    http_conn->handler->set_delegate(delegate);
+    http_conn->handler->set_connection(http_conn);
+    http_conn->handler->set_current_time(current_time);
+
+    // initialize response
+    http_conn->response.reset();
+    http_conn->response.set_http_version(kHTTPVersion11);
+    http_conn->response.set_header_field(kHTTPHeaderServer, format_string("%s/%s", ServerName, ServerVersion));
+    http_conn->response.set_header_field(kHTTPHeaderDate, http_date(current_time).to_header_string(date_buf, sizeof(date_buf)));
+
     return true;
 }
     
