@@ -16,8 +16,12 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <queue>
+#include <atomic>
 #include <deque>
 #include <map>
+#include <chrono>
+#include <condition_variable>
 
 #include <openssl/crypto.h>
 #include <openssl/ssl.h>
