@@ -33,7 +33,9 @@ log_thread::log_thread(int fd, size_t num_buffers) :
     num_buffers(num_buffers),
     log_buffers_free(num_buffers),
     log_buffers_inuse(num_buffers),
+    last_time(0),
     running(true),
+    writer_waiting(false),
     thread(&log_thread::mainloop, this)
 {
     create_buffers();
