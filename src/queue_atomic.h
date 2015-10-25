@@ -121,7 +121,7 @@ struct queue_atomic
     
     virtual ~queue_atomic()
     {
-        delete vec;
+        delete [] vec;
     }
     
     bool empty()
