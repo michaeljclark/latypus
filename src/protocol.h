@@ -227,7 +227,10 @@ struct protocol_thread_delegate
     virtual std::string get_thread_string() const = 0;
     virtual int get_thread_mask() const = 0;
     virtual int get_debug_mask() const = 0;
-    
+
+    virtual void log_error(const char* fmt, ...) const = 0;
+    virtual void log_debug(const char* fmt, ...) const = 0;
+
     virtual protocol_thread_delegate* choose_thread(int mask) = 0;
     virtual void send_message(protocol_thread_delegate *to_thread, protocol_message msg) = 0;
     virtual void queue_message(protocol_thread_delegate *to_thread, protocol_message msg) = 0;

@@ -48,7 +48,10 @@ struct protocol_thread : protocol_thread_delegate
     std::string get_thread_string() const;
     int get_thread_mask() const;
     int get_debug_mask() const;
-    
+
+    void log_error(const char* fmt, ...) const;
+    void log_debug(const char* fmt, ...) const;
+
     protocol_thread_delegate* choose_thread(int mask);
     void send_message(protocol_thread_delegate *to_thread, protocol_message msg);
     void queue_message(protocol_thread_delegate *to_thread, protocol_message msg);

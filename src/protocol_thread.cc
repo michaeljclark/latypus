@@ -149,6 +149,22 @@ std::string protocol_thread::get_thread_string() const { return thread_mask_to_s
 int protocol_thread::get_thread_mask() const { return thread_mask; }
 int protocol_thread::get_debug_mask() const { return engine->debug_mask; }
 
+void protocol_thread::log_error(const char* fmt, ...) const
+{
+    va_list ap;
+    va_start(ap, fmt);
+    log_prefix(format_string("ERROR: %90s:%p", get_thread_string().c_str(), get_thread_id()).c_str(), fmt, ap);
+    va_end(ap);
+}
+
+void protocol_thread::log_debug(const char* fmt, ...) const
+{
+    va_list ap;
+    va_start(ap, fmt);
+    log_prefix(format_string("DEBUG: %90s:%p", get_thread_string().c_str(), get_thread_id()).c_str(), fmt, ap);
+    va_end(ap);
+}
+
 protocol_thread_delegate* protocol_thread::choose_thread(int thread_mask)
 {
     if (this->thread_mask & thread_mask) return this;
@@ -218,7 +234,7 @@ void protocol_thread::receive_message()
 void protocol_thread::mainloop()
 {
     if (engine->debug_mask & protocol_debug_thread) {
-        log_debug("%90s:%p: started", get_thread_string().c_str(), get_thread_id());
+        log_debug("started");
     }
     
     // block signals
@@ -254,8 +270,7 @@ void protocol_thread::mainloop()
         for (auto obj : events) {
             if (engine->debug_mask & protocol_debug_event) {
                 // TODO eventually make pollset use protocol_sock to print socket name
-                log_debug("%90s:%p: %s",
-                          get_thread_string().c_str(), get_thread_id(), obj.to_string().c_str());
+                log_debug("%s", obj.to_string().c_str());
             }
             if (obj.type == protocol::sock_ipc.type) {
                 receive_message();
@@ -269,16 +284,13 @@ void protocol_thread::mainloop()
                         } else if (proto_sock->flags & protocol_sock_tcp_connection) {
                             proto_sock->proto->handle_connection(this, static_cast<protocol_object*>(obj.ptr), obj.event_mask);
                         } else {
-                            log_error("%90s:%p: unknown flags: %s",
-                                      get_thread_string().c_str(), get_thread_id(), obj.to_string().c_str());
+                            log_error("unknown flags: %s", obj.to_string().c_str());
                         }
                     } else {
-                        log_error("%90s:%p: missing protocol: %s",
-                                  get_thread_string().c_str(), get_thread_id(), obj.to_string().c_str());
+                        log_error("missing protocol: %s", obj.to_string().c_str());
                     }
                 } else {
-                    log_error("%90s:%p: invalid socket type: %s",
-                              get_thread_string().c_str(), get_thread_id(), obj.to_string().c_str());
+                    log_error("invalid socket type: %s", obj.to_string().c_str());
                 }
             }
         }
@@ -295,14 +307,13 @@ void protocol_thread::mainloop()
                         }
                     }
                 } else {
-                    log_error("%90s:%p: invalid socket type: %s",
-                              get_thread_string().c_str(), get_thread_id(), obj.to_string().c_str());
+                    log_error("invalid socket type: %s", obj.to_string().c_str());
                 }
             }
         }
     }
     
     if (engine->debug_mask & protocol_debug_thread) {
-        log_debug("%90s:%p: finished", get_thread_string().c_str(), get_thread_id());
+        log_debug("finished");
     }
 }

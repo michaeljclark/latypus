@@ -647,11 +647,8 @@ void http_server::handle_message(protocol_thread_delegate *delegate, protocol_me
     
     conn.set_last_activity(delegate->get_current_time());
     if (delegate->get_debug_mask() & protocol_debug_message) {
-        log_debug("%90s:%p: %s: message: %s",
-                  delegate->get_thread_string().c_str(),
-                  delegate->get_thread_id(),
-                  http_conn->to_string().c_str(),
-                  action->name.c_str());
+        delegate->log_debug("%s: message: %s",
+                            http_conn->to_string().c_str(), action->name.c_str());
     }
     action->callback(delegate, http_conn);
 }
@@ -669,19 +666,14 @@ void http_server::handle_accept(protocol_thread_delegate *delegate, const protoc
         socklen_t addrlen = sizeof(sockaddr_storage);
         if ((fd = accept(listen_fd, (sockaddr*)&addr, &addrlen)) < 0) {
             if (errno == EAGAIN) return;
-            log_error("%90s:%p: accept: %s",
-                      delegate->get_thread_string().c_str(),
-                      delegate->get_thread_id(),
-                      strerror(errno));
+            delegate->log_error("accept: %s", strerror(errno));
             return;
         }
         
         // get a free connection
         auto http_conn = new_connection(delegate);
         if (http_conn == nullptr) {
-            log_error("%90s:%p: accept: no free connections",
-                      delegate->get_thread_string().c_str(),
-                      delegate->get_thread_id());
+            delegate->log_error("accept: no free connections");
             // TODO - queue accept
             close(fd);
             continue;
@@ -704,21 +696,16 @@ void http_server::handle_accept(protocol_thread_delegate *delegate, const protoc
                 break;
         }
         if (delegate->get_debug_mask() & protocol_debug_socket) {
-            log_debug("%90s:%p: %s: accepted%s connection",
-                      delegate->get_thread_string().c_str(),
-                      delegate->get_thread_id(),
-                      http_conn->to_string().c_str(),
-                      listen->get_mode() == socket_mode_tls ? " tls" : "");
+            delegate->log_debug("%s: accepted%s connection",
+                                http_conn->to_string().c_str(),
+                                listen->get_mode() == socket_mode_tls ? " tls" : "");
         }
         
         // copy local address into connection and get peer address
         memcpy(&conn.get_peer_addr().storage, &addr, sizeof(sockaddr_storage));
         addrlen = sizeof(sockaddr_storage);
         if (getsockname(fd, (sockaddr*)&conn.get_local_addr().storage, &addrlen) < 0) {
-            log_error("%90s:%p: getpeername: %s",
-                      delegate->get_thread_string().c_str(),
-                      delegate->get_thread_id(),
-                      strerror(errno));
+            delegate->log_error("getpeername: %s", strerror(errno));
         }
         
         get_engine_state(delegate)->stats.connections_accepted++;
@@ -744,31 +731,22 @@ void http_server::handle_connection(protocol_thread_delegate *delegate, protocol
     if (revents & poll_event_hup) {
         if (delegate->get_debug_mask() & protocol_debug_socket) {
             int socket_error = conn.get_sock_error();
-            log_debug("%90s:%p: %s: %s",
-                      delegate->get_thread_string().c_str(),
-                      delegate->get_thread_id(),
-                      obj->to_string().c_str(),
-                      socket_error ? strerror(socket_error) : "connection closed");
+            delegate->log_debug("%s: %s", obj->to_string().c_str(),
+                                socket_error ? strerror(socket_error) : "connection closed");
         }
         delegate->remove_events(http_conn);
         close_connection(delegate, http_conn);
         return;
     } else if (revents & poll_event_err) {
         if (delegate->get_debug_mask() & protocol_debug_socket) {
-            log_debug("%90s:%p: %s: socket exception",
-                      delegate->get_thread_string().c_str(),
-                      delegate->get_thread_id(),
-                      obj->to_string().c_str());
+            delegate->log_debug("%s: socket exception", obj->to_string().c_str());
         }
         delegate->remove_events(http_conn);
         close_connection(delegate, http_conn);
         return;
     } else if (revents & poll_event_invalid) {
         if (delegate->get_debug_mask() & protocol_debug_socket) {
-            log_debug("%90s:%p: %s: invalid socket",
-                      delegate->get_thread_string().c_str(),
-                      delegate->get_thread_id(),
-                      obj->to_string().c_str());
+            delegate->log_debug("%s: invalid socket", obj->to_string().c_str());
         }
         delegate->remove_events(http_conn);
         close_connection(delegate, http_conn);
@@ -777,11 +755,8 @@ void http_server::handle_connection(protocol_thread_delegate *delegate, protocol
         if (http_conn->state->callback) {
             http_conn->state->callback(delegate, obj);
         } else {
-            log_error("%90s:%p: %s: invalid connection state: state=%d",
-                      delegate->get_thread_string().c_str(),
-                      delegate->get_thread_id(),
-                      obj->to_string().c_str(),
-                      http_conn->state);
+            delegate->log_error("%s: invalid connection state: state=%d",
+                                obj->to_string().c_str(), http_conn->state);
             delegate->remove_events(http_conn);
             abort_connection(delegate, http_conn);
         }
@@ -808,10 +783,8 @@ void http_server::timeout_connection(protocol_thread_delegate *delegate, protoco
     {
         if (current_time - last_activity > cfg->connection_timeout) {
             if (delegate->get_debug_mask() & protocol_debug_timeout) {
-                log_debug("%90s:%p: %s: inactivity timeout reached: aborting connection",
-                          delegate->get_thread_string().c_str(),
-                          delegate->get_thread_id(),
-                          obj->to_string().c_str());
+                delegate->log_debug("%s: inactivity timeout reached: aborting connection",
+                                    obj->to_string().c_str());
             }
             delegate->remove_events(http_conn);
             linger_connection(delegate, http_conn);
@@ -819,10 +792,8 @@ void http_server::timeout_connection(protocol_thread_delegate *delegate, protoco
     } else if (http_conn->state == &connection_state_lingering_close) {
         if (current_time - last_activity > cfg->connection_timeout) {
             if (delegate->get_debug_mask() & protocol_debug_timeout) {
-                log_debug("%90s:%p: %s: inactivity timeout reached: aborting connection",
-                          delegate->get_thread_string().c_str(),
-                          delegate->get_thread_id(),
-                          obj->to_string().c_str());
+                delegate->log_debug("%s: inactivity timeout reached: aborting connection",
+                                    obj->to_string().c_str());
             }
             delegate->remove_events(http_conn);
             abort_connection(delegate, http_conn);
@@ -830,10 +801,8 @@ void http_server::timeout_connection(protocol_thread_delegate *delegate, protoco
     } else if (http_conn->state == &connection_state_waiting) {
         if (current_time - last_activity > cfg->keepalive_timeout) {
             if (delegate->get_debug_mask() & protocol_debug_timeout) {
-                log_debug("%90s:%p: %s: keepalive timeout reached: closing connection",
-                          delegate->get_thread_string().c_str(),
-                          delegate->get_thread_id(),
-                          obj->to_string().c_str());
+                delegate->log_debug("%s: keepalive timeout reached: closing connection",
+                                    obj->to_string().c_str());
             }
             delegate->remove_events(http_conn);
             close_connection(delegate, http_conn);
@@ -863,18 +832,16 @@ void http_server::handle_state_tls_handshake(protocol_thread_delegate *delegate,
                     cipher_bits = SSL_CIPHER_get_bits(cipher, nullptr);
                     cipher_name = SSL_CIPHER_get_name(cipher);
                     cipher_version = SSL_CIPHER_get_version(cipher);
-                    log_debug("%90s:%p: %s: tls cipher_name=%s cipher_version=%s cipher_bits=%d",
-                              delegate->get_thread_string().c_str(),
-                              delegate->get_thread_id(),
-                              obj->to_string().c_str(),
-                              cipher_name, cipher_version, cipher_bits);
+                    if (delegate->get_debug_mask() & protocol_debug_tls) {
+                        delegate->log_debug("%s: tls cipher_name=%s cipher_version=%s cipher_bits=%d",
+                                            obj->to_string().c_str(), cipher_name, cipher_version, cipher_bits);
+                    }
                 }
                 if (servername) {
-                    log_debug("%90s:%p: %s: tls servername=%s",
-                              delegate->get_thread_string().c_str(),
-                              delegate->get_thread_id(),
-                              obj->to_string().c_str(),
-                              servername);
+                    if (delegate->get_debug_mask() & protocol_debug_tls) {
+                        delegate->log_debug("%s: tls servername=%s",
+                                            obj->to_string().c_str(), servername);
+                    }
                 }
             }
             
@@ -887,10 +854,8 @@ void http_server::handle_state_tls_handshake(protocol_thread_delegate *delegate,
             delegate->add_events(http_conn, poll_event_in);
             break;
         default:
-            log_debug("%90s:%p: %s: unknown tls handshake error %d: closing connection",
-                      delegate->get_thread_string().c_str(),
-                      delegate->get_thread_id(),
-                      obj->to_string().c_str(), ret);
+            delegate->log_error("%s: unknown tls handshake error %d: closing connection",
+                                obj->to_string().c_str(), ret);
             delegate->remove_events(http_conn);
             close_connection(delegate, http_conn);
             break;
@@ -905,21 +870,16 @@ void http_server::handle_state_client_request(protocol_thread_delegate *delegate
     
     // read request and request headers
     if (buffer.bytes_writable() <= 0) {
-        log_error("%90s:%p: %s: header buffer full: aborting connection",
-                  delegate->get_thread_string().c_str(),
-                  delegate->get_thread_id(),
-                  obj->to_string().c_str());
+        delegate->log_error("%s: header buffer full: aborting connection",
+                            obj->to_string().c_str());
         delegate->remove_events(http_conn);
         abort_connection(delegate, http_conn); // TODO - bad request or lingering close?
         return;
     }
     io_result result = buffer.buffer_read(conn);
     if (result.has_error()) {
-        log_error("%90s:%p: %s: read exception: aborting connection: %s",
-                  delegate->get_thread_string().c_str(),
-                  delegate->get_thread_id(),
-                  obj->to_string().c_str(),
-                  result.error_string().c_str());
+        delegate->log_error("%s: read exception: aborting connection: %s",
+                            obj->to_string().c_str(), result.error_string().c_str());
         delegate->remove_events(http_conn);
         abort_connection(delegate, http_conn);
         return;
@@ -955,10 +915,8 @@ void http_server::handle_state_client_request(protocol_thread_delegate *delegate
             work_connection(delegate, http_conn);
         }
     } else if (http_conn->request.has_error()) {
-        log_debug("%90s:%p: %s: header parse error: aborting connection",
-                  delegate->get_thread_string().c_str(),
-                  delegate->get_thread_id(),
-                  obj->to_string().c_str());
+        delegate->log_error("%s: header parse error: aborting connection",
+                            obj->to_string().c_str());
         delegate->remove_events(http_conn);
         abort_connection(delegate, http_conn); // TODO - bad request or lingering close?
     }
@@ -971,11 +929,8 @@ void http_server::handle_state_client_body(protocol_thread_delegate *delegate, p
     // read request body e.g. POST
     io_result result = http_conn->handler->read_request_body();
     if (result.has_error()) {
-        log_error("%90s:%p: %s: handler read_request_body failed: aborting connection: %s",
-                  delegate->get_thread_string().c_str(),
-                  delegate->get_thread_id(),
-                  obj->to_string().c_str(),
-                  result.error_string().c_str());
+        delegate->log_error("%s: handler read_request_body failed: aborting connection: %s",
+                            obj->to_string().c_str(), result.error_string().c_str());
         delegate->remove_events(http_conn);
         abort_connection(delegate, http_conn); // TODO - bad request or lingering close?
     } else if (result.size() == 0) {
@@ -1000,11 +955,8 @@ void http_server::handle_state_server_response(protocol_thread_delegate *delegat
     // TODO - if response has body then populate io_buffer and write in write_response_body
     io_result result = buffer.buffer_write(conn);
     if (result.has_error()) {
-        log_error("%90s:%p: %s: write exception: aborting connection: %s",
-                  delegate->get_thread_string().c_str(),
-                  delegate->get_thread_id(),
-                  obj->to_string().c_str(),
-                  result.error_string().c_str());
+        delegate->log_error("%s: write exception: aborting connection: %s",
+                            obj->to_string().c_str(), result.error_string().c_str());
         delegate->remove_events(http_conn);
         abort_connection(delegate, http_conn);
         return;
@@ -1036,18 +988,13 @@ void http_server::handle_state_server_response(protocol_thread_delegate *delegat
     } else {
         // BUG http_conn->handler can be null as handler can abort connection - revise handler interface to return errors
         if (!http_conn->handler->end_request()) {
-            log_error("%90s:%p: %s: handler end_request failed: aborting connection",
-                      delegate->get_thread_string().c_str(),
-                      delegate->get_thread_id(),
-                      obj->to_string().c_str());
+            delegate->log_error("%s: handler end_request failed: aborting connection",
+                                obj->to_string().c_str());
             delegate->remove_events(http_conn);
             abort_connection(delegate, http_conn);
         } else if (http_conn->connection_close) {
             if (delegate->get_debug_mask() & protocol_debug_socket) {
-                log_debug("%90s:%p: %s: closing connection",
-                          delegate->get_thread_string().c_str(),
-                          delegate->get_thread_id(),
-                          obj->to_string().c_str());
+                delegate->log_debug("%s: closing connection", obj->to_string().c_str());
             }
             get_engine_state(delegate)->stats.requests_processed++;
             delegate->remove_events(http_conn);
@@ -1068,27 +1015,19 @@ void http_server::handle_state_server_body(protocol_thread_delegate *delegate, p
     // or forward the connection to the keepalive thread
     io_result result = http_conn->handler->write_response_body();
     if (result.has_error()) {
-        log_error("%90s:%p: %s: handler write_response_body failed: aborting connection: %s",
-                  delegate->get_thread_string().c_str(),
-                  delegate->get_thread_id(),
-                  obj->to_string().c_str(),
-                  result.error_string().c_str());
+        delegate->log_error("%s: handler write_response_body failed: aborting connection: %s",
+                            obj->to_string().c_str(), result.error_string().c_str());
         delegate->remove_events(http_conn);
         abort_connection(delegate, http_conn);
     } else if (result.size() == 0) {
         if (!http_conn->handler->end_request()) {
-            log_error("%90s:%p: %s: handler end_request failed: aborting connection",
-                      delegate->get_thread_string().c_str(),
-                      delegate->get_thread_id(),
-                      obj->to_string().c_str());
+            delegate->log_error("%s: handler end_request failed: aborting connection",
+                                obj->to_string().c_str());
             delegate->remove_events(http_conn);
             abort_connection(delegate, http_conn);
         } else if (http_conn->connection_close) {
             if (delegate->get_debug_mask() & protocol_debug_socket) {
-                log_debug("%90s:%p: %s: closing connection",
-                          delegate->get_thread_string().c_str(),
-                          delegate->get_thread_id(),
-                          obj->to_string().c_str());
+                delegate->log_debug("%s: closing connection", obj->to_string().c_str());
             }
             finished_request(delegate, obj);
             delegate->remove_events(http_conn);
@@ -1200,10 +1139,7 @@ void http_server::worker_process_request(protocol_thread_delegate *delegate, pro
     
     // start request processing
     if (!http_conn->handler->handle_request()) {
-        log_debug("%90s:%p: %s: request handler failed",
-                  delegate->get_thread_string().c_str(),
-                  delegate->get_thread_id(),
-                  obj->to_string().c_str());
+        delegate->log_debug("%s: request handler failed", obj->to_string().c_str());
         abort_connection(delegate, http_conn);
     } else if (http_conn->request_has_body) {
         // copy body fragment to start of buffer
@@ -1215,10 +1151,7 @@ void http_server::worker_process_request(protocol_thread_delegate *delegate, pro
         http_conn->state = &connection_state_server_response;
         delegate->add_events(obj, poll_event_out);
     } else {
-        log_debug("%90s:%p: %s: response buffer full",
-                  delegate->get_thread_string().c_str(),
-                  delegate->get_thread_id(),
-                  obj->to_string().c_str());
+        delegate->log_debug("%s: response buffer full", obj->to_string().c_str());
         abort_connection(delegate, http_conn);
     }
 }
@@ -1334,8 +1267,8 @@ http_server_handler_ptr http_server::translate_path(protocol_thread_delegate *de
     handler->location = location;
     handler->path_translated = path_translated;
     if (delegate->get_debug_mask() & protocol_debug_handler) {
-        log_debug("vhost=%s host_header=%s host_port=%d root=%s path_translated=%s",
-                  vhost->server_names[0].c_str(), host_header, host_port, root.c_str(), handler->path_translated.c_str());
+        delegate->log_debug("vhost=%s host_header=%s host_port=%d root=%s path_translated=%s",
+                            vhost->server_names[0].c_str(), host_header, host_port, root.c_str(), handler->path_translated.c_str());
     }
     
     return handler;
@@ -1356,10 +1289,7 @@ ssize_t http_server::populate_response_headers(protocol_thread_delegate *delegat
     
     // check headers fit into available buffer space
     if (length < 0) {
-        log_error("%90s:%p: %s: header buffer overflow",
-                  delegate->get_thread_string().c_str(),
-                  delegate->get_thread_id(),
-                  obj->to_string().c_str());
+        delegate->log_error("%s: header buffer overflow", obj->to_string().c_str());
         // TODO - send internal error
         delegate->remove_events(http_conn);
         abort_connection(delegate, http_conn);
@@ -1435,11 +1365,7 @@ void http_server::forward_connection(protocol_thread_delegate* delegate, protoco
     if (destination_thread) {
         delegate->send_message(destination_thread, protocol_message(proto_action.action, conn.get_id()));
     } else {
-        log_error("%90s:%p: %s: no thread avaiable: %",
-                  delegate->get_thread_string().c_str(),
-                  delegate->get_thread_id(),
-                  obj->to_string().c_str(),
-                  proto_mask.name.c_str());
+        delegate->log_error("%s: no thread avaiable: %", obj->to_string().c_str(), proto_mask.name.c_str());
         abort_connection(delegate, http_conn);
     }
 }
