@@ -10,7 +10,7 @@
 
 struct protocol_engine : protocol_engine_delegate
 {
-    int                             debug_mask;
+    unsigned int                    debug_mask;
     
     protocol_engine_state_list      state_list;
     
