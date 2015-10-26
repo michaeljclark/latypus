@@ -296,7 +296,7 @@ SSL_CTX* http_tls_shared::init_client(protocol *proto, config_ptr cfg,
     SSL_CTX_set_options(ctx, SSL_OP_NO_TICKET);
     
     init_dh(ctx);
-    init_ecdh(ctx, NID_secp256k1);
+    init_ecdh(ctx, NID_secp521r1);
     
     if (tls_cipher_list.length() > 0) {
         SSL_CTX_set_cipher_list(ctx, tls_cipher_list.c_str());
@@ -340,7 +340,7 @@ SSL_CTX* http_tls_shared::init_server(protocol *proto, config_ptr cfg,
     SSL_CTX_set_options(ctx, SSL_OP_NO_TICKET);
     
     init_dh(ctx);
-    init_ecdh(ctx, NID_secp256k1);
+    init_ecdh(ctx, NID_secp521r1);
     
     if (tls_cipher_list.length() > 0) {
         SSL_CTX_set_cipher_list(ctx, tls_cipher_list.c_str());
