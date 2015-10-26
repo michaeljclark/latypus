@@ -46,6 +46,7 @@ log_thread::~log_thread()
     shutdown();
     write_logs();
     delete_buffers();
+    fclose(file);
 }
 
 void log_thread::shutdown()
