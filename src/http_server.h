@@ -139,7 +139,7 @@ struct http_server_vhost
     http_server_config*                         server_cfg;
     
     http_server_vhost() = delete;
-    http_server_vhost(http_server_config *server_cfg) : server_cfg(server_cfg) {}
+    http_server_vhost(http_server_config *server_cfg) : server_cfg(server_cfg), ssl_ctx(nullptr) {}
     
     std::vector<http_server_listen_spec>        listens;
     std::vector<std::string>                    server_names;
