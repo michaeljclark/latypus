@@ -391,9 +391,6 @@ void http_tls_shared::thread_cleanup()
 
 void http_tls_shared::cleanup()
 {
-#ifndef OPENSSL_IS_BORINGSSL
-    SSL_COMP_free_compression_methods();
-#endif
     ERR_remove_thread_state(nullptr);
     ERR_free_strings();
     EVP_cleanup();
