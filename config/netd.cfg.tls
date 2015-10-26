@@ -1,0 +1,58 @@
+/* httpd config */
+
+client_connections  128;
+server_connections  1024;
+
+listen_backlog      128;
+max_headers         64;
+header_buffer_size  8192;
+io_buffer_size      32768;
+ipc_buffer_size     1048576;
+log_buffers         1024;
+keepalive_timeout   5;
+connection_timeout  60;
+
+error_log           /tmp/netd.errors;
+access_log          /tmp/netd.access;
+pid_file            /tmp/netd.pid;
+
+root                html;
+index               index.html index.htm;
+
+proto_threads       http_server/listener                                             1;
+proto_threads       http_server/router,http_server/worker,http_server/keepalive      4;
+
+proto_threads       http_client/connect                                              1;
+proto_threads       http_client/worker,http_client/keepalive                         4;
+
+tls_cert_file       ssl/cert.pem;
+tls_key_file        ssl/key.pem;
+tls_cipher_list     ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA:!aNULL:!eNULL:!LOW:!EXPORT:!DES:!MD5:!PSK:!SRP:!RC4;
+
+http_server {
+    listen          8080;                   /* ipv4 ip addr any */
+    listen          []:8886;                /* ipv6 ip addr any */
+    listen          127.0.0.1:8887;         /* ipv4 localhost */
+    listen          8443 tls;               /* ipv4 localhost */
+
+    server_name     default;
+
+    location / {
+        root        html;
+        index       index.html index.htm;
+    };
+
+    location /stats/ {
+        handler     stats;
+    };
+};
+
+mime_type           text/css                        css;
+mime_type           text/html                       htm html;
+mime_type           text/plain                      txt;
+mime_type           image/gif                       gif;
+mime_type           image/jpeg                      jpg jpeg;
+mime_type           application/java-script         js;
+mime_type           image/png                       png;
+mime_type           application/octet-stream        default;
+mime_type           application/x-x509-ca-cert      crt;
