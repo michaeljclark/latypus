@@ -23,7 +23,7 @@ check_opt =     $(shell T=$$(mktemp /tmp/test.XXXX.$(2)); echo 'int main() { ret
 # compiler flag test definitions
 LIBCPP_FLAGS =  -stdlib=libc++
 LTO_FLAGS =     -flto
-PIE_FLAGS =     -fpie
+PIE_FLAGS =     -fpie -pie
 STPS_FLAGS =    -fstack-protector-strong
 STP_FLAGS =     -fstack-protector
 RELRO_FLAGS =   -Wl,-z,relro
@@ -68,7 +68,7 @@ LDFLAGS +=      $(NOEXEC_FLAGS)
 endif
 endif
 
-# check if we can use compile position independent executable
+# check if we can compile position independent executable
 ifeq ($(call check_opt,$(CXX),cc,$(PIE_FLAGS)), 0)
 CXXFLAGS +=     $(PIE_FLAGS)
 endif
