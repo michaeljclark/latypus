@@ -23,7 +23,8 @@ check_opt =     $(shell T=$$(mktemp /tmp/test.XXXX.$(2)); echo 'int main() { ret
 # compiler flag test definitions
 LIBCPP_FLAGS =  -stdlib=libc++
 LTO_FLAGS =     -flto
-PIE_FLAGS =     -fpie -pie
+PIE_FLAGS =     -fpie
+PIE_LDFLAGS =   -pie
 STPS_FLAGS =    -fstack-protector-strong
 STP_FLAGS =     -fstack-protector
 RELRO_FLAGS =   -Wl,-z,relro
@@ -71,6 +72,7 @@ endif
 # check if we can compile position independent executable
 ifeq ($(call check_opt,$(CXX),cc,$(PIE_FLAGS)), 0)
 CXXFLAGS +=     $(PIE_FLAGS)
+LDFLAGS +=      $(PIE_LDFLAGS)
 endif
 
 # prefer link time optimization by default with clang
