@@ -384,7 +384,18 @@ SSL_CTX* http_tls_shared::init_server(protocol *proto, config_ptr cfg,
     return ctx;
 }
 
+void http_tls_shared::thread_cleanup()
+{
+    ERR_remove_thread_state(nullptr);
+}
+
 void http_tls_shared::cleanup()
 {
+#ifndef OPENSSL_IS_BORINGSSL
+    SSL_COMP_free_compression_methods();
+#endif
+    ERR_remove_thread_state(nullptr);
     ERR_free_strings();
+    EVP_cleanup();
+    CRYPTO_cleanup_all_ex_data();
 }

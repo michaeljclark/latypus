@@ -243,7 +243,7 @@ void http_client::thread_init(protocol_thread_delegate *delegate) const
 
 void http_client::thread_shutdown(protocol_thread_delegate *delegate) const
 {
-    
+    http_tls_shared::thread_cleanup();
 }
 
 void http_client::handle_message(protocol_thread_delegate *delegate, protocol_message &msg) const

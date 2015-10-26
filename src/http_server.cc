@@ -640,6 +640,7 @@ void http_server::thread_init(protocol_thread_delegate *delegate) const
 
 void http_server::thread_shutdown(protocol_thread_delegate *delegate) const
 {
+    http_tls_shared::thread_cleanup();
 }
 
 void http_server::handle_message(protocol_thread_delegate *delegate, protocol_message &msg) const
