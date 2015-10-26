@@ -1,7 +1,7 @@
 pid_file            /tmp/netd.pid;
 
-proto_threads       http_server/listener                                                                1;
-proto_threads       http_server/router,http_server/worker,http_server/keepalive,http_server/linger      4;
+proto_threads       http_server/listener                                             1;
+proto_threads       http_server/router,http_server/worker,http_server/keepalive      4;
 
 http_server {
     listen          8080;
@@ -14,12 +14,12 @@ http_server {
     location / {
         root        html;
         index       index.html index.htm;
-    };
+    }
 
     location /stats/ {
         handler     stats;
-    };
-};
+    }
+}
 
 mime_type           text/css                        css;
 mime_type           text/html                       htm html;

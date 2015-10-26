@@ -1,4 +1,4 @@
-/* httpd config */
+# httpd config
 
 client_connections  128;
 server_connections  32768;
@@ -23,21 +23,21 @@ proto_threads       http_server/listener                                        
 proto_threads       http_server/router,http_server/worker,http_server/keepalive      8;
 
 http_server {
-    listen          8080;                   /* ipv4 ip addr any */
-    listen          []:8886;                /* ipv6 ip addr any */
-    listen          127.0.0.1:8887;         /* ipv4 localhost */
+    listen          8080;                   # ipv4 ip addr any
+    listen          []:8886;                # ipv6 ip addr any
+    listen          127.0.0.1:8887;         # ipv4 localhost
 
     server_name     default;
 
     location / {
         root        html;
         index       index.html index.htm;
-    };
+    }
     
     location /stats/ {
         handler     stats;
-    };
-};
+    }
+}
 
 mime_type           text/css                        css;
 mime_type           text/html                       htm html;

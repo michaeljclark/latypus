@@ -1,4 +1,4 @@
-/* httpd config */
+# httpd config
 
 server_connections  1024;
 listen_backlog      128;
@@ -17,11 +17,11 @@ pid_file            /var/run/netd.pid;
 root                html;
 index               index.html index.htm;
 
-proto_threads       http_server/listener                                                                1;
-proto_threads       http_server/router,http_server/worker,http_server/keepalive,http_server/linger      4;
+proto_threads       http_server/listener                                             1;
+proto_threads       http_server/router,http_server/worker,http_server/keepalive      4;
 
-proto_threads       http_client/connect                                                                 1;
-proto_threads       http_client/processor,http_client/keepalive                                         4;
+proto_threads       http_client/connect                                              1;
+proto_threads       http_client/worker,http_client/keepalive                         4;
 
 http_server {
     listen          127.0.0.1:80;
@@ -31,12 +31,12 @@ http_server {
     location / {
         root        /var/www;
         index       index.html index.htm;
-    };
+    }
 
     location /stats/ {
         handler     stats;
-    };
-};
+    }
+}
 
 http_server {
     listen          443 tls;
@@ -52,9 +52,9 @@ http_server {
     location / {
         root        /var/www/server1;
         index       index.html index.htm;
-    };
+    }
 
-};
+}
 
 http_server {
     listen          443 tls;
@@ -70,8 +70,8 @@ http_server {
     location / {
         root        /var/www/server2;
         index       index.html index.htm;
-    };
-};
+    }
+}
 
 mime_type           text/css                        css;
 mime_type           text/html                       htm html;

@@ -1,4 +1,4 @@
-/* httpd config */
+# httpd config
 
 client_connections  128;
 server_connections  1024;
@@ -30,22 +30,22 @@ tls_key_file        ssl/key.pem;
 tls_cipher_list     ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA:!aNULL:!eNULL:!LOW:!EXPORT:!DES:!MD5:!PSK:!SRP:!RC4;
 
 http_server {
-    listen          8080;                   /* ipv4 ip addr any */
-    listen          []:8886;                /* ipv6 ip addr any */
-    listen          127.0.0.1:8887;         /* ipv4 localhost */
-    listen          8443 tls;               /* ipv4 localhost */
+    listen          8080;                   # ipv4 ip addr any
+    listen          []:8886;                # ipv6 ip addr any
+    listen          127.0.0.1:8887;         # ipv4 localhost
+    listen          8443 tls;               # ipv4 localhost
 
     server_name     default;
 
     location / {
         root        html;
         index       index.html index.htm;
-    };
+    }
 
     location /stats/ {
         handler     stats;
-    };
-};
+    }
+}
 
 mime_type           text/css                        css;
 mime_type           text/html                       htm html;
