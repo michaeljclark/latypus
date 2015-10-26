@@ -620,6 +620,9 @@ void http_server::engine_shutdown(protocol_engine_delegate *delegate) const
             SSL_CTX_free(vhost->ssl_ctx);
         }
     }
+    
+    // free SSL globals
+    http_tls_shared::cleanup();
 }
 
 void http_server::thread_init(protocol_thread_delegate *delegate) const

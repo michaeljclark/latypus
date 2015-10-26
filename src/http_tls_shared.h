@@ -69,6 +69,7 @@ struct http_tls_shared
                                 std::string tls_cipher_list,
                                 std::string tls_key_file,
                                 std::string tls_cert_file);
+    static void cleanup();
     
     static std::string log_cipher(SSL *ssl);
 };

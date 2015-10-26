@@ -383,3 +383,8 @@ SSL_CTX* http_tls_shared::init_server(protocol *proto, config_ptr cfg,
     
     return ctx;
 }
+
+void http_tls_shared::cleanup()
+{
+    ERR_free_strings();
+}
