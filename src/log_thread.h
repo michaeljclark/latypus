@@ -24,10 +24,10 @@ struct log_thread : std::thread
     time_t                          last_time;
     std::atomic<bool>               running;
     std::atomic<bool>               writer_waiting;
-    std::thread                     thread;
     std::mutex                      log_mutex;
     std::condition_variable         log_cond;
     std::condition_variable         writer_cond;
+    std::thread                     thread;
 
     log_thread(int fd, size_t num_buffers);
     virtual ~log_thread();
