@@ -14,7 +14,7 @@ struct pollset_epoll : pollset
     int                         epoll_fd;
     std::vector<struct epoll_event>  eevents;
     std::vector<poll_object>    pollobjects;
-    std::unordered_map<int,poll_object>   pollobjects_map;
+    std::vector<poll_object>    pollobjects_map;
     std::vector<poll_object>    events;
     
     pollset_epoll();
