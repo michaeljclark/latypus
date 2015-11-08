@@ -41,7 +41,7 @@ struct http_server_handler_factory_func : http_server_handler_factory
     http_server_handler_factory_func(std::string name, http_server_function fn) : name(name), fn(fn) {}
     
     std::string get_name() { return name; }
-    http_server_handler_ptr new_handler() { return http_server_handler_ptr(new http_server_handler_func(fn)); }
+    http_server_handler_ptr new_handler() { return std::make_shared<http_server_handler_func>(fn); }
 };
 
 #endif

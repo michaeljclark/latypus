@@ -193,7 +193,7 @@ void http_client::make_default_config(config_ptr cfg) const
 
 protocol_config_ptr http_client::make_protocol_config() const
 {
-    return protocol_config_ptr(new http_client_config());
+    return std::make_shared<http_client_config>();
 }
 
 http_client_engine_state* http_client::get_engine_state(protocol_thread_delegate *delegate) {

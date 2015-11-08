@@ -406,7 +406,7 @@ void http_server::make_default_vhost(config_ptr cfg) const
 
 protocol_config_ptr http_server::make_protocol_config() const
 {
-    return protocol_config_ptr(new http_server_config());
+    return std::make_shared<http_server_config>();
 }
 
 http_server_engine_state* http_server::get_engine_state(protocol_thread_delegate *delegate) {
@@ -509,7 +509,7 @@ void http_server::engine_init(protocol_engine_delegate *delegate) const
                 log_info("opened access log file: %s", vhost->access_log.c_str());
             }
             vhost->access_log_file.set_fd(log_fd);
-            vhost->access_log_thread = log_thread_ptr(new log_thread(log_fd, cfg->log_buffers));
+            vhost->access_log_thread = std::make_shared<log_thread>(log_fd, cfg->log_buffers);
         }
         if (vhost->error_log.size() > 0 && vhost->error_log != "off") {
             int log_fd = open(vhost->error_log.c_str(), O_WRONLY|O_CREAT|O_APPEND, 0755);
@@ -520,7 +520,7 @@ void http_server::engine_init(protocol_engine_delegate *delegate) const
                 log_info("opened error log file: %s", vhost->error_log.c_str());
             }
             vhost->error_log_file.set_fd(log_fd);
-            vhost->error_log_thread = log_thread_ptr(new log_thread(log_fd, cfg->log_buffers));
+            vhost->error_log_thread = std::make_shared<log_thread>(log_fd, cfg->log_buffers);
         }
     }
 
@@ -1410,6 +1410,6 @@ void http_server_engine_state::bind_function(config_ptr cfg, std::string path, t
     bind_location->uri = path;
     bind_location->root = cfg->root;
     bind_location->handler = handler_name;
-    bind_location->handler_factory = http_server_handler_factory_ptr(new http_server_handler_factory_func(handler_name, fn));
+    bind_location->handler_factory = std::make_shared<http_server_handler_factory_func>(handler_name, fn);
     default_vhost->location_list.push_back(bind_location);
 }

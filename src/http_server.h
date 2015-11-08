@@ -57,7 +57,7 @@ struct http_server_handler_factory_impl : http_server_handler_factory
     http_server_handler_factory_impl(std::string name) : name(name) {}
     
     std::string get_name() { return name; }
-    http_server_handler_ptr new_handler() { return http_server_handler_ptr(new T()); }
+    http_server_handler_ptr new_handler() { return std::make_shared<T>(); }
 };
 
 
