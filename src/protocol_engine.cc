@@ -129,7 +129,7 @@ void protocol_engine::protocol_config_init(config_ptr cfg)
 
 config_ptr protocol_engine::default_config(protocol* proto)
 {
-    cfg = config_ptr(new config());
+    cfg = std::make_shared<config>();
     protocol_config_init(cfg);
     proto->make_default_config(cfg);
     return cfg;
@@ -137,7 +137,7 @@ config_ptr protocol_engine::default_config(protocol* proto)
 
 void protocol_engine::read_config(std::string config_file)
 {
-    cfg = config_ptr(new config());
+    cfg = std::make_shared<config>();
     protocol_config_init(cfg);
     cfg->read(config_file);
 }
