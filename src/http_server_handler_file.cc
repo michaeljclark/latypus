@@ -269,8 +269,10 @@ bool http_server_handler_file::populate_response()
     http_conn->response.set_status_code(status_code);
     http_conn->response.set_reason_phrase(status_text);
     if (status_code != HTTPStatusCodeNotModified) {
+        char content_length_str[32];
+        snprintf(content_length_str, sizeof(content_length_str), "%lu", content_length);
         http_conn->response.set_header_field(kHTTPHeaderContentType, mime_type);
-        http_conn->response.set_header_field(kHTTPHeaderContentLength, format_string("%lu", content_length));
+        http_conn->response.set_header_field(kHTTPHeaderContentLength, content_length_str);
     }
     if (status_code == HTTPStatusCodeOK || status_code == HTTPStatusCodeNotModified) {
         http_conn->response.set_header_field(kHTTPHeaderLastModified, last_modified.to_header_string(date_buf, sizeof(date_buf)));
