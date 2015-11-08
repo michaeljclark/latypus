@@ -96,6 +96,7 @@ const std::vector<poll_object>& pollset_epoll::do_poll(int timeout)
     
     if (nevents < 0 && errno != EAGAIN) {
         log_error("pollset_epoll:::do_poll: epoll_wait: %s", strerror(errno));
+        events.resize(0);
         return events;
     }
     
