@@ -5,10 +5,6 @@
 #ifndef http_request_h
 #define http_request_h
 
-struct http_request;
-typedef std::shared_ptr<http_request> http_request_ptr;
-
-
 /* http_request */
 
 struct http_request : http_parser
