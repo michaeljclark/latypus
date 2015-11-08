@@ -41,6 +41,21 @@ struct http_header_string
     inline bool operator>=(const http_header_string &o) const {return (compare(o) >= 0); }
 };
 
+/*
+namespace std {
+    
+    template <>
+    struct hash<http_header_string>
+    {
+        std::size_t operator()(const http_header_string& hs) const
+        {
+            return std::hash<std::string>()(std::string(hs.data, hs.length));
+        }
+    };
+    
+}
+*/
+
 struct http_common
 {
     static int sanitize_path(char *s);
