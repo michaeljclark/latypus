@@ -88,10 +88,6 @@ pkg install cmake gmake ragel
 brew install cmake ragel
 ````
 
-### Windows
-  * python, perl, yasm, ninja, CMake
-  * Note: Windows is not yet supported
-
 ## Building
   * GNU Makefile build on Linux, Mac OS X
 ````
@@ -116,14 +112,6 @@ CC=$(which clang) CXX=$(which clang++) cmake -DCMAKE_BUILD_TYPE=Release ..
 mkdir build
 cd build
 cmake -G Xcode..
-````
-  * CMake ninja on Windows (Windows is not yet supported)
-````
-"C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat" amd64
-mkdir build
-cd build
-cmake -G "Ninja" ..
-ninja
 ````
 
 ## Running
