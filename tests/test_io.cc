@@ -11,6 +11,7 @@
 #include <cstring>
 #include <string>
 #include <vector>
+#include <memory>
 #include <chrono>
 
 #include "plat_os.h"
