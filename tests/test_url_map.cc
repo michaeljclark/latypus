@@ -7,6 +7,7 @@
 #include <string>
 #include <iostream>
 #include <iomanip>
+#include <memory>
 #include <vector>
 
 #include "url.h"
@@ -39,37 +40,37 @@ public:
     {
         trie<uint32_t> url_map;
 
-        CPPUNIT_ASSERT(url_map.insert("/", 1) == true);
-        CPPUNIT_ASSERT(url_map.insert("/bar/", 2) == true);
-        CPPUNIT_ASSERT(url_map.insert("/foo/", 3) == true);
-        CPPUNIT_ASSERT(url_map.insert("/foo/bar/", 4) == true);
-        CPPUNIT_ASSERT(url_map.insert("/foo/bang/", 5) == true);
-        CPPUNIT_ASSERT(url_map.insert("/woo/tang/", 6) == true);
-        CPPUNIT_ASSERT(url_map.insert("/woo/tang/", 6) == false);
+        url_map.insert("/", 1);
+        url_map.insert("/bar/", 2);
+        url_map.insert("/foo/", 3);
+        url_map.insert("/foo/bar/", 4);
+        url_map.insert("/foo/bang/", 5);
+        url_map.insert("/woo/tang/", 6);
+        url_map.insert("/woo/tang/", 6);
 
-        CPPUNIT_ASSERT(url_map.find_nearest("/bar") == 1);
-        CPPUNIT_ASSERT(url_map.find_nearest("/bar/bang") == 2);
-        CPPUNIT_ASSERT(url_map.find_nearest("/foo") == 1);
-        CPPUNIT_ASSERT(url_map.find_nearest("/foo/woo") == 3);
-        CPPUNIT_ASSERT(url_map.find_nearest("/foo/bar/baz") == 4);
-        CPPUNIT_ASSERT(url_map.find_nearest("/foo/bar/bart") == 4);
-        CPPUNIT_ASSERT(url_map.find_nearest("/foo/bang") == 3);
-        CPPUNIT_ASSERT(url_map.find_nearest("/foo/bang/") == 5);
-        CPPUNIT_ASSERT(url_map.find_nearest("/woo/tang") == 1);
-        CPPUNIT_ASSERT(url_map.find_nearest("/woo/tang/bar") == 6);
-        CPPUNIT_ASSERT(url_map.find_nearest("/woo/tang/baz") == 6);
+        CPPUNIT_ASSERT(url_map.find_nearest("/bar").second == 1);
+        CPPUNIT_ASSERT(url_map.find_nearest("/bar/bang").second == 2);
+        CPPUNIT_ASSERT(url_map.find_nearest("/foo").second == 1);
+        CPPUNIT_ASSERT(url_map.find_nearest("/foo/woo").second == 3);
+        CPPUNIT_ASSERT(url_map.find_nearest("/foo/bar/baz").second == 4);
+        CPPUNIT_ASSERT(url_map.find_nearest("/foo/bar/bart").second == 4);
+        CPPUNIT_ASSERT(url_map.find_nearest("/foo/bang").second == 3);
+        CPPUNIT_ASSERT(url_map.find_nearest("/foo/bang/").second == 5);
+        CPPUNIT_ASSERT(url_map.find_nearest("/woo/tang").second == 1);
+        CPPUNIT_ASSERT(url_map.find_nearest("/woo/tang/bar").second == 6);
+        CPPUNIT_ASSERT(url_map.find_nearest("/woo/tang/baz").second == 6);
     }
 
     void test_url_map_2()
     {
         trie<uint32_t> url_map;
         
-        CPPUNIT_ASSERT(url_map.insert("/", 1) == true);
-        CPPUNIT_ASSERT(url_map.insert("/func/", 2) == true);
+        url_map.insert("/", 1);
+        url_map.insert("/func/", 2);
 
-        CPPUNIT_ASSERT(url_map.find_nearest("/bar") == 1);
-        CPPUNIT_ASSERT(url_map.find_nearest("/func/") == 2);
-        CPPUNIT_ASSERT(url_map.find_nearest("/favicon.ico") == 0);
+        CPPUNIT_ASSERT(url_map.find_nearest("/bar").second == 1);
+        CPPUNIT_ASSERT(url_map.find_nearest("/func/").second == 2);
+        CPPUNIT_ASSERT(url_map.find_nearest("/favicon.ico").second == 0);
     }
 };
 
