@@ -158,7 +158,7 @@ public:
         typedef queue_atomic<void*> qtype;
         qtype q(qsize);
         
-        printf("queue_atomic::is_lock_free  = %u\n", q.version_counter.is_lock_free());
+        printf("queue_atomic::is_lock_free  = %u\n", q.counter_back.is_lock_free());
         printf("queue_atomic::atomic_bits   = %u\n", qtype::atomic_bits);
         printf("queue_atomic::offset_bits   = %u\n", qtype::offset_bits);
         printf("queue_atomic::version_bits  = %u\n", qtype::version_bits);
@@ -170,16 +170,16 @@ public:
         printf("queue_atomic::offset_mask   = 0x%016llx\n", (u64)qtype::offset_mask);
         printf("queue_atomic::version_mask  = 0x%016llx\n", (u64)qtype::version_mask);
         
-        CPPUNIT_ASSERT(qtype::atomic_bits   == 64);
-        CPPUNIT_ASSERT(qtype::offset_bits   == 32);
-        CPPUNIT_ASSERT(qtype::version_bits  == 32);
-        CPPUNIT_ASSERT(qtype::offset_shift  == 0);
-        CPPUNIT_ASSERT(qtype::version_shift == 32);
-        CPPUNIT_ASSERT(qtype::size_max      == 2147483648);
-        CPPUNIT_ASSERT(qtype::offset_limit  == 4294967296);
-        CPPUNIT_ASSERT(qtype::version_limit == 4294967296);
-        CPPUNIT_ASSERT(qtype::offset_mask   == 0x00000000ffffffffULL);
-        CPPUNIT_ASSERT(qtype::version_mask  == 0x00000000ffffffffULL);
+        assert(qtype::atomic_bits   == 64);
+        assert(qtype::offset_bits   == 48);
+        assert(qtype::version_bits  == 16);
+        assert(qtype::offset_shift  == 0);
+        assert(qtype::version_shift == 48);
+        assert(qtype::size_max      == 140737488355328ULL);
+        assert(qtype::offset_limit  == 281474976710656ULL);
+        assert(qtype::version_limit == 65536);
+        assert(qtype::offset_mask   == 0x0000ffffffffffffULL);
+        assert(qtype::version_mask  == 0x000000000000ffffULL);
     }
     
     void test_empty_invariants()
@@ -188,16 +188,15 @@ public:
         typedef queue_atomic<void*> qtype;
         qtype q(qsize);
         
-        CPPUNIT_ASSERT(q.capacity() == 1024);
-        CPPUNIT_ASSERT(q.size() == 0);
-        CPPUNIT_ASSERT(q.empty() == true);
-        CPPUNIT_ASSERT(q.full() == false);
-        CPPUNIT_ASSERT(q.size_limit == 1024);
-        CPPUNIT_ASSERT(q._last_version() == 0);
-        CPPUNIT_ASSERT(q._back_version() == 0);
-        CPPUNIT_ASSERT(q._front_version() == 0);
-        CPPUNIT_ASSERT(q._back() == 0);
-        CPPUNIT_ASSERT(q._front() == 1024);
+        assert(q.capacity() == 1024);
+        assert(q.size() == 0);
+        assert(q.empty() == true);
+        assert(q.full() == false);
+        assert(q.size_limit == 1024);
+        assert(q._back_version() == 0);
+        assert(q._front_version() == 0);
+        assert(q._back() == 0);
+        assert(q._front() == 1024);
     }
     
     void test_push_pop()
@@ -207,114 +206,105 @@ public:
         qtype q(qsize);
         
         // check initial invariants
-        CPPUNIT_ASSERT(q.capacity() == qsize);
-        CPPUNIT_ASSERT(q.size() == 0);
-        CPPUNIT_ASSERT(q.empty() == true);
-        CPPUNIT_ASSERT(q.full() == false);
-        CPPUNIT_ASSERT(q.size_limit == qsize);
-        CPPUNIT_ASSERT(q._last_version() == 0);
-        CPPUNIT_ASSERT(q._back_version() == 0);
-        CPPUNIT_ASSERT(q._front_version() == 0);
-        CPPUNIT_ASSERT(q._back() == 0);
-        CPPUNIT_ASSERT(q._front() == qsize);
+        assert(q.capacity() == qsize);
+        assert(q.size() == 0);
+        assert(q.empty() == true);
+        assert(q.full() == false);
+        assert(q.size_limit == qsize);
+        assert(q._back_version() == 0);
+        assert(q._front_version() == 0);
+        assert(q._back() == 0);
+        assert(q._front() == qsize);
         
         // push_back 4 items
         for (size_t i = 1; i <= 4; i++) {
-            CPPUNIT_ASSERT(q.push_back((void*)i) == true);
-            CPPUNIT_ASSERT(q._last_version() == i);
-            CPPUNIT_ASSERT(q._back_version() == i);
-            CPPUNIT_ASSERT(q._front_version() == 0);
-            CPPUNIT_ASSERT(q._back() == i);
-            CPPUNIT_ASSERT(q._front() == qsize);
-            CPPUNIT_ASSERT(q.size() == i);
-            CPPUNIT_ASSERT(q.empty() == false);
-            CPPUNIT_ASSERT(q.full() == (i < 4 ? false : true));
+            assert(q.push_back((void*)i) == true);
+            assert(q._back_version() == i);
+            assert(q._front_version() == 0);
+            assert(q._back() == i);
+            assert(q._front() == qsize);
+            assert(q.size() == i);
+            assert(q.empty() == false);
+            assert(q.full() == (i < 4 ? false : true));
         }
         
         // push_back overflow test
-        CPPUNIT_ASSERT(q.push_back((void*)5) == false);
-        CPPUNIT_ASSERT(q._last_version() == 4);
-        CPPUNIT_ASSERT(q._back_version() == 4);
-        CPPUNIT_ASSERT(q._front_version() == 0);
-        CPPUNIT_ASSERT(q._back() == 4);
-        CPPUNIT_ASSERT(q._front() == qsize);
-        CPPUNIT_ASSERT(q.size() == 4);
-        CPPUNIT_ASSERT(q.empty() == false);
-        CPPUNIT_ASSERT(q.full() == true);
+        assert(q.push_back((void*)5) == false);
+        assert(q._back_version() == 4);
+        assert(q._front_version() == 0);
+        assert(q._back() == 4);
+        assert(q._front() == qsize);
+        assert(q.size() == 4);
+        assert(q.empty() == false);
+        assert(q.full() == true);
         
         // pop_front 4 items
         for (size_t i = 1; i <= 4; i++) {
-            CPPUNIT_ASSERT(q.pop_front() == (void*)i);
-            CPPUNIT_ASSERT(q._last_version() == 4 + i);
-            CPPUNIT_ASSERT(q._back_version() == 4);
-            CPPUNIT_ASSERT(q._front_version() == 4 + i);
-            CPPUNIT_ASSERT(q._back() == 4);
-            CPPUNIT_ASSERT(q._front() == 4 + i);
-            CPPUNIT_ASSERT(q.size() == 4 - i);
-            CPPUNIT_ASSERT(q.empty() == (i > 3 ? true : false));
-            CPPUNIT_ASSERT(q.full() == false);
+            assert(q.pop_front() == (void*)i);
+            assert(q._back_version() == 4);
+            assert(q._front_version() == i);
+            assert(q._back() == 4);
+            assert(q._front() == 4 + i);
+            assert(q.size() == 4 - i);
+            assert(q.empty() == (i > 3 ? true : false));
+            assert(q.full() == false);
         }
         
         // pop_front underflow test
-        CPPUNIT_ASSERT(q.pop_front() == (void*)0);
-        CPPUNIT_ASSERT(q._last_version() == 8);
-        CPPUNIT_ASSERT(q._back_version() == 4);
-        CPPUNIT_ASSERT(q._front_version() == 8);
-        CPPUNIT_ASSERT(q._back() == 4);
-        CPPUNIT_ASSERT(q._front() == 8);
-        CPPUNIT_ASSERT(q.size() == 0);
-        CPPUNIT_ASSERT(q.empty() == true);
-        CPPUNIT_ASSERT(q.full() == false);
+        assert(q.pop_front() == (void*)0);
+        assert(q._back_version() == 4);
+        assert(q._front_version() == 4);
+        assert(q._back() == 4);
+        assert(q._front() == 8);
+        assert(q.size() == 0);
+        assert(q.empty() == true);
+        assert(q.full() == false);
         
         // push_back 4 items
         for (size_t i = 1; i <= 4; i++) {
-            CPPUNIT_ASSERT(q.push_back((void*)i) == true);
-            CPPUNIT_ASSERT(q._last_version() == 8 + i);
-            CPPUNIT_ASSERT(q._back_version() == 8 + i);
-            CPPUNIT_ASSERT(q._front_version() == 8);
-            CPPUNIT_ASSERT(q._back() == 4 + i);
-            CPPUNIT_ASSERT(q._front() == 8);
-            CPPUNIT_ASSERT(q.size() == i);
-            CPPUNIT_ASSERT(q.empty() == false);
-            CPPUNIT_ASSERT(q.full() == (i < 4 ? false : true));
+            assert(q.push_back((void*)i) == true);
+            assert(q._back_version() == 4 + i);
+            assert(q._front_version() == 4);
+            assert(q._back() == 4 + i);
+            assert(q._front() == 8);
+            assert(q.size() == i);
+            assert(q.empty() == false);
+            assert(q.full() == (i < 4 ? false : true));
         }
         
         // push_back overflow test
-        CPPUNIT_ASSERT(q.push_back((void*)5) == false);
-        CPPUNIT_ASSERT(q._last_version() == 12);
-        CPPUNIT_ASSERT(q._back_version() == 12);
-        CPPUNIT_ASSERT(q._front_version() == 8);
-        CPPUNIT_ASSERT(q._back() == 8);
-        CPPUNIT_ASSERT(q._front() == 8);
-        CPPUNIT_ASSERT(q.size() == 4);
-        CPPUNIT_ASSERT(q.empty() == false);
-        CPPUNIT_ASSERT(q.full() == true);
+        assert(q.push_back((void*)5) == false);
+        assert(q._back_version() == 8);
+        assert(q._front_version() == 4);
+        assert(q._back() == 8);
+        assert(q._front() == 8);
+        assert(q.size() == 4);
+        assert(q.empty() == false);
+        assert(q.full() == true);
         
         // pop_front 4 items
         for (size_t i = 1; i <= 4; i++) {
-            CPPUNIT_ASSERT(q.pop_front() == (void*)i);
-            CPPUNIT_ASSERT(q._last_version() == 12 + i);
-            CPPUNIT_ASSERT(q._back_version() == 12);
-            CPPUNIT_ASSERT(q._front_version() == 12 + i);
-            CPPUNIT_ASSERT(q._back() == 8);
-            CPPUNIT_ASSERT(q._front() == 8 + i);
-            CPPUNIT_ASSERT(q.size() == 4 - i);
-            CPPUNIT_ASSERT(q.empty() == (i > 3 ? true : false));
-            CPPUNIT_ASSERT(q.full() == false);
+            assert(q.pop_front() == (void*)i);
+            assert(q._back_version() == 8);
+            assert(q._front_version() == 4 + i);
+            assert(q._back() == 8);
+            assert(q._front() == 8 + i);
+            assert(q.size() == 4 - i);
+            assert(q.empty() == (i > 3 ? true : false));
+            assert(q.full() == false);
         }
         
         // pop_front underflow test
-        CPPUNIT_ASSERT(q.pop_front() == (void*)0);
-        CPPUNIT_ASSERT(q._last_version() == 16);
-        CPPUNIT_ASSERT(q._back_version() == 12);
-        CPPUNIT_ASSERT(q._front_version() == 16);
-        CPPUNIT_ASSERT(q._back() == 8);
-        CPPUNIT_ASSERT(q._front() == 12);
-        CPPUNIT_ASSERT(q.size() == 0);
-        CPPUNIT_ASSERT(q.empty() == true);
-        CPPUNIT_ASSERT(q.full() == false);
+        assert(q.pop_front() == (void*)0);
+        assert(q._back_version() == 8);
+        assert(q._front_version() == 8);
+        assert(q._back() == 8);
+        assert(q._front() == 12);
+        assert(q.size() == 0);
+        assert(q.empty() == true);
+        assert(q.full() == false);
     }
-
+    
     void test_threads()
     {
         test_push_pop_threads<int,queue_atomic<int>>("queue_atomic", 8, 10, 1024);
