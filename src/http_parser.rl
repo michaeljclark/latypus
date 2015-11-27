@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <mutex>
 
 #include "http_common.h"
 #include "http_constants.h"

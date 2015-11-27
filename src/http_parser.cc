@@ -10,21 +10,21 @@
 #include <cstring>
 #include <sstream>
 #include <memory>
-#include <mutex>
 #include <string>
 #include <vector>
 #include <map>
+#include <mutex>
 
 #include "http_common.h"
 #include "http_constants.h"
 #include "http_parser.h"
 
 
-#line 89 "src/http_parser.rl"
+#line 95 "src/http_parser.rl"
 
 
 
-#line 22 "src/http_parser.cc"
+#line 28 "src/http_parser.cc"
 static const char _http_parser_actions[] = {
 	0, 1, 0, 1, 1, 1, 2, 1, 
 	3, 1, 4, 1, 5, 1, 6, 1, 
@@ -230,7 +230,7 @@ static const int http_parser_error = 0;
 static const int http_parser_en_main = 1;
 
 
-#line 92 "src/http_parser.rl"
+#line 98 "src/http_parser.rl"
 
 http_parser::http_parser() {}
 http_parser::~http_parser() {}
@@ -238,12 +238,12 @@ http_parser::~http_parser() {}
 void http_parser::reset()
 {
     
-#line 236 "src/http_parser.cc"
+#line 242 "src/http_parser.cc"
 	{
 	cs = http_parser_start;
 	}
 
-#line 99 "src/http_parser.rl"
+#line 105 "src/http_parser.rl"
     
     nread = 0;
     mark = NULL;
@@ -259,7 +259,7 @@ size_t http_parser::parse(const char *buf, size_t len)
     const char *pe = buf + len;
 
     
-#line 257 "src/http_parser.cc"
+#line 263 "src/http_parser.cc"
 	{
 	int _klen;
 	unsigned int _trans;
@@ -334,74 +334,74 @@ _match:
 		switch ( *_acts++ )
 		{
 	case 0:
-#line 18 "src/http_parser.rl"
+#line 24 "src/http_parser.rl"
 	{ mark = p; }
 	break;
 	case 1:
-#line 19 "src/http_parser.rl"
+#line 25 "src/http_parser.rl"
 	{ field_start = p; }
 	break;
 	case 2:
-#line 20 "src/http_parser.rl"
+#line 26 "src/http_parser.rl"
 	{ field_len = p - field_start; }
 	break;
 	case 3:
-#line 21 "src/http_parser.rl"
+#line 27 "src/http_parser.rl"
 	{ mark = p; }
 	break;
 	case 4:
-#line 22 "src/http_parser.rl"
+#line 28 "src/http_parser.rl"
 	{ query_start = p; }
 	break;
 	case 5:
-#line 23 "src/http_parser.rl"
+#line 29 "src/http_parser.rl"
 	{ set_header_field(http_header_string(field_start, field_len), http_header_string(mark, p - mark)); }
 	break;
 	case 6:
-#line 24 "src/http_parser.rl"
+#line 30 "src/http_parser.rl"
 	{ set_request_method(http_header_string(mark, p - mark)); }
 	break;
 	case 7:
-#line 25 "src/http_parser.rl"
+#line 31 "src/http_parser.rl"
 	{ set_request_uri(http_header_string(mark, p - mark)); }
 	break;
 	case 8:
-#line 26 "src/http_parser.rl"
+#line 32 "src/http_parser.rl"
 	{ set_fragment(http_header_string(mark, p - mark)); }
 	break;
 	case 9:
-#line 27 "src/http_parser.rl"
+#line 33 "src/http_parser.rl"
 	{ set_query_string(http_header_string(query_start, p - query_start)); }
 	break;
 	case 10:
-#line 28 "src/http_parser.rl"
+#line 34 "src/http_parser.rl"
 	{ set_http_version(http_header_string(mark, p - mark)); }
 	break;
 	case 11:
-#line 29 "src/http_parser.rl"
+#line 35 "src/http_parser.rl"
 	{ set_request_path(http_header_string(mark, p - mark)); }
 	break;
 	case 12:
-#line 30 "src/http_parser.rl"
+#line 36 "src/http_parser.rl"
 	{ set_status_code(atoi(std::string(mark, p - mark).c_str())); }
 	break;
 	case 13:
-#line 31 "src/http_parser.rl"
+#line 37 "src/http_parser.rl"
 	{ set_reason_phrase(http_header_string(mark, p - mark)); }
 	break;
 	case 14:
-#line 32 "src/http_parser.rl"
+#line 38 "src/http_parser.rl"
 	{ set_parse_type(http_parse_response); }
 	break;
 	case 15:
-#line 33 "src/http_parser.rl"
+#line 39 "src/http_parser.rl"
 	{ set_parse_type(http_parse_request); }
 	break;
 	case 16:
-#line 34 "src/http_parser.rl"
+#line 40 "src/http_parser.rl"
 	{ set_body_start(http_header_string(p + 1, len - (p + 1 - buf))); {p++; goto _out; } }
 	break;
-#line 399 "src/http_parser.cc"
+#line 405 "src/http_parser.cc"
 		}
 	}
 
@@ -414,7 +414,7 @@ _again:
 	_out: {}
 	}
 
-#line 114 "src/http_parser.rl"
+#line 120 "src/http_parser.rl"
 
     nread += p - buf;
 
