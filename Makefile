@@ -195,16 +195,16 @@ dist: clean ; dir=$$(basename $$(pwd)) ; cd .. && tar --exclude .git -czf $${dir
 
 # build targets
 ifeq ($(enable_lto),1)
-$(NETA_BIN): $(NETA_OBJS) $(LATYPUS_OBJS) ; $(call cmd, LD $@, $(LD) $(CXXFLAGS) $(LDFLAGS) $^ -o $@)
-$(NETB_BIN): $(NETB_OBJS) $(LATYPUS_OBJS) ; $(call cmd, LD $@, $(LD) $(CXXFLAGS) $(LDFLAGS) $^ -o $@)
-$(NETC_BIN): $(NETC_OBJS) $(LATYPUS_OBJS) ; $(call cmd, LD $@, $(LD) $(CXXFLAGS) $(LDFLAGS) $^ -o $@)
-$(NETD_BIN): $(NETD_OBJS) $(LATYPUS_OBJS) ; $(call cmd, LD $@, $(LD) $(CXXFLAGS) $(LDFLAGS) $^ -o $@)
+$(NETA_BIN): $(NETA_OBJS) $(LATYPUS_OBJS) ; $(call cmd, LD $@, $(LD) $(CXXFLAGS) $^ $(LDFLAGS) -o $@)
+$(NETB_BIN): $(NETB_OBJS) $(LATYPUS_OBJS) ; $(call cmd, LD $@, $(LD) $(CXXFLAGS) $^ $(LDFLAGS) -o $@)
+$(NETC_BIN): $(NETC_OBJS) $(LATYPUS_OBJS) ; $(call cmd, LD $@, $(LD) $(CXXFLAGS) $^ $(LDFLAGS) -o $@)
+$(NETD_BIN): $(NETD_OBJS) $(LATYPUS_OBJS) ; $(call cmd, LD $@, $(LD) $(CXXFLAGS) $^ $(LDFLAGS) -o $@)
 else
 $(LATYPUS_LIB): $(LATYPUS_OBJS) ; $(call cmd, AR $@, $(AR) cr $@ $^)
-$(NETA_BIN): $(NETA_OBJS) $(LATYPUS_LIB) ; $(call cmd, LD $@, $(LD) $(CXXFLAGS) $(LDFLAGS) $^ -o $@)
-$(NETB_BIN): $(NETB_OBJS) $(LATYPUS_LIB) ; $(call cmd, LD $@, $(LD) $(CXXFLAGS) $(LDFLAGS) $^ -o $@)
-$(NETC_BIN): $(NETC_OBJS) $(LATYPUS_LIB) ; $(call cmd, LD $@, $(LD) $(CXXFLAGS) $(LDFLAGS) $^ -o $@)
-$(NETD_BIN): $(NETD_OBJS) $(LATYPUS_LIB) ; $(call cmd, LD $@, $(LD) $(CXXFLAGS) $(LDFLAGS) $^ -o $@)
+$(NETA_BIN): $(NETA_OBJS) $(LATYPUS_LIB) ; $(call cmd, LD $@, $(LD) $(CXXFLAGS) $^ $(LDFLAGS) -o $@)
+$(NETB_BIN): $(NETB_OBJS) $(LATYPUS_LIB) ; $(call cmd, LD $@, $(LD) $(CXXFLAGS) $^ $(LDFLAGS) -o $@)
+$(NETC_BIN): $(NETC_OBJS) $(LATYPUS_LIB) ; $(call cmd, LD $@, $(LD) $(CXXFLAGS) $^ $(LDFLAGS) -o $@)
+$(NETD_BIN): $(NETD_OBJS) $(LATYPUS_LIB) ; $(call cmd, LD $@, $(LD) $(CXXFLAGS) $^ $(LDFLAGS) -o $@)
 endif
 
 # build recipes
