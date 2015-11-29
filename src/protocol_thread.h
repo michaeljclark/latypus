@@ -18,7 +18,10 @@ typedef std::map<int,size_t> protocol_thread_next_map;
 
 struct protocol_thread : protocol_thread_delegate
 {
+    static std::atomic<int>         thread_counter;
+    
     protocol_engine                 *engine;
+    int                             thread_num;
     int                             thread_mask;
     unix_socketpair                 notify;
     pollset_ptr                     pollset;
@@ -45,6 +48,7 @@ struct protocol_thread : protocol_thread_delegate
     pollset_ptr get_pollset() const;
     resolver_ptr get_resolver() const;
     std::thread::id get_thread_id() const;
+    int get_thread_num() const;
     std::string get_thread_string() const;
     int get_thread_mask() const;
     int get_debug_mask() const;

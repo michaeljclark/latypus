@@ -161,6 +161,7 @@ std::string http_client_config::to_string()
 
 const char* http_client::ClientName = "latypus";
 const char* http_client::ClientVersion = "0.0.0";
+char http_client::ClientString[1024] = "";
 
 std::once_flag http_client::protocol_init;
 
@@ -211,6 +212,10 @@ protocol_engine_state* http_client::create_engine_state(config_ptr cfg) const
 
 void http_client::engine_init(protocol_engine_delegate *delegate) const
 {
+    // prepare version string
+    // TODO - check buffer length
+    snprintf(ClientString, sizeof(ClientString), "%s/%s", ClientName, ClientVersion);
+    
     // get config
     const auto &cfg = delegate->get_config();
     auto engine_state = get_engine_state(delegate);
@@ -466,13 +471,8 @@ void http_client::handle_state_server_response(protocol_thread_delegate *delegat
     }
 
     // incrementally parse headers
-#if USE_RINGBUFFER
     /* size_t bytes_parsed = */ http_conn->response.parse(buffer.data() + buffer.back - result.size(), result.size());
     buffer.front += result.size();
-#else
-    /* size_t bytes_parsed = */ http_conn->response.parse(buffer.data() + buffer.offset(), result.size());
-    buffer.set_offset(buffer.offset() + result.size());
-#endif
     
     // switch state if response processing is finished
     if (http_conn->response.is_finished()) {
@@ -534,7 +534,7 @@ void http_client::handle_state_server_body(protocol_thread_delegate *delegate, p
     // or forward the connection to the keepalive thread
     io_result result = http_conn->handler->read_response_body();
     if (result.has_error()) {
-        delegate->log_error("%s: handler read_request_body failed: aborting connection: %s",
+        delegate->log_error("%s: handler read_response_body failed: aborting connection: %s",
                             obj->to_string().c_str(), result.error_string().c_str());
         delegate->remove_events(http_conn);
         abort_connection(delegate, http_conn);
@@ -667,7 +667,7 @@ void http_client::process_next_request(protocol_thread_delegate *delegate, proto
     // TODO - handle canonical escaping of path
     http_conn->request.set_request_uri(current_request->url->path);
     http_conn->request.set_header_field(kHTTPHeaderHost, current_request->url->host);
-    http_conn->request.set_header_field(kHTTPHeaderUserAgent, format_string("%s/%s", ClientName, ClientVersion));
+    http_conn->request.set_header_field(kHTTPHeaderUserAgent, ClientString);
     
     // TODO - handle option to close connection
     //http_serverrequest->set_header_field(kHTTPHeaderConnection, kHTTPTokenClose);
@@ -715,11 +715,7 @@ ssize_t http_client::populate_request_headers(protocol_thread_delegate *delegate
         abort_connection(delegate, http_conn);
         return length;
     }
-#if USE_RINGBUFFER
     buffer.back = length;
-#else
-    buffer.set_length(length);
-#endif
 
     // debug request
     if (delegate->get_debug_mask() & protocol_debug_headers) {

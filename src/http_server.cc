@@ -59,9 +59,7 @@
 #include "http_server_handler_func.h"
 #include "http_server_handler_stats.h"
 
-#define USE_NODELAY 1
-#define USE_NOPUSH 1
-
+#define USE_NODELAY
 
 // sock
 protocol_sock http_server::server_sock_tcp_listen
@@ -305,6 +303,7 @@ std::string http_server_config::to_string()
 
 const char* http_server::ServerName = "latypus";
 const char* http_server::ServerVersion = "0.0.0";
+char http_server::ServerString[1024] = "";
 
 std::once_flag http_server::protocol_init;
 std::map<std::string,http_server_handler_factory_ptr> http_server::handler_factory_map;
@@ -333,8 +332,6 @@ void http_server::make_default_config(config_ptr cfg) const
     static const char* ipv6_localhost_addr = "[]:8080";
     log_info("%s using default config", http_server::get_proto()->name.c_str());
     cfg->pid_file = "/tmp/latypus.pid";
-    cfg->error_log = "/tmp/latypus.errors";
-    cfg->access_log = "/tmp/latypus.access";
     cfg->listen_backlog = LISTEN_BACKLOG_DEFAULT;
     cfg->server_connections = SERVER_CONNECTIONS_DEFAULT;
     cfg->connection_timeout = CONNETION_TIMEOUT_DEFAULT;
@@ -424,6 +421,10 @@ protocol_engine_state* http_server::create_engine_state(config_ptr cfg) const
 
 void http_server::engine_init(protocol_engine_delegate *delegate) const
 {
+    // prepare version string
+    // TODO - check buffer length
+    snprintf(ServerString, sizeof(ServerString), "%s/%s", ServerName, ServerVersion);
+    
     // get config
     const auto &cfg = delegate->get_config();
     auto engine_state = get_engine_state(delegate);
@@ -890,24 +891,15 @@ void http_server::handle_state_client_request(protocol_thread_delegate *delegate
     }
 
     // Close connection if we get EOF reading headers
-#if USE_RINGBUFFER
     if (result.size() == 0 && buffer.back == 0) {
-#else
-    if (result.size() == 0 && buffer.offset() == 0) {
-#endif
         delegate->remove_events(http_conn);
         close_connection(delegate, http_conn);
         return;
     }
     
     // incrementally parse headers
-#if USE_RINGBUFFER
     /* size_t bytes_parsed = */ http_conn->request.parse(buffer.data() + buffer.back - result.size(), result.size());
     buffer.front += result.size();
-#else
-    /* size_t bytes_parsed = */ http_conn->request.parse(buffer.data() + buffer.offset(), result.size());
-    buffer.set_offset(buffer.offset() + result.size());
-#endif
     
     // switch state if request processing is finished
     if (http_conn->request.is_finished()) {
@@ -939,108 +931,102 @@ void http_server::handle_state_client_body(protocol_thread_delegate *delegate, p
         abort_connection(delegate, http_conn); // TODO - bad request or lingering close?
     } else if (result.size() == 0) {
         populate_response_headers(delegate, http_conn);
-        http_conn->state = &connection_state_server_response;
+        // if response has a body then enter connection_state_server_body
+        if (http_conn->response_has_body) {
+            http_conn->state = &connection_state_server_body;
+        } else {
+            http_conn->state = &connection_state_server_response;
+        }
+        delegate->add_events(obj, poll_event_out);
     }
 }
 
 void http_server::handle_state_server_response(protocol_thread_delegate *delegate, protocol_object *obj)
 {
     auto http_conn = static_cast<http_server_connection*>(obj);
-    auto &conn = http_conn->conn;
-    auto &buffer = http_conn->buffer;
-
-#if defined (USE_NOPUSH)
-    if (http_conn->response_has_body) {
-        conn.set_nopush(true);
-    }
-#endif
     
-    // write response and response headers
-    // TODO - if response has body then populate io_buffer and write in write_response_body
-    io_result result = buffer.buffer_write(conn);
-    if (result.has_error()) {
-        delegate->log_error("%s: write exception: aborting connection: %s",
-                            obj->to_string().c_str(), result.error_string().c_str());
-        delegate->remove_events(http_conn);
-        abort_connection(delegate, http_conn);
-        return;
-    }
-    
-    // if there is any response header data still to be written then
-    // enter poll loop waiting for another poll_event_out event
-    if (buffer.bytes_readable() > 0) {
-        return;
-    }
-    
-    // clear buffers
-    buffer.reset();
-#if defined (USE_NOPUSH) && defined (__APPLE__)
-    // On darwin we turn off cork early
-    // BSD BUG exists where clearing nopush doesn't cause a flush (present on latest Darwin)
-    // On linux we can turn off cork at the end of the file body
-    // TODO - writev or prepopulate output buffer to combine headers and body and use TCP_MAXSEG (TCP_MSS) sized writes
-    if (http_conn->response_has_body) {
-        conn.set_nopush(false);
-    }
-#endif
-    
-    // if response has a body then enter http_server_connection_state_server_body
-    // otherwise end the request and close the connection or forward the
-    // connection to the keepalive thread
-    if (http_conn->response_has_body) {
-        http_conn->state = &connection_state_server_body;
-    } else {
-        // BUG http_conn->handler can be null as handler can abort connection - revise handler interface to return errors
-        if (!http_conn->handler->end_request()) {
-            delegate->log_error("%s: handler end_request failed: aborting connection",
-                                obj->to_string().c_str());
+    // write buffer to socket
+    if (http_conn->buffer.bytes_readable() > 0) {
+        io_result result = http_conn->buffer.buffer_write(http_conn->conn);
+        if (result.has_error()) {
+            delegate->log_error("%s: buffer_write failed: aborting connection: %s",
+                                obj->to_string().c_str(), result.error_string().c_str());
             delegate->remove_events(http_conn);
             abort_connection(delegate, http_conn);
-        } else if (http_conn->connection_close) {
-            if (delegate->get_debug_mask() & protocol_debug_socket) {
-                delegate->log_debug("%s: closing connection", obj->to_string().c_str());
-            }
-            get_engine_state(delegate)->stats.requests_processed++;
-            delegate->remove_events(http_conn);
-            close_connection(delegate, http_conn);
-        } else {
-            get_engine_state(delegate)->stats.requests_processed++;
-            delegate->remove_events(http_conn);
-            keepalive_connection(delegate, http_conn);
+            return;
         }
+        if (result.size() != 0) {
+            return;
+        }
+    }
+    
+    if (!http_conn->handler->end_request()) {
+        delegate->log_error("%s: handler end_request failed: aborting connection",
+                            obj->to_string().c_str());
+        delegate->remove_events(http_conn);
+        abort_connection(delegate, http_conn);
+    } else if (http_conn->connection_close) {
+        if (delegate->get_debug_mask() & protocol_debug_socket) {
+            delegate->log_debug("%s: closing connection", obj->to_string().c_str());
+        }
+        get_engine_state(delegate)->stats.requests_processed++;
+        delegate->remove_events(http_conn);
+        close_connection(delegate, http_conn);
+    } else {
+        get_engine_state(delegate)->stats.requests_processed++;
+        delegate->remove_events(http_conn);
+        keepalive_connection(delegate, http_conn);
     }
 }
 
 void http_server::handle_state_server_body(protocol_thread_delegate *delegate, protocol_object *obj)
 {
     auto http_conn = static_cast<http_server_connection*>(obj);
-
+    
     // write server response body and when finished close the connection
     // or forward the connection to the keepalive thread
-    io_result result = http_conn->handler->write_response_body();
-    if (result.has_error()) {
-        delegate->log_error("%s: handler write_response_body failed: aborting connection: %s",
-                            obj->to_string().c_str(), result.error_string().c_str());
-        delegate->remove_events(http_conn);
-        abort_connection(delegate, http_conn);
-    } else if (result.size() == 0) {
-        if (!http_conn->handler->end_request()) {
-            delegate->log_error("%s: handler end_request failed: aborting connection",
-                                obj->to_string().c_str());
+    if (http_conn->response_has_body) {
+        io_result body_result = http_conn->handler->write_response_body();
+        if (body_result.has_error()) {
+            delegate->log_error("%s: handler write_response_body failed: aborting connection: %s",
+                                obj->to_string().c_str(), body_result.error_string().c_str());
             delegate->remove_events(http_conn);
             abort_connection(delegate, http_conn);
-        } else if (http_conn->connection_close) {
-            if (delegate->get_debug_mask() & protocol_debug_socket) {
-                delegate->log_debug("%s: closing connection", obj->to_string().c_str());
-            }
-            finished_request(delegate, obj);
-            delegate->remove_events(http_conn);
-            close_connection(delegate, http_conn);
-        } else {
-            finished_request(delegate, obj);
-            delegate->remove_events(http_conn);
-            keepalive_connection(delegate, http_conn);
+            return;
         }
+    }
+    
+    // write buffer to socket
+    if (http_conn->buffer.bytes_readable() > 0) {
+        io_result result = http_conn->buffer.buffer_write(http_conn->conn);
+        if (result.has_error()) {
+            delegate->log_error("%s: buffer_write failed: aborting connection: %s",
+                                obj->to_string().c_str(), result.error_string().c_str());
+            delegate->remove_events(http_conn);
+            abort_connection(delegate, http_conn);
+            return;
+        }
+        if (result.size() != 0) {
+            return;
+        }
+    }
+    
+    if (!http_conn->handler->end_request()) {
+        delegate->log_error("%s: handler end_request failed: aborting connection",
+                            obj->to_string().c_str());
+        delegate->remove_events(http_conn);
+        abort_connection(delegate, http_conn);
+    } else if (http_conn->connection_close) {
+        if (delegate->get_debug_mask() & protocol_debug_socket) {
+            delegate->log_debug("%s: closing connection", obj->to_string().c_str());
+        }
+        finished_request(delegate, obj);
+        delegate->remove_events(http_conn);
+        close_connection(delegate, http_conn);
+    } else {
+        finished_request(delegate, obj);
+        delegate->remove_events(http_conn);
+        keepalive_connection(delegate, http_conn);
     }
 }
 
@@ -1152,7 +1138,12 @@ void http_server::worker_process_request(protocol_thread_delegate *delegate, pro
         http_conn->state = &connection_state_client_body;
         delegate->add_events(obj, poll_event_in);
     } else if (populate_response_headers(delegate, http_conn) > 0) {
-        http_conn->state = &connection_state_server_response;
+        // if response has a body then enter connection_state_server_body
+        if (http_conn->response_has_body) {
+            http_conn->state = &connection_state_server_body;
+        } else {
+            http_conn->state = &connection_state_server_response;
+        }
         delegate->add_events(obj, poll_event_out);
     } else {
         delegate->log_debug("%s: response buffer full", obj->to_string().c_str());
@@ -1205,7 +1196,7 @@ bool http_server::process_request_headers(protocol_thread_delegate *delegate, pr
     // initialize response
     http_conn->response.reset();
     http_conn->response.set_http_version(kHTTPVersion11);
-    http_conn->response.set_header_field(kHTTPHeaderServer, format_string("%s/%s", ServerName, ServerVersion));
+    http_conn->response.set_header_field(kHTTPHeaderServer, ServerString);
     http_conn->response.set_header_field(kHTTPHeaderDate, http_date(current_time).to_header_string(date_buf, sizeof(date_buf)));
 
     return true;
@@ -1290,6 +1281,7 @@ ssize_t http_server::populate_response_headers(protocol_thread_delegate *delegat
     // copy headers to io buffer
     buffer.reset();
     ssize_t length = http_conn->response.to_buffer(buffer.data(), buffer.size());
+    http_conn->handler->set_header_length(length);
     
     // check headers fit into available buffer space
     if (length < 0) {
@@ -1299,11 +1291,7 @@ ssize_t http_server::populate_response_headers(protocol_thread_delegate *delegat
         abort_connection(delegate, http_conn);
         return length;
     }
-#if USE_RINGBUFFER
     buffer.back = length;
-#else
-    buffer.set_length(length);
-#endif
     
     // debug response
     if (delegate->get_debug_mask() & protocol_debug_headers) {
@@ -1338,16 +1326,6 @@ void http_server::keepalive_connection(protocol_thread_delegate *delegate, proto
 #if defined (USE_NODELAY)
     // force socket to send data instead of waiting (Nagle algorithm)
     conn.set_nodelay(true);
-#endif
-    
-#if defined (USE_NOPUSH) && !defined (__APPLE__)
-    // Turn off cork at the end of the file body (except on Dawrin)
-    // BSD BUG exists where clearing nopush doesn't cause a flush (present on latest Darwin)
-    // TODO - detect versions of BSD where clearing NOPUSH doens't cause a flush
-    // TODO - writev or prepopulate output buffer to combine headers and body and use TCP_MAXSEG (TCP_MSS) sized writes
-    if (http_conn->response_has_body) {
-        conn.set_nopush(false);
-    }
 #endif
     
     get_engine_state(delegate)->stats.connections_keepalive++;

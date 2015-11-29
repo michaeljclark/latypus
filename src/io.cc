@@ -21,9 +21,13 @@
 
 /* io_file */
 
+#if USE_PREAD_PWRITE
 io_file::io_file() : file_offset(0), fd(-1) {}
-
 io_file::io_file(int fd) : file_offset(0), fd(fd) {}
+#else
+io_file::io_file() : fd(-1) {}
+io_file::io_file(int fd) : fd(fd) {}
+#endif
 
 io_file::~io_file()
 {
@@ -37,43 +41,49 @@ io_error io_file::open(std::string filename, int flags, int mode)
     return io_error(fd < 0 ? errno : 0);
 }
 
+#if USE_PREAD_PWRITE
+
+size_t io_file::offset() const { return file_offset; }
+
+void io_file::set_offset(size_t offset) { file_offset = offset; }
+
+#else
+
+size_t io_file::offset() const { return lseek(fd, 0, SEEK_CUR); }
+
+void io_file::set_offset(size_t offset) { lseek(fd, offset, SEEK_SET); }
+
+#endif
+
 io_result io_file::read(void *buf, size_t len)
 {
+#if USE_PREAD_PWRITE
     ssize_t ret = ::pread(fd, buf, len, file_offset);
+#else
+    ssize_t ret = ::read(fd, buf, len);
+#endif
     if (ret < 0) {
         return io_result(errno);
     }
+#if USE_PREAD_PWRITE
     file_offset += ret;
-    return io_result(ret);
-}
-
-io_result io_file::readv(const struct iovec *iov, int iovcnt)
-{
-    ssize_t ret = ::readv(fd, iov, iovcnt);
-    if (ret < 0) {
-        return io_result(errno);
-    }
-    file_offset += ret;
+#endif
     return io_result(ret);
 }
 
 io_result io_file::write(void *buf, size_t len)
 {
+#if USE_PREAD_PWRITE
     ssize_t ret = ::pwrite(fd, buf, len, file_offset);
+#else
+    ssize_t ret = ::write(fd, buf, len);
+#endif
     if (ret < 0) {
         return io_result(errno);
     }
+#if USE_PREAD_PWRITE
     file_offset += ret;
-    return io_result(ret);
-}
-
-io_result io_file::writev(const struct iovec *iov, int iovcnt)
-{
-    ssize_t ret = ::writev(fd, iov, iovcnt);
-    if (ret < 0) {
-        return io_result(errno);
-    }
-    file_offset += ret;
+#endif
     return io_result(ret);
 }
 
@@ -99,7 +109,9 @@ void io_file::close()
 {
     if (fd >= 0) {
         ::close(fd);
+#if USE_PREAD_PWRITE
         file_offset = 0;
+#endif
         fd = -1;
     }
 }
@@ -197,26 +209,6 @@ io_result io_buffer::read(void *buf, size_t len)
     return io_result(bytes_to_read);
 }
 
-io_result io_buffer::readv(const struct iovec *iov, int iovcnt)
-{
-    ssize_t bytes_read = 0;
-    for (int i = 0; i < iovcnt; i++)
-    {
-        ssize_t len = iov[i].iov_len;
-        void *buf = iov[i].iov_base;
-        ssize_t read_max = bytes_readable();
-        
-        if (read_max < 0 || len == 0) return io_result(0);
-        
-        size_t bytes_to_read = len < read_max ? len : read_max;
-        memcpy(buf, buffer.data() + buffer_offset + bytes_read, bytes_to_read);
-        bytes_read += bytes_to_read;
-    }
-    buffer_offset += bytes_read;
-    
-    return io_result(bytes_read);
-}
-
 io_result io_buffer::write(void *buf, size_t len)
 {
     ssize_t write_max = bytes_writable();
@@ -228,27 +220,6 @@ io_result io_buffer::write(void *buf, size_t len)
     buffer_length += bytes_to_write;
 
     return io_result(bytes_to_write);
-}
-
-io_result io_buffer::writev(const struct iovec *iov, int iovcnt)
-{
-    ssize_t bytes_written = 0;
-    for (int i = 0; i < iovcnt; i++)
-    {
-        ssize_t len = iov[i].iov_len;
-        void *buf = iov[i].iov_base;
-        ssize_t write_max = bytes_writable();
-        
-        if (write_max < 0 || len == 0) return io_result(0);
-        
-        size_t bytes_to_write = len < write_max ? len : write_max;
-        memcpy(buffer.data() + buffer_offset + bytes_written, buf, bytes_to_write);
-        
-        bytes_written += bytes_to_write;
-    }
-    buffer_length += bytes_written;
-    
-    return io_result(bytes_written);
 }
 
 io_result io_buffer::buffer_read(io_reader &reader)
@@ -324,11 +295,9 @@ void io_ring_buffer::set(const char* src, size_t len)
 
 io_result io_ring_buffer::read(void *buf, size_t len)
 {
-    ssize_t read_max = bytes_readable();
+    size_t read_max = bytes_readable();
     size_t read_offset = front & mask;
-    size_t bytes_to_read = len < (size_t)read_max ? len : read_max;
-    
-    assert(bytes_to_read >= 0);
+    size_t bytes_to_read = std::min(len, read_max);
     
     if (bytes_to_read == 0) return io_result(0);
 
@@ -347,27 +316,12 @@ io_result io_ring_buffer::read(void *buf, size_t len)
     return io_result(bytes_to_read);
 }
 
-io_result io_ring_buffer::readv(const struct iovec *iov, int iovcnt)
-{
-    ssize_t bytes_read = 0;
-    for (int i = 0; i < iovcnt; i++)
-    {
-        io_result result = read(iov[i].iov_base, iov[i].iov_len);
-        if (result.has_error()) return result;
-        bytes_read += result.size();
-    }
-
-    return io_result(bytes_read);
-}
-
 io_result io_ring_buffer::write(void *buf, size_t len)
 {
-    ssize_t write_max = bytes_writable();
+    size_t write_max = bytes_writable();
     size_t write_offset = back & mask;
-    size_t bytes_to_write = len < (size_t)write_max ? len : write_max;
+    size_t bytes_to_write = std::min(len, write_max);
     
-    assert(bytes_to_write >= 0);
-
     if (bytes_to_write == 0) return io_result(0);
 
     ssize_t len1 = buffer.size() - write_offset;
@@ -385,77 +339,30 @@ io_result io_ring_buffer::write(void *buf, size_t len)
     return io_result(bytes_to_write);
 }
 
-io_result io_ring_buffer::writev(const struct iovec *iov, int iovcnt)
-{
-    ssize_t bytes_written = 0;
-    for (int i = 0; i < iovcnt; i++)
-    {
-        io_result result = write(iov[i].iov_base, iov[i].iov_len);
-        if (result.has_error()) return result;
-        bytes_written += result.size();
-    }
-    
-    return io_result(bytes_written);
-}
-
 io_result io_ring_buffer::buffer_read(io_reader &reader)
 {
-    int iovcnt = 0;
-    struct iovec iov[2];
-    ssize_t bytes_to_read = bytes_writable();
+    size_t read_max = bytes_writable();
     size_t write_offset = back & mask;
-    
-    assert(bytes_to_read >= 0);
+    size_t bytes_to_read = std::min(buffer.size() - write_offset, read_max);
     
     if (bytes_to_read == 0) return io_result(0);
     
-    size_t len1 = std::max(0L, std::min((ssize_t)buffer.size() - (ssize_t)write_offset, bytes_to_read));
-    if (len1 > 0) {
-        iov[iovcnt].iov_base = buffer.data() + write_offset;
-        iov[iovcnt].iov_len = len1;
-        iovcnt++;
-    }
-    
-    size_t len2 = std::max(0L, ((ssize_t)bytes_to_read - (ssize_t)len1));
-    if (len2 > 0) {
-        iov[iovcnt].iov_base = buffer.data();
-        iov[iovcnt].iov_len = len2;
-        iovcnt++;
-    }
-    
-    io_result result = reader.readv(iov, iovcnt);
-    if (result.size() > 0) back += result.size();
+    io_result result = reader.read(buffer.data() + write_offset, bytes_to_read);
+    back += result.size();
     
     return result;
 }
 
 io_result io_ring_buffer::buffer_write(io_writer &writer)
 {
-    int iovcnt = 0;
-    struct iovec iov[2];
-    ssize_t bytes_to_write = bytes_readable();
+    size_t write_max = bytes_readable();
     size_t read_offset = front & mask;
+    size_t bytes_to_write = std::min(buffer.size() - read_offset, write_max);
     
-    assert(bytes_to_write >= 0);
-
     if (bytes_to_write == 0) return io_result(0);
     
-    ssize_t len1 = std::max(0L, std::min((ssize_t)buffer.size() - (ssize_t)read_offset, bytes_to_write));
-    if (len1 > 0) {
-        iov[iovcnt].iov_base = buffer.data() + read_offset;
-        iov[iovcnt].iov_len = len1;
-        iovcnt++;
-    }
-    
-    ssize_t len2 = std::max(0L, bytes_to_write - len1);
-    if (len2 > 0) {
-        iov[iovcnt].iov_base = buffer.data();
-        iov[iovcnt].iov_len = len2;
-        iovcnt++;
-    }
-    
-    io_result result = writer.writev(iov, iovcnt);
-    if (result.size() > 0) front += result.size();
+    io_result result = writer.write(buffer.data() + read_offset, bytes_to_write);
+    front += result.size();
     
     return result;
 }
@@ -490,15 +397,6 @@ io_result io_buffered_reader::read(void *buf, size_t len)
     return buffer->read(buf, len);
 }
 
-io_result io_buffered_reader::readv(const struct iovec *iov, int iovcnt)
-{
-    if (buffer->bytes_readable() == 0) {
-        io_result res = buffer->buffer_read(*reader);
-        if (res.has_error()) return res;
-    }
-    return buffer->readv(iov, iovcnt);
-}
-
 
 /* io_buffered_writer */
 
@@ -528,17 +426,6 @@ void io_buffered_writer::set_writer(io_writer_ptr writer)
 io_result io_buffered_writer::write(void *buf, size_t len)
 {
     io_result res = buffer->write(buf, len);
-    if (res.has_error()) return res;
-    if (buffer->bytes_readable() == buffer->size()) {
-        io_result res = buffer->buffer_write(*writer);
-        if (res.has_error()) return res;
-    }
-    return res;
-}
-
-io_result io_buffered_writer::writev(const struct iovec *iov, int iovcnt)
-{
-    io_result res = buffer->writev(iov, iovcnt);
     if (res.has_error()) return res;
     if (buffer->bytes_readable() == buffer->size()) {
         io_result res = buffer->buffer_write(*writer);

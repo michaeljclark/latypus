@@ -17,6 +17,7 @@ typedef std::shared_ptr<io_reader> io_reader_ptr;
 typedef std::shared_ptr<io_writer> io_writer_ptr;
 typedef std::shared_ptr<io_buffer> io_buffer_ptr;
 
+#undef USE_PREAD_PWRITE
 
 /* io_error */
 
@@ -53,7 +54,6 @@ struct io_reader
     virtual ~io_reader() {};
     
     virtual io_result read(void *buf, size_t len) = 0;
-    virtual io_result readv(const struct iovec *iov, int iovcnt) = 0;
 };
 
 
@@ -64,7 +64,6 @@ struct io_writer
     virtual ~io_writer() {};
     
     virtual io_result write(void *buf, size_t len) = 0;
-    virtual io_result writev(const struct iovec *iov, int iovcnt) = 0;
 };
 
 
@@ -95,8 +94,10 @@ struct io_file_name : std::pair<std::string,io_error>
 
 struct io_file: io_reader, io_writer, io_seekable
 {
-    off_t file_offset;
     int fd;
+#if USE_PREAD_PWRITE
+    off_t file_offset;
+#endif
     
     io_file();
     io_file(int fd);
@@ -113,13 +114,11 @@ struct io_file: io_reader, io_writer, io_seekable
 
     io_error open(std::string filename, int flags, int mode = 0644);
 
-    size_t offset() const { return file_offset; }
-    void set_offset(size_t offset) { file_offset = offset; }
+    size_t offset() const;
+    void set_offset(size_t offset);
     
     io_result read(void *buf, size_t len);
-    io_result readv(const struct iovec *iov, int iovcnt);
     io_result write(void *buf, size_t len);
-    io_result writev(const struct iovec *iov, int iovcnt);
 };
 
 
@@ -143,9 +142,7 @@ struct io_buffer: io_reader, io_writer, io_seekable
     io_result buffer_write(io_writer &writer);
     
     io_result read(void *buf, size_t len);
-    io_result readv(const struct iovec *iov, int iovcnt);
     io_result write(void *buf, size_t len);
-    io_result writev(const struct iovec *iov, int iovcnt);
     
     char* data() { return buffer.data(); }
     char* pos() { return buffer.data() + buffer_offset; }
@@ -180,15 +177,13 @@ struct io_ring_buffer: io_reader, io_writer
     io_result buffer_write(io_writer &writer);
     
     io_result read(void *buf, size_t len);
-    io_result readv(const struct iovec *iov, int iovcnt);
     io_result write(void *buf, size_t len);
-    io_result writev(const struct iovec *iov, int iovcnt);
     
     char* data() { return buffer.data(); }
     char* pos() { return buffer.data() + (back & mask); }
     size_t size() const { return buffer.size(); }
-    size_t bytes_readable() const { return (ssize_t)buffer.size() - front + back; }
-    size_t bytes_writable() const { return front - back; }
+    size_t bytes_readable() const { return (front < back) ? back - front : buffer.size() - front + back; }
+    size_t bytes_writable() const { return (front < back) ? buffer.size() - back - front : front + back; }
 };
 
 
@@ -208,7 +203,6 @@ struct io_buffered_reader : io_reader
     void set_reader(io_reader_ptr reader);
     
     io_result read(void *buf, size_t len);
-    io_result readv(const struct iovec *iov, int iovcnt);
 };
 
 
@@ -229,7 +223,6 @@ struct io_buffered_writer : io_writer
     void set_writer(io_writer_ptr writer);
     
     io_result write(void *buf, size_t len);
-    io_result writev(const struct iovec *iov, int iovcnt);
     io_result flush();
 };
 

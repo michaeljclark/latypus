@@ -232,6 +232,7 @@ io_result http_server_handler_file::read_request_body()
 bool http_server_handler_file::populate_response()
 {
     char date_buf[32];
+    char content_length_buf[32];
     
     // set request body presence
     switch (request_method) {
@@ -269,10 +270,9 @@ bool http_server_handler_file::populate_response()
     http_conn->response.set_status_code(status_code);
     http_conn->response.set_reason_phrase(status_text);
     if (status_code != HTTPStatusCodeNotModified) {
-        char content_length_str[32];
-        snprintf(content_length_str, sizeof(content_length_str), "%lu", content_length);
+        snprintf(content_length_buf, sizeof(content_length_buf), "%lu", content_length);
         http_conn->response.set_header_field(kHTTPHeaderContentType, mime_type);
-        http_conn->response.set_header_field(kHTTPHeaderContentLength, content_length_str);
+        http_conn->response.set_header_field(kHTTPHeaderContentLength, content_length_buf);
     }
     if (status_code == HTTPStatusCodeOK || status_code == HTTPStatusCodeNotModified) {
         http_conn->response.set_header_field(kHTTPHeaderLastModified, last_modified.to_header_string(date_buf, sizeof(date_buf)));
@@ -295,29 +295,13 @@ bool http_server_handler_file::populate_response()
 }
 
 io_result http_server_handler_file::write_response_body()
-{    
-    auto &buffer = http_conn->buffer;
-    
+{
     // refill buffer
-    if (reader && buffer.bytes_readable() == 0) {
-        buffer.reset();
-        io_result result = buffer.buffer_read(*reader);
-        if (result.has_error()) {
-            return result;
-        }
+    if (reader) {
+        return http_conn->buffer.buffer_read(*reader);
+    } else {
+        return io_result(0);
     }
-    
-    // write buffer to socket
-    if (buffer.bytes_readable() > 0) {
-        io_result result = buffer.buffer_write(http_conn->conn);
-        if (result.has_error()) {
-            return result;
-        }
-        total_written += result.size();
-    }
-    
-    // return bytes available
-    return io_result(content_length - total_written);
 }
 
 bool http_server_handler_file::end_request()

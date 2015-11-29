@@ -49,8 +49,11 @@
 
 /* protocol_thread */
 
+std::atomic<int> protocol_thread::thread_counter;
+
 protocol_thread::protocol_thread(protocol_engine *engine, int thread_mask)
   : engine(engine),
+    thread_num(++thread_counter),
     thread_mask(thread_mask),
     notify(engine->cfg->ipc_buffer_size),
     pollset(new pollset_platform_type()),
@@ -146,6 +149,7 @@ config_ptr protocol_thread::get_config() const { return engine->cfg; }
 pollset_ptr protocol_thread::get_pollset() const { return pollset; }
 resolver_ptr protocol_thread::get_resolver() const { return dns; }
 std::thread::id protocol_thread::get_thread_id() const { return thread.get_id(); }
+int protocol_thread::get_thread_num() const { return thread_num; }
 std::string protocol_thread::get_thread_string() const { return thread_mask_to_string(thread_mask); }
 int protocol_thread::get_thread_mask() const { return thread_mask; }
 int protocol_thread::get_debug_mask() const { return engine->debug_mask; }

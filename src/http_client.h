@@ -9,8 +9,6 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
-#define USE_RINGBUFFER 1
-
 struct http_client;
 struct http_client_engine_state;
 
@@ -62,11 +60,7 @@ struct http_client_handler
 struct http_client_connection : protocol_object
 {
     connection                  conn;
-#if USE_RINGBUFFER
     io_ring_buffer              buffer;
-#else
-    io_buffer                   buffer;
-#endif
     protocol_state              *state;
     http_request                request;
     http_response               response;
@@ -136,6 +130,7 @@ struct http_client : protocol
     /* id */
     static const char* ClientName;
     static const char* ClientVersion;
+    static char ClientString[1024];
 
     /* initialization */
     

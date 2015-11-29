@@ -119,6 +119,8 @@ io_result http_server_handler_func::read_request_body()
 
 bool http_server_handler_func::populate_response()
 {
+    char content_length_buf[32];
+    
     // set request body presence
     switch (request_method) {
         case HTTPMethodGET:
@@ -155,8 +157,9 @@ bool http_server_handler_func::populate_response()
     http_conn->response.set_status_code(status_code);
     http_conn->response.set_reason_phrase(status_text);
     if (status_code != HTTPStatusCodeNotModified) {
+        snprintf(content_length_buf, sizeof(content_length_buf), "%lu", content_length);
         http_conn->response.set_header_field(kHTTPHeaderContentType, mime_type);
-        http_conn->response.set_header_field(kHTTPHeaderContentLength, format_string("%lu", content_length));
+        http_conn->response.set_header_field(kHTTPHeaderContentLength, content_length_buf);
     }
     switch (http_version) {
         case HTTPVersion10:
@@ -177,26 +180,12 @@ bool http_server_handler_func::populate_response()
 
 io_result http_server_handler_func::write_response_body()
 {    
-    auto &buffer = http_conn->buffer;
-    
     // refill buffer
-    if (reader && buffer.bytes_readable() == 0) {
-        buffer.reset();
-        io_result res = buffer.buffer_read(*reader);
-        if (res.has_error()) return res;
+    if (reader) {
+        return http_conn->buffer.buffer_read(*reader);
+    } else {
+        return io_result(0);
     }
-    
-    // write buffer to socket
-    if (buffer.bytes_readable() > 0) {
-        io_result result = buffer.buffer_write(http_conn->conn);
-        if (result.has_error()) {
-            return result;
-        }
-        total_written += result.size();
-    }
-    
-    // return bytes available
-    return io_result(content_length - total_written);
 }
 
 bool http_server_handler_func::end_request()

@@ -119,7 +119,7 @@ bool http_server_handler_stats::handle_request()
         ss << "  threads " << engine->threads_all.size() << std::endl;
         for (auto &thread : engine->threads_all) {
             std::string thread_mask = protocol_thread::thread_mask_to_string(thread->thread_mask);
-            ss << "    " << thread->get_thread_id() << " " << thread_mask << std::endl;
+            ss << "    " << thread->get_thread_num() << " " << thread_mask << std::endl;
         }
         size_t connections_total = http_engine_state->connections_all.size();
         size_t connections_free = http_engine_state->connections_free.size();
@@ -186,6 +186,8 @@ io_result http_server_handler_stats::read_request_body()
 
 bool http_server_handler_stats::populate_response()
 {
+    char content_length_buf[32];
+    
     // set request body presence
     switch (request_method) {
         case HTTPMethodGET:
@@ -222,8 +224,9 @@ bool http_server_handler_stats::populate_response()
     http_conn->response.set_status_code(status_code);
     http_conn->response.set_reason_phrase(status_text);
     if (status_code != HTTPStatusCodeNotModified) {
+        snprintf(content_length_buf, sizeof(content_length_buf), "%lu", content_length);
         http_conn->response.set_header_field(kHTTPHeaderContentType, mime_type);
-        http_conn->response.set_header_field(kHTTPHeaderContentLength, format_string("%lu", content_length));
+        http_conn->response.set_header_field(kHTTPHeaderContentLength, content_length_buf);
     }
     switch (http_version) {
         case HTTPVersion10:
@@ -244,26 +247,12 @@ bool http_server_handler_stats::populate_response()
 
 io_result http_server_handler_stats::write_response_body()
 {    
-    auto &buffer = http_conn->buffer;
-    
     // refill buffer
-    if (reader && buffer.bytes_readable() == 0) {
-        buffer.reset();
-        io_result res = buffer.buffer_read(*reader);
-        if (res.has_error()) return res;
+    if (reader) {
+        return http_conn->buffer.buffer_read(*reader);
+    } else {
+        return io_result(0);
     }
-    
-    // write buffer to socket
-    if (buffer.bytes_readable() > 0) {
-        io_result result = buffer.buffer_write(http_conn->conn);
-        if (result.has_error()) {
-            return result;
-        }
-        total_written += result.size();
-    }
-    
-    // return bytes available
-    return io_result(content_length - total_written);
 }
 
 bool http_server_handler_stats::end_request()

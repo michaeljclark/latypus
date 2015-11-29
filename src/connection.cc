@@ -146,28 +146,12 @@ io_result connection::read(void *buf, size_t len)
     return sock->read(buf, len);
 }
 
-io_result connection::readv(const struct iovec *iov, int iovcnt)
-{
-    if (!sock) {
-        return io_result(io_error(EIO));
-    }
-    return sock->readv(iov, iovcnt);
-}
-
 io_result connection::write(void *buf, size_t len)
 {
     if (!sock) {
         return io_result(io_error(EIO));
     }
     return sock->write(buf, len);
-}
-
-io_result connection::writev(const struct iovec *iov, int iovcnt)
-{
-    if (!sock) {
-        return io_result(io_error(EIO));
-    }
-    return sock->writev(iov, iovcnt);
 }
 
 time_t connection::get_last_activity() { return last_activity; }

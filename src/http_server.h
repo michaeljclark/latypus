@@ -9,8 +9,6 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
-#define USE_RINGBUFFER 1
-
 struct http_server;
 struct http_server_engine_state;
 
@@ -71,10 +69,12 @@ struct http_server_handler
     http_server_location        *location;
     std::string                 path_translated;
     time_t                      current_time;
+    ssize_t                     header_length;
     
     void set_connection(http_server_connection *conn) { http_conn = conn; }
     void set_delegate(protocol_thread_delegate *delegate) { this->delegate = delegate; }
     void set_current_time(time_t current_time) { this->current_time = current_time; }
+    void set_header_length(ssize_t header_length) { this->header_length = header_length; }
 
     virtual void init() = 0;
     virtual bool handle_request() = 0;
@@ -90,11 +90,7 @@ struct http_server_handler
 struct http_server_connection : protocol_object
 {
     connection                  conn;
-#if USE_RINGBUFFER
     io_ring_buffer              buffer;
-#else
-    io_buffer                   buffer;
-#endif
     protocol_state              *state;
     http_request                request;
     http_response               response;
@@ -217,6 +213,7 @@ struct http_server : protocol
     /* id */
     static const char* ServerName;
     static const char* ServerVersion;
+    static char ServerString[1024];
 
     /* initialization */
     
