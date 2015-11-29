@@ -7,13 +7,12 @@ a modern, portable and scalable high performance C++1y m:n threaded HTTP client 
 ## Overview
   * Supports Linux, FreeBSD and Mac OS X
   * Supports TLS, TLS Server Name Extension
+  * Scalable event driven protocol threads (kqueue, epoll, poll)
   * Hybrid message/event driven m:n threaded protocol agnostic state machine
-  * Scalable event driven protocol threads (kqueue, epoll, poll, select)
-  * protocol state labels assigned to threads. e,g, router, worker, keepalive, linger
-  * protocol states can be assigned to single thread to emulate event driven servers like Node.js
-  * protocol states can be assigned to many threads to emulate m:n threaded event driven servers
-  * protocol states can be distributed between threads i.e. router,listener and n worker threads
-  * unix sockets are used to route connections between threads
+  * protocol states assigned to threads. e,g, listener, router, worker, keepalive
+  * protocol states can be assigned to a single thread to emulate event driven servers like Node.js
+  * protocol states can be assigned to multiple threads to emulate m:n threaded event driven servers
+  * protocol states can be distributed among threads i.e. one listener, one router and n workers
 
 ## Screenshot
 ![Screenshot of latypus](https://raw.githubusercontent.com/metaparadigm/latypus/master/screenshot.png)
