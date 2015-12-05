@@ -147,7 +147,13 @@ io_result http_client_handler_file::read_response_body()
         }
         total_read += bytes_readable;
         buffer.reset();
-        return io_result(-1);
+        
+        // return bytes available or -1 if content length not present
+        if (content_length >= 0) {
+            return io_result(content_length - total_read);
+        } else {
+            return io_result(-1);
+        }
     }
     
     if (total_read == content_length) return io_result(0);
