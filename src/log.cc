@@ -24,15 +24,17 @@ std::string format_string(const char* fmt, ...)
 {
     std::vector<char> buf;
     va_list args1, args2;
-    int len;
+    int len, ret;
 
     va_start(args1, fmt);
-    assert((len = vsnprintf(NULL, 0, fmt, args1)) >= 0);
+    len = vsnprintf(NULL, 0, fmt, args1);
+    assert(len >= 0);
     va_end(args1);
 
     buf.resize(len + 1);
     va_start(args2, fmt);
-    assert(len == vsnprintf(buf.data(), buf.capacity(), fmt, args2));
+    ret = vsnprintf(buf.data(), buf.capacity(), fmt, args2);
+    assert(len == ret);
     va_end(args2);
     
     return std::string(buf.data(), len);
@@ -42,13 +44,15 @@ void log_prefix(const char* prefix, const char* fmt, va_list args1)
 {
     std::vector<char> buf;
     va_list args2;
-    int len;
+    int len, ret;
 
     va_copy(args2, args1);
 
-    assert((len = vsnprintf(NULL, 0, fmt, args1)) >= 0);
+    len = vsnprintf(NULL, 0, fmt, args1);
+    assert(len >= 0);
     buf.resize(len + 1);
-    assert(len == vsnprintf(buf.data(), buf.capacity(), fmt, args2));
+    ret = vsnprintf(buf.data(), buf.capacity(), fmt, args2);
+    assert(len == ret);
     
     if (latypus_log_file) {
         fprintf(latypus_log_file, "%s: %s\n", prefix, buf.data());
