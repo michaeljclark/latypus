@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstdarg>
+#include <cassert>
 #include <string>
 #include <vector>
 
@@ -21,35 +22,33 @@ FILE* latypus_log_file = nullptr;
 
 std::string format_string(const char* fmt, ...)
 {
-    std::vector<char> buf(INITIAL_BUFFER_SIZE);
-    va_list ap;
+    std::vector<char> buf;
+    va_list args1, args2;
+    int len;
+
+    va_start(args1, fmt);
+    assert((len = vsnprintf(NULL, 0, fmt, args1)) >= 0);
+    va_end(args1);
+
+    buf.resize(len + 1);
+    va_start(args2, fmt);
+    assert(len == vsnprintf(buf.data(), buf.capacity(), fmt, args2));
+    va_end(args2);
     
-    va_start(ap, fmt);
-    int len = vsnprintf(buf.data(), buf.capacity(), fmt, ap);
-    va_end(ap);
-    
-    std::string str;
-    if (len >= (int)buf.capacity()) {
-        buf.resize(len + 1);
-        va_start(ap, fmt);
-        vsnprintf(buf.data(), buf.capacity(), fmt, ap);
-        va_end(ap);
-    }
-    str = buf.data();
-    
-    return str;
+    return std::string(buf.data(), len);
 }
 
-void log_prefix(const char* prefix, const char* fmt, va_list arg)
+void log_prefix(const char* prefix, const char* fmt, va_list args1)
 {
-    std::vector<char> buf(INITIAL_BUFFER_SIZE);
-    
-    int len = vsnprintf(buf.data(), buf.capacity(), fmt, arg);
+    std::vector<char> buf;
+    va_list args2;
+    int len;
 
-    if (len >= (int)buf.capacity()) {
-        buf.resize(len + 1);
-        vsnprintf(buf.data(), buf.capacity(), fmt, arg);
-    }
+    va_copy(args2, args1);
+
+    assert((len = vsnprintf(NULL, 0, fmt, args1)) >= 0);
+    buf.resize(len + 1);
+    assert(len == vsnprintf(buf.data(), buf.capacity(), fmt, args2));
     
     if (latypus_log_file) {
         fprintf(latypus_log_file, "%s: %s\n", prefix, buf.data());
