@@ -74,7 +74,9 @@ public:
         io_file file(fd);
         io_result result = file.read(buf, sizeof(buf));
         CPPUNIT_ASSERT(result.size() == strlen(test_data_1));
+#if USE_PREAD_PWRITE
         CPPUNIT_ASSERT(file.file_offset == strlen(test_data_1));
+#endif
         CPPUNIT_ASSERT(memcmp(buf, test_data_1, strlen(test_data_1)) == 0);
         
         /* remove temporary file */
@@ -95,8 +97,10 @@ public:
         io_file file(fd);
         io_result result = file.write((void*)test_data_1, strlen(test_data_1));
         CPPUNIT_ASSERT(result.size() == strlen(test_data_1));
+#if USE_PREAD_PWRITE
         CPPUNIT_ASSERT(file.file_offset == strlen(test_data_1));
-        
+#endif
+
         /* read using pread */
         ssize_t ret = pread(fd, buf, strlen(test_data_1), 0);
         CPPUNIT_ASSERT(ret == strlen(test_data_1));
@@ -329,7 +333,9 @@ public:
         io_buffered_reader buffered_reader(file);
         io_result result = buffered_reader.read(buf, sizeof(buf));
         CPPUNIT_ASSERT(result.size() == strlen(test_data_1));
+#if USE_PREAD_PWRITE
         CPPUNIT_ASSERT(file->file_offset == strlen(test_data_1));
+#endif
         CPPUNIT_ASSERT(memcmp(buf, test_data_1, strlen(test_data_1)) == 0);
         
         /* remove temporary file */
@@ -351,10 +357,14 @@ public:
         io_buffered_writer buffered_writer(file);
         io_result result = buffered_writer.write((void*)test_data_1, strlen(test_data_1));
         CPPUNIT_ASSERT(result.size() == strlen(test_data_1));
+#if USE_PREAD_PWRITE
         CPPUNIT_ASSERT(file->file_offset == 0);
+#endif
         buffered_writer.flush();
+#if USE_PREAD_PWRITE
         CPPUNIT_ASSERT(file->file_offset == strlen(test_data_1));
-        
+#endif
+
         /* read using pread */
         ssize_t ret = pread(fd, buf, strlen(test_data_1), 0);
         CPPUNIT_ASSERT(ret == strlen(test_data_1));
