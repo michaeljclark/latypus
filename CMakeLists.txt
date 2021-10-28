@@ -12,10 +12,8 @@ elseif(MSVC)
 endif()
 
 include_directories(src)
-include_directories(third_party/boringssl/include)
 include_directories(third_party/cppunit/include)
 
-add_subdirectory(third_party/boringssl)
 add_subdirectory(third_party/cppunit)
 
 if(LINUX)

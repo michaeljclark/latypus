@@ -19,7 +19,6 @@ a modern, portable and scalable high performance C++1y m:n threaded HTTP client 
 
 ## Third Party Dependencies
   * [cppunit](http://www.freedesktop.org/wiki/Software/cppunit/)
-  * [boringssl](https://boringssl.googlesource.com/boringssl/)
 
 ## Example
 Example http echo server
