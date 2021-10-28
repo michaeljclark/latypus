@@ -145,7 +145,7 @@ void http_tls_shared::tls_expire_sessions(SSL_CTX *ctx)
     }
 }
 
-int http_tls_shared::tls_new_session_cb(struct ssl_st *ssl, SSL_SESSION *sess)
+int http_tls_shared::tls_new_session_cb(SSL *ssl, SSL_SESSION *sess)
 {
     unsigned int sess_id_len;
     const unsigned char *sess_id = SSL_SESSION_get_id(sess, &sess_id_len);
@@ -180,7 +180,7 @@ int http_tls_shared::tls_new_session_cb(struct ssl_st *ssl, SSL_SESSION *sess)
     }
 }
 
-void http_tls_shared::tls_remove_session_cb(struct ssl_ctx_st *ctx, SSL_SESSION *sess)
+void http_tls_shared::tls_remove_session_cb(SSL_CTX *ctx, SSL_SESSION *sess)
 {
     unsigned int sess_id_len;
     const unsigned char *sess_id = SSL_SESSION_get_id(sess, &sess_id_len);
@@ -195,13 +195,13 @@ void http_tls_shared::tls_remove_session_cb(struct ssl_ctx_st *ctx, SSL_SESSION 
     }
 }
 
-SSL_SESSION * http_tls_shared::tls_get_session_cb(struct ssl_st *ssl, unsigned char *sess_id, int sess_id_len, int *copy)
+SSL_SESSION * http_tls_shared::tls_get_session_cb(SSL *ssl, const unsigned char *sess_id, int sess_id_len, int *copy)
 {
     *copy = 0;
     std::string sess_key = hex::encode(sess_id, sess_id_len);
     
     session_mutex.lock();
-    tls_expire_sessions(ssl->ctx);
+    tls_expire_sessions(SSL_get_SSL_CTX(ssl));
     auto si = session_map.find(sess_key);
     if (si != session_map.end()) {
         auto &tls_sess = *si->second;
@@ -246,10 +246,19 @@ void http_tls_shared::init_dh(SSL_CTX *ctx)
         log_fatal_exit("%s: DH_new failed", __func__);
     }
     
+#if OPENSSL_VERSION_NUMBER >= 0x10100003L
+    // OpenSSL v1.1.0 has public API changes
+    // p, g and length of the Diffie-Hellman param can't be set directly anymore,
+    // instead DH_set0_pqg and DH_set_length are used
+    BIGNUM* p = BN_bin2bn(dh1024_p, sizeof(dh1024_p), 0);
+    BIGNUM* g = BN_bin2bn(dh1024_g, sizeof(dh1024_g), 0);
+    if ((DH_set0_pqg(dh, p, NULL, g) == 0)) {
+#else
     dh->p = BN_bin2bn(dh1024_p, sizeof(dh1024_p), NULL);
     dh->g = BN_bin2bn(dh1024_g, sizeof(dh1024_g), NULL);
 
     if (dh->p == NULL || dh->g == NULL) {
+#endif
         DH_free(dh);
         log_fatal_exit("%s: BN_bin2bn failed", __func__);
     }
