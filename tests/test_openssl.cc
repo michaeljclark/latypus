@@ -141,7 +141,7 @@ public:
         OpenSSL_add_all_algorithms();
         
         /* create ssl context */
-        const SSL_METHOD *meth = TLSv1_client_method();
+        const SSL_METHOD *meth = TLS_client_method();
         SSL_CTX *ctx = SSL_CTX_new(meth);
         
         if (!SSL_CTX_load_verify_locations(ctx, RSA_CLIENT_CA_CERT, NULL)) {

@@ -296,7 +296,7 @@ SSL_CTX* http_tls_shared::init_client(protocol *proto, config_ptr cfg,
     CRYPTO_set_locking_callback(http_tls_shared::tls_locking_function);
     CRYPTO_THREADID_set_callback(http_tls_shared::tls_threadid_function);
     
-    SSL_CTX *ctx = SSL_CTX_new(TLSv1_2_client_method());
+    SSL_CTX *ctx = SSL_CTX_new(TLS_client_method());
     SSL_CTX_set_ex_data(ctx, 0, cfg.get());
     
     SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2);
@@ -340,7 +340,7 @@ SSL_CTX* http_tls_shared::init_server(protocol *proto, config_ptr cfg,
     CRYPTO_set_locking_callback(http_tls_shared::tls_locking_function);
     CRYPTO_THREADID_set_callback(http_tls_shared::tls_threadid_function);
     
-    SSL_CTX *ctx = SSL_CTX_new(TLSv1_2_server_method());
+    SSL_CTX *ctx = SSL_CTX_new(TLS_server_method());
     SSL_CTX_set_ex_data(ctx, 0, cfg.get());
     
     SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2);
