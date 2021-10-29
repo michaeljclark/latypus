@@ -1,7 +1,7 @@
 //
-//  openssl_async_echo_server.cc
+//  async_tls_echo_server.cc
 //
-//  clang++ -std=c++11 openssl_async_echo_server.cc -lcrypto -lssl -o openssl_async_echo_server
+//  c++ -std=c++11 async_tls_echo_server.cc -lcrypto -lssl -o async_tls_echo_server
 //
 //  * example of non-blocking TLS
 //  * tested with openssl/boringssl
@@ -20,6 +20,7 @@
 #include <cstdio>
 #include <cstdarg>
 #include <cstring>
+#include <cassert>
 #include <cerrno>
 #include <csignal>
 #include <vector>
@@ -30,6 +31,8 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
+template<typename T> using vector = std::vector<T>;
+template<typename K, typename V> using map = std::map<K,V>;
 
 static int listen_port = 8443;
 static int listen_backlog = 128;
@@ -58,19 +61,19 @@ static const char* state_names[] =
 struct tls_connection
 {
     tls_connection(int fd, SSL *ssl)
-        : fd(fd), ssl(ssl), state(ssl_none) {}
+        : fd(fd), ssl(ssl), state(ssl_none), save_state(ssl_none) {}
     tls_connection(const tls_connection &o)
-        : fd(o.fd), ssl(o.ssl), state(o.state) {}
+        : fd(o.fd), ssl(o.ssl), state(o.state), save_state(ssl_none) {}
 
     int fd;
     SSL *ssl;
-    ssl_state state;
+    ssl_state state, save_state;
 };
 
 struct tls_echo_server
 {
-    std::vector<struct pollfd> poll_vec;
-    std::map<int,tls_connection> tls_connection_map;
+    vector<struct pollfd> poll_vec;
+    map<int,tls_connection> tls_connection_map;
     
     void update_state(tls_connection &conn, int events, ssl_state new_state);
     void update_state(tls_connection &conn, int ssl_err);
@@ -78,53 +81,69 @@ struct tls_echo_server
     void mainloop();
 };
 
-static void log_prefix(const char* prefix, const char* fmt, va_list args)
+static void valog(const char* prefix, const char* fmt, va_list args)
 {
-    std::vector<char> buf(256);
-    int len = vsnprintf(buf.data(), buf.capacity(), fmt, args);
-    if (len >= (int)buf.capacity()) {
-        buf.resize(len + 1);
-        vsnprintf(buf.data(), buf.capacity(), fmt, args);
-    }
+    vector<char> buf;
+    va_list args_dup;
+    int len, ret;
+
+    va_copy(args_dup, args);
+
+    len = vsnprintf(NULL, 0, fmt, args);
+    assert(len >= 0);
+    buf.resize(len + 1);
+    ret = vsnprintf(buf.data(), buf.capacity(), fmt, args_dup);
+    assert(len == ret);
+    if (buf[len - 1] == '\n') buf[len - 1] = '\0';
+
     fprintf(stderr, "%s: %s\n", prefix, buf.data());
 }
 
-static void log_fatal_exit(const char* fmt, ...)
+static void vlog(const char* prefix, const char* fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
-    log_prefix("fatal", fmt, args);
+    valog(prefix, fmt, args);
+    va_end(args);
+}
+
+static void panic(const char* fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    valog("fatal", fmt, args);
     va_end(args);
     exit(9);
 }
 
-static void log_debug(const char* fmt, ...)
+static void debugf(const char* fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
-    log_prefix("debug", fmt, args);
+    valog("debug", fmt, args);
     va_end(args);
 }
 
-static int log_tls_errors(const char *str, size_t len, void *bio)
+static int tls_error(const char *str, size_t len, void *bio)
 {
-    fprintf(stderr, "%s", str);
+    vlog("tls_error", "%s", str);
     return 0;
 }
 
 void tls_echo_server::update_state(tls_connection &conn, int events, ssl_state new_state)
 {
-    log_debug("fd=%d %s -> %s",
+    debugf("fd=%d %s -> %s",
               conn.fd, state_names[conn.state], state_names[new_state]);
     conn.state = new_state;
     auto pi = std::find_if(poll_vec.begin(), poll_vec.end(),
                            [&] (const struct pollfd &pfd) { return (pfd.fd == conn.fd); });
     if (pi != poll_vec.end()) pi->events = events;
-    else log_fatal_exit("file descriptor missing from poll_vec: %d", conn.fd);
+    else panic("file descriptor missing from poll_vec: %d", conn.fd);
 }
 
 void tls_echo_server::update_state(tls_connection &conn, int ssl_err)
 {
+    conn.save_state = conn.state;
     switch (ssl_err) {
         case SSL_ERROR_WANT_READ:
             update_state(conn, POLLIN, ssl_handshake_read);
@@ -133,14 +152,14 @@ void tls_echo_server::update_state(tls_connection &conn, int ssl_err)
             update_state(conn, POLLOUT, ssl_handshake_write);
             break;
         default:
-            log_fatal_exit("tls error: %s", ERR_reason_error_string(ERR_get_error()));
+            panic("tls error: %s", ERR_reason_error_string(ERR_get_error()));
             break;
     }
 }
 
 void tls_echo_server::close_connection(tls_connection &conn)
 {
-    log_debug("connection closed");
+    debugf("connection closed");
     int fd = conn.fd;
     close(fd);
     auto pi = std::find_if(poll_vec.begin(), poll_vec.end(),
@@ -149,22 +168,24 @@ void tls_echo_server::close_connection(tls_connection &conn)
     tls_connection_map.erase(fd);
 }
 
+static volatile bool running = 1;
+
 void tls_echo_server::mainloop()
 {
-    SSL_CTX *ctx = SSL_CTX_new(TLSv1_server_method());
+    SSL_CTX *ctx = SSL_CTX_new(TLS_server_method());
     
     if (SSL_CTX_use_certificate_file(ctx, ssl_cert_file, SSL_FILETYPE_PEM) <= 0) {
-        ERR_print_errors_cb(log_tls_errors, NULL);
-        log_fatal_exit("failed to load certificate: %s", ssl_cert_file);
+        ERR_print_errors_cb(tls_error, NULL);
+        panic("failed to load certificate: %s", ssl_cert_file);
     } else {
-        log_debug("loaded cert: %s", ssl_cert_file);
+        debugf("loaded cert: %s", ssl_cert_file);
     }
-    
+
     if (SSL_CTX_use_PrivateKey_file(ctx, ssl_key_file, SSL_FILETYPE_PEM) <= 0) {
-        ERR_print_errors_cb(log_tls_errors, NULL);
-        log_fatal_exit("failed to load private key: %s", ssl_key_file);
+        ERR_print_errors_cb(tls_error, NULL);
+        panic("failed to load private key: %s", ssl_key_file);
     } else {
-        log_debug("loaded key: %s", ssl_key_file);
+        debugf("loaded key: %s", ssl_key_file);
     }
     
     sockaddr_in saddr;
@@ -175,40 +196,40 @@ void tls_echo_server::mainloop()
 
     int listen_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (listen_fd < 0) {
-        log_fatal_exit("socket failed: %s", strerror(errno));
+        panic("socket failed: %s", strerror(errno));
     }
     int reuse = 1;
     if (setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, (void *)&reuse, sizeof(reuse)) < 0) {
-        log_fatal_exit("setsockopt(SOL_SOCKET, SO_REUSEADDR) failed: %s", strerror(errno));
+        panic("setsockopt(SOL_SOCKET, SO_REUSEADDR) failed: %s", strerror(errno));
     }
     if (fcntl(listen_fd, F_SETFD, FD_CLOEXEC) < 0) {
-        log_fatal_exit("fcntl(F_SETFD, FD_CLOEXEC) failed: %s", strerror(errno));
+        panic("fcntl(F_SETFD, FD_CLOEXEC) failed: %s", strerror(errno));
     }
     if (fcntl(listen_fd, F_SETFL, O_NONBLOCK) < 0) {
-        log_fatal_exit("fcntl(F_SETFL, O_NONBLOCK) failed: %s", strerror(errno));
+        panic("fcntl(F_SETFL, O_NONBLOCK) failed: %s", strerror(errno));
     }
     socklen_t addr_size = sizeof(sockaddr_in);
     if (bind(listen_fd, (struct sockaddr *) &saddr, addr_size) < 0) {
-        log_fatal_exit("bind failed: %s", strerror(errno));
+        panic("bind failed: %s", strerror(errno));
     }
     if (listen(listen_fd, (int)listen_backlog) < 0) {
-        log_fatal_exit("listen failed: %s", strerror(errno));
+        panic("listen failed: %s", strerror(errno));
     }
 
     char saddr_name[32];
     inet_ntop(saddr.sin_family, (void*)&saddr.sin_addr, saddr_name, sizeof(saddr_name));
-    log_debug("listening on: %s:%d", saddr_name, ntohs(saddr.sin_port));
+    debugf("listening on: %s:%d", saddr_name, ntohs(saddr.sin_port));
 
     char buf[16384];
     int buf_len = 0;
     poll_vec.push_back({listen_fd, POLLIN, 0});
     
-    while (true)
+    while (running)
     {
         int ret = poll(poll_vec.data(), (int)poll_vec.size(), -1);
-        if (ret < 0 && (errno != EAGAIN || errno != EINTR))
+        if (ret < 0 && errno != EAGAIN && errno != EINTR)
         {
-            log_fatal_exit("poll failed: %s", strerror(errno));
+            panic("poll failed: %s", strerror(errno));
         }
         auto poll_events = poll_vec;
         for (auto &pfd : poll_events)
@@ -219,15 +240,15 @@ void tls_echo_server::mainloop()
                 char paddr_name[32];
                 int fd = accept(listen_fd, (struct sockaddr *) &paddr, &addr_size);
                 if (fd < 0) {
-                    log_fatal_exit("accept failed: %s", strerror(errno));
+                    panic("accept failed: %s", strerror(errno));
                 }
                 
                 if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0) {
-                    log_fatal_exit("fcntl(F_SETFL, O_NONBLOCK) failed: %s", strerror(errno));
+                    panic("fcntl(F_SETFL, O_NONBLOCK) failed: %s", strerror(errno));
                 }
 
                 inet_ntop(paddr.sin_family, (void*)&paddr.sin_addr, paddr_name, sizeof(paddr_name));
-                log_debug("accepted connection from: %s:%d fd=%d",
+                debugf("accepted connection from: %s:%d fd=%d",
                           paddr_name, ntohs(paddr.sin_port), fd);
                 
                 SSL *ssl = SSL_new(ctx);
@@ -255,6 +276,7 @@ void tls_echo_server::mainloop()
             
             if (pfd.revents & (POLLHUP | POLLERR))
             {
+                SSL_free(conn.ssl);
                 close_connection(conn);
                 break;
             }
@@ -267,44 +289,77 @@ void tls_echo_server::mainloop()
                     int ssl_err = SSL_get_error(conn.ssl, ret);
                     update_state(conn, ssl_err);
                 } else {
-                    update_state(conn, POLLIN, ssl_app_read);
+                    /* we can get a handshake while writing response */
+                    if (conn.save_state == ssl_app_write) {
+                        update_state(conn, POLLOUT, ssl_app_write);
+                    } else {
+                        update_state(conn, POLLIN, ssl_app_read);
+                    }
                 }
             }
             else if (conn.state == ssl_app_read && pfd.revents & POLLIN)
             {
+                /* TODO: track input buffer offset to handle partial reads */
                 int ret = SSL_read(conn.ssl, buf, sizeof(buf) - 1);
                 if (ret < 0) {
                     int ssl_err = SSL_get_error(conn.ssl, ret);
                     update_state(conn, ssl_err);
                 } else if (ret == 0) {
+                    SSL_free(conn.ssl);
                     close_connection(conn);
                 } else {
                     buf_len = ret;
                     buf[buf_len] = '\0';
-                    printf("received: %s", buf);
+                    debugf("received: %s", buf);
                     update_state(conn, POLLOUT, ssl_app_write);
                 }
             }
             else if (conn.state == ssl_app_write && pfd.revents & POLLOUT)
             {
+                /* TODO: track output buffer offset to handle partial writes */
                 int ret = SSL_write(conn.ssl, buf, buf_len);
                 if (ret < 0) {
                     int ssl_err = SSL_get_error(conn.ssl, ret);
                     update_state(conn, ssl_err);
                 } else {
-                    printf("sent: %s", buf);
+                    debugf("sent: %s", buf);
                     update_state(conn, POLLIN, ssl_app_read);
                 }
             }
         }
     }
+    debugf("exiting\n");
+    SSL_CTX_free(ctx);
 }
 
+static void _signal_handler(int signum, siginfo_t *info, void *)
+{
+    switch (signum) {
+        case SIGTERM:
+        case SIGINT:
+            running = 0;
+            break;
+        default:
+            break;
+    }
+}
+
+static void _install_signal_handler()
+{
+    struct sigaction sigaction_handler;
+    memset(&sigaction_handler, 0, sizeof(sigaction_handler));
+    sigaction_handler.sa_sigaction = _signal_handler;
+    sigaction_handler.sa_flags = SA_SIGINFO;
+    sigaction(SIGTERM, &sigaction_handler, nullptr);
+    sigaction(SIGINT, &sigaction_handler, nullptr);
+}
 
 int main(int argc, char **argv)
 {
     SSL_library_init();
     SSL_load_error_strings();
+
+    _install_signal_handler();
     
     tls_echo_server server;
     server.mainloop();
