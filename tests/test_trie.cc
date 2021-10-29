@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cerrno>
+#include <cinttypes>
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -24,7 +25,7 @@ void trie_add(trie<uint32_t> &trie, std::vector<std::string> &words)
     const auto t2 = std::chrono::high_resolution_clock::now();
     uint64_t total_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count();
     uint64_t item_ns = total_ns / words.size();
-    printf("%-20s items=(%9lu) total_time=(%12llu ns) item_time=(%6llu ns)\n",
+    printf("%-20s items=(%9lu) total_time=(%12" PRIu64 " ns) item_time=(%6" PRIu64 " ns)\n",
            __func__, words.size(), total_ns, item_ns);
 }
 
@@ -39,7 +40,7 @@ void trie_lookup(trie<uint32_t> &trie, std::vector<std::string> &words)
     const auto t2 = std::chrono::high_resolution_clock::now();
     uint64_t total_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count();
     uint64_t item_ns = total_ns / i;
-    printf("%-20s items=(%9lu) total_time=(%12llu ns) item_time=(%6llu ns)\n",
+    printf("%-20s items=(%9lu) total_time=(%12" PRIu64 " ns) item_time=(%6" PRIu64 " ns)\n",
            __func__, i, total_ns, item_ns);
 }
 
@@ -53,7 +54,7 @@ void map_add(std::map<std::string,uint32_t> &map, std::vector<std::string> &word
     const auto t2 = std::chrono::high_resolution_clock::now();
     uint64_t total_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count();
     uint64_t item_ns = total_ns / words.size();
-    printf("%-20s items=(%9lu) total_time=(%12llu ns) item_time=(%6llu ns)\n",
+    printf("%-20s items=(%9lu) total_time=(%12" PRIu64 " ns) item_time=(%6" PRIu64 " ns)\n",
            __func__, words.size(), total_ns, item_ns);
 }
 
@@ -69,7 +70,7 @@ void map_lookup(std::map<std::string,uint32_t> &map, std::vector<std::string> &w
     const auto t2 = std::chrono::high_resolution_clock::now();
     uint64_t total_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count();
     uint64_t item_ns = total_ns / i;
-    printf("%-20s items=(%9lu) total_time=(%12llu ns) item_time=(%6llu ns)\n",
+    printf("%-20s items=(%9lu) total_time=(%12" PRIu64 " ns) item_time=(%6" PRIu64 " ns)\n",
            __func__, i, total_ns, item_ns);
 }
 
@@ -83,7 +84,7 @@ void unordered_map_add(std::unordered_map<std::string,uint32_t> &map, std::vecto
     const auto t2 = std::chrono::high_resolution_clock::now();
     uint64_t total_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count();
     uint64_t item_ns = total_ns / words.size();
-    printf("%-20s items=(%9lu) total_time=(%12llu ns) item_time=(%6llu ns)\n",
+    printf("%-20s items=(%9lu) total_time=(%12" PRIu64 " ns) item_time=(%6" PRIu64 " ns)\n",
            __func__, words.size(), total_ns, item_ns);
 }
 
@@ -99,7 +100,7 @@ void unordered_map_lookup(std::unordered_map<std::string,uint32_t> &map, std::ve
     const auto t2 = std::chrono::high_resolution_clock::now();
     uint64_t total_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count();
     uint64_t item_ns = total_ns / i;
-    printf("%-20s items=(%9lu) total_time=(%12llu ns) item_time=(%6llu ns)\n",
+    printf("%-20s items=(%9lu) total_time=(%12" PRIu64 " ns) item_time=(%6" PRIu64 " ns)\n",
            __func__, i, total_ns, item_ns);
 }
 
@@ -122,7 +123,7 @@ void read_words(std::vector<std::string> &words, std::string filename)
     uint64_t total_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count();
     uint64_t item_ns = total_ns / words.size();
     fclose(file);
-    printf("%-20s items=(%9lu) total_time=(%12llu ns) item_time=(%6llu ns)\n",
+    printf("%-20s items=(%9lu) total_time=(%12" PRIu64 " ns) item_time=(%6" PRIu64 " ns)\n",
            __func__, words.size(), total_ns, item_ns);
 }
 
