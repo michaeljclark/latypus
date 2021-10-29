@@ -30,9 +30,6 @@
 
 static const char* tmp_tmpl = "/tmp/test_io.XXXXXX";
 static const char* test_data_1 = "0123456789ABCDEF";
-static const char* test_data_2 = "xxxxxxxx";
-static const char* test_data_3 = "xxxxxxxxyyyyyyyy";
-static const char* test_data_4 = "yyyyyyyyxxxxxxxx";
 
 class test_io : public CppUnit::TestFixture
 {
@@ -68,14 +65,14 @@ public:
         
         /* write using pwrite */
         ssize_t ret = pwrite(fd, test_data_1, strlen(test_data_1), 0);
-        CPPUNIT_ASSERT(ret == strlen(test_data_1));
+        CPPUNIT_ASSERT(ret == (ssize_t)strlen(test_data_1));
         
         /* read using io_file::read */
         io_file file(fd);
         io_result result = file.read(buf, sizeof(buf));
-        CPPUNIT_ASSERT(result.size() == strlen(test_data_1));
+        CPPUNIT_ASSERT(result.size() == (ssize_t)strlen(test_data_1));
 #if USE_PREAD_PWRITE
-        CPPUNIT_ASSERT(file.file_offset == strlen(test_data_1));
+        CPPUNIT_ASSERT(file.file_offset == (ssize_t)strlen(test_data_1));
 #endif
         CPPUNIT_ASSERT(memcmp(buf, test_data_1, strlen(test_data_1)) == 0);
         
@@ -96,14 +93,14 @@ public:
         /* write using io_file::write */
         io_file file(fd);
         io_result result = file.write((void*)test_data_1, strlen(test_data_1));
-        CPPUNIT_ASSERT(result.size() == strlen(test_data_1));
+        CPPUNIT_ASSERT(result.size() == (ssize_t)strlen(test_data_1));
 #if USE_PREAD_PWRITE
-        CPPUNIT_ASSERT(file.file_offset == strlen(test_data_1));
+        CPPUNIT_ASSERT(file.file_offset == (ssize_t)strlen(test_data_1));
 #endif
 
         /* read using pread */
         ssize_t ret = pread(fd, buf, strlen(test_data_1), 0);
-        CPPUNIT_ASSERT(ret == strlen(test_data_1));
+        CPPUNIT_ASSERT(ret == (ssize_t)strlen(test_data_1));
         CPPUNIT_ASSERT(memcmp(buf, test_data_1, strlen(test_data_1)) == 0);
         
         /* remove temporary file */
@@ -132,7 +129,7 @@ public:
         
         /* read from test buffer */
         io_result result = buffer.read(buf, sizeof(buf));
-        CPPUNIT_ASSERT(result.size() == strlen(test_data_1));
+        CPPUNIT_ASSERT(result.size() == (ssize_t)strlen(test_data_1));
         CPPUNIT_ASSERT(buffer.offset() == strlen(test_data_1));
         CPPUNIT_ASSERT(buffer.length() == strlen(test_data_1));
         CPPUNIT_ASSERT(buffer.bytes_readable() == 0);
@@ -153,7 +150,7 @@ public:
         
         /* write to test buffer */
         io_result result = buffer.write((void*)test_data_1, strlen(test_data_1));
-        CPPUNIT_ASSERT(result.size() == strlen(test_data_1));
+        CPPUNIT_ASSERT(result.size() == (ssize_t)strlen(test_data_1));
         CPPUNIT_ASSERT(buffer.offset() == 0);
         CPPUNIT_ASSERT(buffer.length() == strlen(test_data_1));
         CPPUNIT_ASSERT(buffer.bytes_readable() == strlen(test_data_1));
@@ -176,7 +173,7 @@ public:
         
         /* write to test buffer */
         io_result result1 = buffer.write((void*)test_data_1, strlen(test_data_1));
-        CPPUNIT_ASSERT(result1.size() == strlen(test_data_1));
+        CPPUNIT_ASSERT(result1.size() == (ssize_t)strlen(test_data_1));
         CPPUNIT_ASSERT(buffer.offset() == 0);
         CPPUNIT_ASSERT(buffer.length() == strlen(test_data_1));
         CPPUNIT_ASSERT(buffer.bytes_readable() == strlen(test_data_1));
@@ -185,7 +182,7 @@ public:
         
         /* read from test buffer */
         io_result result2 = buffer.read(buf, sizeof(buf));
-        CPPUNIT_ASSERT(result2.size() == strlen(test_data_1));
+        CPPUNIT_ASSERT(result2.size() == (ssize_t)strlen(test_data_1));
         CPPUNIT_ASSERT(buffer.offset() == strlen(test_data_1));
         CPPUNIT_ASSERT(buffer.length() == strlen(test_data_1));
         CPPUNIT_ASSERT(buffer.bytes_readable() == 0);
@@ -215,7 +212,7 @@ public:
         
         /* read from test buffer */
         io_result result = buffer.read(buf, sizeof(buf));
-        CPPUNIT_ASSERT(result.size() == strlen(test_data_1));
+        CPPUNIT_ASSERT(result.size() == (ssize_t)strlen(test_data_1));
         CPPUNIT_ASSERT(buffer.back == 16);
         CPPUNIT_ASSERT(buffer.front == 1040);
         CPPUNIT_ASSERT(buffer.bytes_readable() == 0);
@@ -236,7 +233,7 @@ public:
         
         /* write to test buffer */
         io_result result = buffer.write((void*)test_data_1, strlen(test_data_1));
-        CPPUNIT_ASSERT(result.size() == strlen(test_data_1));
+        CPPUNIT_ASSERT(result.size() == (ssize_t)strlen(test_data_1));
         CPPUNIT_ASSERT(buffer.back == 16);
         CPPUNIT_ASSERT(buffer.front == 1024);
         CPPUNIT_ASSERT(buffer.bytes_readable() == strlen(test_data_1));
@@ -259,7 +256,7 @@ public:
         
         /* write to test buffer */
         io_result result1 = buffer.write((void*)test_data_1, strlen(test_data_1));
-        CPPUNIT_ASSERT(result1.size() == strlen(test_data_1));
+        CPPUNIT_ASSERT(result1.size() == (ssize_t)strlen(test_data_1));
         CPPUNIT_ASSERT(buffer.back == 16);
         CPPUNIT_ASSERT(buffer.front == 1024);
         CPPUNIT_ASSERT(buffer.bytes_readable() == strlen(test_data_1));
@@ -268,7 +265,7 @@ public:
         
         /* read from test buffer */
         io_result result2 = buffer.read(buf, sizeof(buf));
-        CPPUNIT_ASSERT(result2.size() == strlen(test_data_1));
+        CPPUNIT_ASSERT(result2.size() == (ssize_t)strlen(test_data_1));
         CPPUNIT_ASSERT(buffer.back == 16);
         CPPUNIT_ASSERT(buffer.front == 1040);
         CPPUNIT_ASSERT(buffer.bytes_readable() == 0);
@@ -307,7 +304,7 @@ public:
         
         /* write to test buffer */
         io_result result = buffer.write((void*)test_data_1, strlen(test_data_1));
-        CPPUNIT_ASSERT(result.size() == buffer.size());
+        CPPUNIT_ASSERT(result.size() == (ssize_t)buffer.size());
         CPPUNIT_ASSERT(buffer.offset() == 0);
         CPPUNIT_ASSERT(buffer.length() == buffer.size());
         CPPUNIT_ASSERT(buffer.length() != strlen(test_data_1));
@@ -326,15 +323,15 @@ public:
         
         /* write using pwrite */
         ssize_t ret = pwrite(fd, test_data_1, strlen(test_data_1), 0);
-        CPPUNIT_ASSERT(ret == strlen(test_data_1));
+        CPPUNIT_ASSERT(ret == (ssize_t)strlen(test_data_1));
         
         /* read using io_buffered_reader::read */
         io_file_ptr file = std::make_shared<io_file>(fd);
         io_buffered_reader buffered_reader(file);
         io_result result = buffered_reader.read(buf, sizeof(buf));
-        CPPUNIT_ASSERT(result.size() == strlen(test_data_1));
+        CPPUNIT_ASSERT(result.size() == (ssize_t)strlen(test_data_1));
 #if USE_PREAD_PWRITE
-        CPPUNIT_ASSERT(file->file_offset == strlen(test_data_1));
+        CPPUNIT_ASSERT(file->file_offset == (ssize_t)strlen(test_data_1));
 #endif
         CPPUNIT_ASSERT(memcmp(buf, test_data_1, strlen(test_data_1)) == 0);
         
@@ -356,18 +353,18 @@ public:
         io_file_ptr file = std::make_shared<io_file>(fd);
         io_buffered_writer buffered_writer(file);
         io_result result = buffered_writer.write((void*)test_data_1, strlen(test_data_1));
-        CPPUNIT_ASSERT(result.size() == strlen(test_data_1));
+        CPPUNIT_ASSERT(result.size() == (ssize_t)strlen(test_data_1));
 #if USE_PREAD_PWRITE
         CPPUNIT_ASSERT(file->file_offset == 0);
 #endif
         buffered_writer.flush();
 #if USE_PREAD_PWRITE
-        CPPUNIT_ASSERT(file->file_offset == strlen(test_data_1));
+        CPPUNIT_ASSERT(file->file_offset == (ssize_t)strlen(test_data_1));
 #endif
 
         /* read using pread */
         ssize_t ret = pread(fd, buf, strlen(test_data_1), 0);
-        CPPUNIT_ASSERT(ret == strlen(test_data_1));
+        CPPUNIT_ASSERT(ret == (ssize_t)strlen(test_data_1));
         CPPUNIT_ASSERT(memcmp(buf, test_data_1, strlen(test_data_1)) == 0);
         
         /* remove temporary file */
